@@ -25,9 +25,7 @@ export class AuthService {
       throw new BadRequestException('잘못된 회원가입 요청입니다!');
     }
 
-    const user = await this.userRepository.findOne({
-      where: { email },
-    });
+    const user = await this.userRepository.findOneBy({ email });
 
     if (user) {
       throw new BadRequestException('이미 가입한 이메일 입니다!');
@@ -42,17 +40,13 @@ export class AuthService {
       ...userData,
     });
 
-    const newUser = await this.userRepository.findOne({
-      where: { email },
-    });
+    const newUser = await this.userRepository.findOneBy({ email });
 
     return newUser;
   }
 
   async authenticate(email: string, password: string) {
-    const user = await this.userRepository.findOne({
-      where: { email },
-    });
+    const user = await this.userRepository.findOneBy({ email });
 
     if (!user) {
       throw new BadRequestException('잘못된 로그인 정보 입니다!');
@@ -79,17 +73,16 @@ export class AuthService {
     const refreshTokenSecret = this.configService.get<string>(
       envVariableKeys.refreshToken,
     );
+    const newPayload = {
+      sub: payload.sub, // user id
+      role: payload.role,
+      type: isRefreshToken ? 'refresh' : 'access',
+    };
+    const tokenOptions = {
+      secret: isRefreshToken ? refreshTokenSecret : accessTokenSecret,
+      expiresIn: isRefreshToken ? '24h' : 300,
+    };
 
-    return await this.jwtService.signAsync(
-      {
-        sub: payload.sub, // user id
-        role: payload.role,
-        type: isRefreshToken ? 'refresh' : 'access',
-      },
-      {
-        secret: isRefreshToken ? refreshTokenSecret : accessTokenSecret,
-        expiresIn: isRefreshToken ? '24h' : 300,
-      },
-    );
+    return await this.jwtService.signAsync(newPayload, tokenOptions);
   }
 }
