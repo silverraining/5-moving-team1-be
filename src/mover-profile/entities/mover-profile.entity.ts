@@ -44,9 +44,7 @@ export class MoverProfile extends BaseTable {
   serviceRegion: ServiceRegionMap; /// 서비스 지역
 
   /// User : MoverProfile <-> 1:1 관계
-  @OneToOne(() => User, (user) => user.moverProfile, {
-    cascade: true,
-  })
+  @OneToOne(() => User, (user) => user.moverProfile)
   @JoinColumn() /// FK userId 생성
   @Index('IDX_MOVER_USER_ID')
   user: User;
