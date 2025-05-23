@@ -19,7 +19,7 @@ export class AuthService {
   ) {}
 
   async register(createUserDto: CreateUserDto) {
-    const { role, name, phone, email, password } = createUserDto;
+    const { email, password, ...userData } = createUserDto;
 
     if (!password) {
       throw new BadRequestException('잘못된 회원가입 요청입니다!');
@@ -39,9 +39,7 @@ export class AuthService {
     await this.userRepository.save({
       email,
       password: hashedPassword,
-      role,
-      name,
-      phone,
+      ...userData,
     });
 
     const newUser = await this.userRepository.findOne({
