@@ -1,7 +1,7 @@
 export enum ServiceType {
-  SMALL,
-  HOME,
-  OFFICE,
+  SMALL = 'SMALL',
+  HOME = 'HOME',
+  OFFICE = 'OFFICE',
 }
 
 export enum ServiceRegion {

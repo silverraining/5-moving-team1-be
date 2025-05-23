@@ -8,14 +8,14 @@ export class AuthGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     /// 요청에서 user 객체가 있는지 확인
-    const req = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest();
     const isPublic = this.reflector.get(Public, context.getHandler());
 
     if (isPublic) {
       return true;
     }
 
-    if (!req.user || req.user.type !== 'access') {
+    if (!request.user || request.user.type !== 'access') {
       return false;
     }
     return true;

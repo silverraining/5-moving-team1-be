@@ -32,9 +32,7 @@ export class CustomerProfile extends BaseTable {
   serviceRegion: ServiceRegionMap;
 
   // User : CustomerProfile <-> 1:1 관계
-  @OneToOne(() => User, (user) => user.customerProfile, {
-    cascade: true,
-  })
+  @OneToOne(() => User, (user) => user.customerProfile)
   @JoinColumn() /// FK userId 생성
   @Index('IDX_CUSTOMER_USER_ID')
   user: User;

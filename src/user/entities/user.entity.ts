@@ -11,15 +11,15 @@ import {
 } from 'typeorm';
 
 export enum Role {
-  CUSTOMER,
-  MOVER,
+  CUSTOMER = 'CUSTOMER',
+  MOVER = 'MOVER',
 }
 
 export enum Provider {
-  LOCAL,
-  GOOGLE,
-  KAKAO,
-  NAVER,
+  LOCAL = 'LOCAL',
+  GOOGLE = 'GOOGLE',
+  KAKAO = 'KAKAO',
+  NAVER = 'NAVER',
 }
 
 @Entity()
@@ -42,7 +42,7 @@ export class User extends BaseTable {
   @Column({ nullable: true })
   password?: string;
 
-  @Column({ type: 'enum', enum: Provider })
+  @Column({ type: 'enum', enum: Provider, default: Provider.LOCAL })
   provider: Provider;
 
   @Column({ nullable: true })
