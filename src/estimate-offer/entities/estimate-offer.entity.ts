@@ -5,12 +5,12 @@ import { Review } from 'src/review/entities/review.entity';
 import { Column, Entity, ManyToOne, OneToOne, PrimaryColumn } from 'typeorm';
 
 export enum OfferStatus {
-  REQUESTED, // 고객이 견적 요청 보냄 (기사 입장에선 대기 중)
-  SUBMITTED, // 기사님이 견적서 보냄
-  REJECTED, // 기사님이 반려함
-  CONFIRMED, // 고객이 확정함
-  CANCELED, // 고객이 다른 기사 선택 → 자동 취소
-  COMPLETED, // 이사 완료
+  REQUESTED = 'REQUESTED', // 고객이 견적 요청 보냄 (기사 입장에선 대기 중)
+  SUBMITTED = 'SUBMITTED', // 기사님이 견적서 보냄
+  REJECTED = 'REJECTED', // 기사님이 반려함
+  CONFIRMED = 'CONFIRMED', // 고객이 확정함
+  CANCELED = 'CANCELED', // 고객이 다른 기사 선택 → 자동 취소
+  COMPLETED = 'COMPLETED', // 이사 완료
 }
 
 @Entity()
