@@ -47,6 +47,9 @@ export class EstimateRequest extends BaseTable {
   @Column({ type: 'json' })
   toAddress: Address; // 도착지 주소
 
+  @Column({ type: 'uuid', array: true, nullable: true })
+  targetMoverIds?: string[]; // 지정 견적 요청을 보낸 기사 id 목록 (견적 요청 시점에 기사가 없을 수 있음 )
+
   @Column()
   confirmedOfferId: string; // 확정된 제안 견적 id
 
@@ -57,5 +60,5 @@ export class EstimateRequest extends BaseTable {
 
   // EstimateRequest : EstimateOffer <-> 1:N 관계
   @OneToMany(() => EstimateOffer, (offer) => offer.estimateRequest)
-  estimateOffers: EstimateOffer[]; // 견적 제안 목록 (3개 제한)
+  estimateOffers: EstimateOffer[]; // 견적 제안 목록 (최대 8개)
 }

@@ -41,6 +41,9 @@ export class EstimateOffer extends BaseTable {
   status: OfferStatus; // 견적 제안 상태
 
   @Column({ default: false })
+  isTargeted: boolean; // 고객이 지정한 기사가 제안한 견적 여부
+
+  @Column({ default: false })
   isConfirmed: boolean; // 고객이 확정했는지 여부
 
   @Column()
