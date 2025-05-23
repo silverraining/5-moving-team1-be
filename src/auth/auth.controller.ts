@@ -18,7 +18,6 @@ export class AuthController {
   @Public()
   @UseGuards(LocalAuthGuard)
   @Post('login/local')
-  /// authorization: Basic $token
   async loginLocal(@Request() req: { user: JwtPayload }) {
     return {
       refreshToken: await this.authService.issueToken(req.user, true),

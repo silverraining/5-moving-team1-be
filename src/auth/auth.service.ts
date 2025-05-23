@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Provider, User } from 'src/user/entities/user.entity';
+import { User } from 'src/user/entities/user.entity';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
@@ -42,7 +42,6 @@ export class AuthService {
       role,
       name,
       phone,
-      provider: Provider.LOCAL,
     });
 
     const newUser = await this.userRepository.findOne({
