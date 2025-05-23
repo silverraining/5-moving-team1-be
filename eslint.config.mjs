@@ -33,7 +33,8 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-misused-promises': 'off',
-      '@typescript-eslint/no-explicit-any': 'off', // 여기 확실히 꺼짐
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/no-unused-vars': [
         'error',
         {

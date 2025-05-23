@@ -8,7 +8,6 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { NextFunction, Request, Response } from 'express';
 import { envVariableKeys } from 'src/common/const/env.const';
-import { JwtPayload } from 'src/common/types/payload.type';
 
 @Injectable()
 export class BearerTokenMiddleware implements NestMiddleware {
@@ -32,7 +31,7 @@ export class BearerTokenMiddleware implements NestMiddleware {
     try {
       const token = this.validateBearerToken(authHeader);
 
-      const decodedPayload: JwtPayload = this.jwtService.decode(token);
+      const decodedPayload = this.jwtService.decode(token);
       if (
         decodedPayload.type !== 'refresh' &&
         decodedPayload.type !== 'access'
@@ -44,7 +43,7 @@ export class BearerTokenMiddleware implements NestMiddleware {
       const secretKey = isRefreshToken
         ? envVariableKeys.refreshToken
         : envVariableKeys.accessToken;
-      const payload: JwtPayload = await this.jwtService.verifyAsync(token, {
+      const payload = await this.jwtService.verifyAsync(token, {
         secret: this.configService.get<string>(secretKey),
       });
 

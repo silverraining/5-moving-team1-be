@@ -3,18 +3,16 @@ import {
   Catch,
   ExceptionFilter,
   ForbiddenException,
-  HttpStatus,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
 
 @Catch(ForbiddenException)
 export class ForbiddenExceptionFilter implements ExceptionFilter {
-  catch(exception: ForbiddenException, host: ArgumentsHost) {
+  catch(exception: any, host: ArgumentsHost) {
     const context = host.switchToHttp();
-    const response: Response = context.getResponse();
-    const request: Request = context.getRequest();
+    const response = context.getResponse();
+    const request = context.getRequest();
 
-    const status: HttpStatus = exception.getStatus();
+    const status = exception.getStatus();
 
     console.log(`[ForbiddenException] ${request.method} ${request.path}`);
     response.status(status).json({
