@@ -32,9 +32,10 @@ export class MoverProfileController {
     return this.moverProfileService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.moverProfileService.findOne(+id);
+  @Get('me')
+  @RBAC(Role.MOVER)
+  findOne(@UserInfo() userInfo: UserInfo) {
+    return this.moverProfileService.findOne(userInfo.sub);
   }
 
   @Patch(':id')
