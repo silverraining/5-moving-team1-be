@@ -25,9 +25,9 @@ export class MoverProfileService {
     return `This action returns all moverProfile`;
   }
 
-  async findOne(id: string) {
+  async findOne(userId: string) {
     const profile = await this.moverProfileRepository.findOne({
-      where: { user: { id } }, // user의 id로 프로필 찾기
+      where: { user: { id: userId } }, // user의 id로 프로필 찾기
     });
     return profile;
   }
