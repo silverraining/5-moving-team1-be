@@ -19,8 +19,8 @@ async function bootstrap() {
 
   //Swagger 세팅
   const config = new DocumentBuilder()
-    .setTitle('Moviong API') // 문서 제목
-    .setDescription('이사 관련 서비스 앱 개발자를 위한 Moviong API 문서입니다.') // 설명
+    .setTitle('Moving API') // 문서 제목
+    .setDescription('이사 관련 서비스 앱 개발자를 위한 Moving API 문서입니다.') // 설명
     .setVersion('1.0') // 버전
     .addBearerAuth() // JWT 인증 적용할 경우
     .build();
