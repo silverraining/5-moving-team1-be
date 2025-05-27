@@ -85,4 +85,22 @@ export class AuthService {
 
     return await this.jwtService.signAsync(newPayload, tokenOptions);
   }
+
+  async verifyRefreshToken(token: string): Promise<User | null> {
+    const refreshTokenSecret = this.configService.get<string>(
+      envVariableKeys.refreshToken,
+    );
+
+    const payload = this.jwtService.verify(token, {
+      secret: refreshTokenSecret,
+    });
+
+    // payload에 포함된 사용자 식별자로 DB 조회
+    const user = await this.userRepository.findOneBy({ id: payload.sub });
+    if (!user) {
+      return null; // 유효하지 않은 토큰
+    }
+
+    return user;
+  }
 }
