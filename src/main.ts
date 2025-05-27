@@ -38,11 +38,10 @@ async function bootstrap() {
   await app.listen(process.env.PORT ?? 3000);
 
   const port = process.env.PORT || 3000;
-  const lines = [];
   console.log(`
  🚀 서버 실행 완료!                                         
- 🔗 Localhost:       http://localhost:5000                 
- 📘 Swagger 문서:    http://localhost:5000/api-docs`);
+ 🔗 Localhost:       http://localhost:${port}                 
+ 📘 Swagger 문서:    http://localhost:${port}/api-docs`);
 }
 
 void bootstrap();
