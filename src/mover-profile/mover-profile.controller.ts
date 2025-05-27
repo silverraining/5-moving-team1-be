@@ -38,12 +38,13 @@ export class MoverProfileController {
     return this.moverProfileService.findOne(userInfo.sub);
   }
 
-  @Patch(':id')
+  @Patch('me')
+  @RBAC(Role.MOVER)
   update(
-    @Param('id') id: string,
+    @UserInfo() userInfo: UserInfo,
     @Body() updateMoverProfileDto: UpdateMoverProfileDto,
   ) {
-    return this.moverProfileService.update(+id, updateMoverProfileDto);
+    return this.moverProfileService.update(userInfo.sub, updateMoverProfileDto);
   }
 
   @Delete(':id')
