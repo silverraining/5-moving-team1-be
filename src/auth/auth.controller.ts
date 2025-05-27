@@ -21,7 +21,7 @@ function LoginSwagger() {
   return applyDecorators(...ApiLogin());
 }
 function RotateTokenSwagger() {
-  return applyDecorators(...ApiRotateToken());
+  return applyDecorators(ApiRotateToken());
 }
 
 @Controller('auth')
@@ -46,6 +46,9 @@ export class AuthController {
     };
   }
 
+  // API 테스트는 되는데, 스웨거에서 403 권한없음이 나와서 확인해보니
+  // accessToken이 없거나 만료되었을 때 호출하므로 인증이 필요 없는 엔드포인트 -> @Public() 데코레이터 추가
+  @Public()
   @Post('token/access')
   @RotateTokenSwagger()
   async rotateRefreshToken(@Body('refreshToken') refreshToken: string) {
