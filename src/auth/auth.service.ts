@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/user/entities/user.entity';
 import { Repository } from 'typeorm';
@@ -90,10 +94,14 @@ export class AuthService {
     const refreshTokenSecret = this.configService.get<string>(
       envVariableKeys.refreshToken,
     );
-
-    const payload = this.jwtService.verify(token, {
-      secret: refreshTokenSecret,
-    });
+    let payload: JwtPayload;
+    try {
+      payload = this.jwtService.verify(token, {
+        secret: refreshTokenSecret,
+      });
+    } catch (e) {
+      throw new UnauthorizedException('리프레시 토큰이 유효하지 않습니다.');
+    }
 
     // payload에 포함된 사용자 식별자로 DB 조회
     const user = await this.userRepository.findOneBy({ id: payload.sub });

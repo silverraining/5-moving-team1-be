@@ -1,6 +1,6 @@
 import { ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
-
+import { applyDecorators } from '@nestjs/common';
 export const ApiRegister = () => [
   ApiOperation({
     summary: '회원가입',
@@ -85,36 +85,52 @@ export const ApiLogin = () => [
   }),
 ];
 
-export const ApiRotateToken = () => [
-  ApiOperation({
-    summary: '액세스 토큰 재발급',
-    description: '리프레시 토큰이 유효할 경우 새 액세스 토큰을 발급합니다.',
-  }),
-  ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        refshToken: { type: 'string', example: '' },
+export const ApiRotateToken = () =>
+  applyDecorators(
+    ApiOperation({
+      summary: '액세스 토큰 재발급',
+      description: '리프레시 토큰이 유효할 경우 새 액세스 토큰을 발급합니다.',
+    }),
+    ApiBody({
+      schema: {
+        type: 'object',
+        properties: {
+          refreshToken: {
+            type: 'string',
+            example:
+              'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4Mzg0NjUxOS1kNjMxLTQzM2UtYTZmYi0wNzA1ZmIzZTZkM2QiLCJyb2xlIjoiQ1VTVE9NRVIiLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzQ4MjMyMjUyLCJleHAiOjE3NDgyMzI1NTJ9.bqVmVH8_eh4fDP8TPCV0tazgTmkZUZEcnjXqLgMOI0Q',
+          },
+        },
+        required: ['refreshToken'],
       },
-      required: ['accessToken'],
-    },
-    examples: {
-      basic: {
-        summary: '기본 예시',
-        value: {
-          refreshToken:
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4Mzg0NjUxOS1kNjMxLTQzM2UtYTZmYi0wNzA1ZmIzZTZkM2QiLCJyb2xlIjoiQ1VTVE9NRVIiLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzQ4MjMyMjUyLCJleHAiOjE3NDgyMzI1NTJ9.bqVmVH8_eh4fDP8TPCV0tazgTmkZUZEcnjXqLgMOI0Q@example.com',
+      examples: {
+        basic: {
+          summary: '기본 예시',
+          value: {
+            refreshToken:
+              'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4M...',
+          },
         },
       },
-    },
-  }),
-  ApiResponse({
-    status: 200,
-    description: '새 액세스 토큰 발급',
-    schema: {
-      example: {
-        accessToken: 'new-access-token',
+    }),
+    ApiResponse({
+      status: 201,
+      description: '새 액세스 토큰 발급',
+      schema: {
+        example: {
+          accessToken: 'new-access-token',
+        },
       },
-    },
-  }),
-];
+    }),
+    ApiResponse({
+      status: 401,
+      description: '리프레시 토큰이 유효하지 않습니다.',
+      schema: {
+        example: {
+          message: '리프레시 토큰이 유효하지 않습니다.',
+          error: 'Unauthorized',
+          statusCode: 401,
+        },
+      },
+    }),
+  );
