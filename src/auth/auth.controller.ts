@@ -4,6 +4,7 @@ import {
   Controller,
   Post,
   Request,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
@@ -47,9 +48,26 @@ export class AuthController {
 
   @Post('token/access')
   @RotateTokenSwagger()
-  async rotateRefreshToken(@Request() req: { user: JwtPayload }) {
-    return {
-      accessToken: await this.authService.issueToken(req.user, false),
+  async rotateRefreshToken(@Body('refreshToken') refreshToken: string) {
+    if (!refreshToken) {
+      throw new UnauthorizedException('리프레시 토큰이 필요합니다.');
+    }
+
+    // 1) 리프레시 토큰 검증
+    const user = await this.authService.verifyRefreshToken(refreshToken);
+    if (!user) {
+      throw new UnauthorizedException('리프레시 토큰이 유효하지 않습니다.');
+    }
+
+    const newPayload: JwtPayload = {
+      sub: user.id,
+      role: user.role,
+      type: null,
     };
+
+    // 2) 새로운 액세스 토큰 발급
+    const accessToken = await this.authService.issueToken(newPayload, false);
+
+    return { accessToken };
   }
 }
