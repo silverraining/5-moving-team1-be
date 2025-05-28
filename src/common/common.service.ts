@@ -87,10 +87,10 @@ export class CommonService {
     /**
      * cursorObj =
      * {
-     *    values: {
+     *    values: [{
      *      id: 27,
      *      field: value, // 정렬 필드값
-     *    },
+     *    }, ...],
      *    order: {
      *      field: MoverOrderField,
      *      direction: OrderDirection,
