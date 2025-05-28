@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   HttpCode,
+  Patch,
   Post,
   Request,
   UnauthorizedException,
@@ -13,9 +14,16 @@ import { Public } from './decorator/public.decorator';
 import { LocalAuthGuard } from './strategy/local.strategy';
 import { JwtPayload } from 'src/common/types/payload.type';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
-import { ApiLogin, ApiRegister, ApiRotateToken } from './docs/swagger';
+import {
+  ApiLogin,
+  ApiRegister,
+  ApiRotateToken,
+  ApiUpdateMe,
+} from './docs/swagger';
 import { AuthGuard } from './guard/auth.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { UserInfo } from '@/user/decorator/user-info.decorator';
+import { UpdateUserInfoDto } from './dto/update-user-info.dto';
 
 function RegisterSwagger() {
   return applyDecorators(...ApiRegister());
@@ -87,5 +95,14 @@ export class AuthController {
   async logout(@Request() req: { user: JwtPayload }) {
     await this.authService.logout(req.user.sub);
     return { message: '로그아웃 되었습니다.' };
+  }
+
+  //User 기본정보 수정 API
+  @Patch('me')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiUpdateMe()
+  updateMyInfo(@UserInfo() userInfo: UserInfo, @Body() dto: UpdateUserInfoDto) {
+    return this.authService.updateMyInfo(userInfo.sub, dto);
   }
 }

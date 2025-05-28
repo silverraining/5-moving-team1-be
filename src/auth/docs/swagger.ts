@@ -6,6 +6,7 @@ import {
 } from '@nestjs/swagger';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { applyDecorators } from '@nestjs/common';
+import { UpdateUserInfoDto } from '../dto/update-user-info.dto';
 export const ApiRegister = () => [
   ApiOperation({
     summary: '회원가입',
@@ -40,7 +41,7 @@ export const ApiRegister = () => [
         id: '5cf532a2-c1de-4549-b0c7-61f0bdfd62de',
         role: 'CUSTOMER',
         name: '홍길동',
-        phone: '01012345777',
+        phone: '01012345678',
         email: 'hong@example.com',
         provider: 'LOCAL',
         snsId: null,
@@ -50,17 +51,30 @@ export const ApiRegister = () => [
   }),
   ApiResponse({
     status: 400,
-    description: '유효성 검사 실패',
-    schema: {
-      example: {
-        statusCode: 400,
-        message: [
-          '이름은 한글 또는 영어만 가능하며, 공백과 특수문자는 사용할 수 없습니다.',
-          '이름은 2자 이상 20자 이하이어야 합니다.',
-          '휴대폰 번호는 010으로 시작하는 11자리 숫자여야 합니다.',
-          '유효한 이메일 주소를 입력해주세요.',
-        ],
-        error: 'Bad Request',
+    description: '유효성 검사 실패 또는 중복된 이메일로 인한 회원가입 실패',
+    content: {
+      'application/json': {
+        examples: {
+          validationError: {
+            summary: '입력값 유효성 오류',
+            value: {
+              statusCode: 400,
+              message: [
+                '이름은 한글 또는 영어만 가능하며, 공백과 특수문자는 사용할 수 없습니다.',
+                '휴대폰 번호는 010으로 시작하는 11자리 숫자여야 합니다.',
+              ],
+              error: 'Bad Request',
+            },
+          },
+          duplicateEmail: {
+            summary: '중복된 이메일 오류',
+            value: {
+              statusCode: 400,
+              message: '이미 가입한 이메일 입니다!',
+              error: 'Bad Request',
+            },
+          },
+        },
       },
     },
   }),
@@ -192,3 +206,102 @@ export const ApiLogout = () =>
       },
     }),
   );
+export function ApiUpdateMe() {
+  return applyDecorators(
+    ApiBearerAuth(),
+    ApiOperation({
+      summary: '내 정보 수정',
+      description: `
+- 인증된 사용자가 본인의 이름, 전화번호, 비밀번호를 수정합니다.
+- 모든 항목은 선택적(optional)이며, 수정할 값만 전달하면 됩니다.
+- 유효성 검증 조건은 다음과 같습니다:
+  - 이름: 2자 이상 20자 이하, 한글/영어/숫자 조합만 가능 (공백·특수문자 불가)
+  - 전화번호: 010으로 시작하는 11자리 숫자
+  - 비밀번호: 8~20자, 영문 + 숫자 + 특수문자 조합 (공백 불가)
+      `,
+    }),
+    ApiBody({
+      description: '수정할 필드 (이름, 비밀번호, 전화번호 중 선택적)',
+      type: UpdateUserInfoDto,
+      examples: {
+        nameOnly: {
+          summary: '이름만 수정',
+          value: {
+            name: '무빙이',
+          },
+        },
+        namePhoneExample: {
+          summary: '이름과 전화번호 수정',
+          value: {
+            name: '무빙이',
+            phone: '01012345678',
+          },
+        },
+        passwordExample: {
+          summary: '비밀번호만 수정',
+          value: {
+            password: 'NewPass123!',
+          },
+        },
+        fullExample: {
+          summary: '이름, 전화번호, 비밀번호 모두 수정',
+          value: {
+            name: '무빙이',
+            phone: '01088888888',
+            password: 'NewPass123!',
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 200,
+      description: '정보 수정 성공',
+      schema: {
+        example: {
+          message: '회원정보가 성공적으로 수정되었습니다.',
+        },
+      },
+    }),
+    ApiResponse({
+      status: 400,
+      description: '입력값 유효성 검사 실패',
+      content: {
+        'application/json': {
+          examples: {
+            nameValidationError: {
+              summary: '이름 유효성 실패',
+              value: {
+                statusCode: 400,
+                message: [
+                  '이름은 2자 이상 20자 이하로 한글, 영어, 숫자와 그 조합만 가능하며, 공백과 특수문자는 사용할 수 없습니다.',
+                ],
+                error: 'Bad Request',
+              },
+            },
+            passwordValidationError: {
+              summary: '비밀번호 유효성 실패',
+              value: {
+                statusCode: 400,
+                message: [
+                  '비밀번호는 8자 이상 20자 이하의 영문, 숫자, 특수문자 조합을 공백 없이 입력해야 합니다.',
+                ],
+                error: 'Bad Request',
+              },
+            },
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 401,
+      description: '토큰이 없거나 만료된 경우',
+      schema: {
+        example: {
+          statusCode: 401,
+          message: '만료된 토큰입니다!',
+          error: 'Unauthorized',
+        },
+      },
+    }),
+  );
+}

@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -12,6 +13,7 @@ import { JwtService } from '@nestjs/jwt';
 import { envVariableKeys } from 'src/common/const/env.const';
 import { JwtPayload } from 'src/common/types/payload.type';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
+import { UpdateUserInfoDto } from './dto/update-user-info.dto';
 
 @Injectable()
 export class AuthService {
@@ -160,5 +162,34 @@ export class AuthService {
 
     user.refreshToken = null;
     await this.userRepository.save(user);
+  }
+  /**
+   * 인증된 사용자의 정보(이름, 전화번호, 비밀번호)를 수정합니다.
+   *
+   * @param userId - 수정할 사용자 본인의 ID
+   * @param dto - update-user-info DTO (name, phone, password 중 일부 또는 전부)
+   *
+   * @returns 수정 완료 메시지 객체
+   *
+   * @throws NotFoundException - 사용자를 찾을 수 없는 경우
+   * @throws QueryFailedError - 중복된 전화번호 등 DB 제약 조건 위반 시
+   */
+
+  async updateMyInfo(userId: string, dto: UpdateUserInfoDto) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
+
+    if (dto.password) {
+      const salt = await bcrypt.genSalt();
+      user.password = await bcrypt.hash(dto.password, salt);
+    }
+
+    if (dto.name) user.name = dto.name;
+    if (dto.phone) user.phone = dto.phone;
+
+    await this.userRepository.save(user);
+    return { message: '회원정보가 성공적으로 수정되었습니다.' };
   }
 }
