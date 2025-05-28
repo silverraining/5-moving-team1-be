@@ -15,6 +15,16 @@ import { CreateUserDto } from 'src/user/dto/create-user.dto';
 
 @Injectable()
 export class AuthService {
+  async saveRefreshToken(userId: string, refreshToken: string): Promise<void> {
+    const user = await this.userRepository.findOneBy({ id: userId });
+
+    if (!user) {
+      throw new UnauthorizedException('유저를 찾을 수 없습니다.');
+    }
+
+    user.refreshToken = refreshToken;
+    await this.userRepository.save(user);
+  }
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,

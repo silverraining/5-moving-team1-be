@@ -2,6 +2,7 @@ import {
   applyDecorators,
   Body,
   Controller,
+  HttpCode,
   Post,
   Request,
   UnauthorizedException,
@@ -14,6 +15,7 @@ import { JwtPayload } from 'src/common/types/payload.type';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { ApiLogin, ApiRegister, ApiRotateToken } from './docs/swagger';
 import { AuthGuard } from './guard/auth.guard';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 function RegisterSwagger() {
   return applyDecorators(...ApiRegister());
@@ -41,10 +43,13 @@ export class AuthController {
   @Post('login/local')
   @LoginSwagger()
   async loginLocal(@Request() req: { user: JwtPayload }) {
-    return {
-      refreshToken: await this.authService.issueToken(req.user, true),
-      accessToken: await this.authService.issueToken(req.user, false),
-    };
+    const refreshToken = await this.authService.issueToken(req.user, true);
+    const accessToken = await this.authService.issueToken(req.user, false);
+
+    // DB에 refreshToken 저장
+    await this.authService.saveRefreshToken(req.user.sub, refreshToken);
+
+    return { refreshToken, accessToken };
   }
 
   // API 테스트는 되는데, 스웨거에서 403 권한없음이 나와서 확인해보니
@@ -77,6 +82,8 @@ export class AuthController {
 
   @Post('logout')
   @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(200)
   async logout(@Request() req: { user: JwtPayload }) {
     await this.authService.logout(req.user.sub);
     return { message: '로그아웃 되었습니다.' };
