@@ -48,8 +48,8 @@ export class User extends BaseTable {
   @Column({ nullable: true })
   snsId?: string;
 
-  @Column({ nullable: true })
-  refreshToken?: string;
+  @Column({ type: 'text', nullable: true })
+  refreshToken: string | null;
 
   // User : Notification <-> 1:N 관계
   @OneToMany(() => Notification, (notification) => notification.user)
@@ -68,4 +68,5 @@ export class User extends BaseTable {
     cascade: true,
   })
   customerProfile?: CustomerProfile;
+  currentRefreshToken: null;
 }
