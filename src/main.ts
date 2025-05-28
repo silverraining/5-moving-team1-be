@@ -6,7 +6,10 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  //
+  //모든 라우트에 /api prefix 적용
+  app.setGlobalPrefix('api');
+
+  //유효성 파이프 전역 설정
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true, // DTO에 없는 속성은 자동으로 제거

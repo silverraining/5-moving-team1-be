@@ -10,7 +10,8 @@ import {
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-
+import { ApiExcludeController } from '@nestjs/swagger';
+@ApiExcludeController() // user 도메인 Swagger 문서에서 제외
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}

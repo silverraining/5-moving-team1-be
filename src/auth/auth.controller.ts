@@ -2,6 +2,8 @@ import {
   applyDecorators,
   Body,
   Controller,
+  HttpCode,
+  Patch,
   Post,
   Request,
   UnauthorizedException,
@@ -12,7 +14,16 @@ import { Public } from './decorator/public.decorator';
 import { LocalAuthGuard } from './strategy/local.strategy';
 import { JwtPayload } from 'src/common/types/payload.type';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
-import { ApiLogin, ApiRegister, ApiRotateToken } from './docs/swagger';
+import {
+  ApiLogin,
+  ApiRegister,
+  ApiRotateToken,
+  ApiUpdateMe,
+} from './docs/swagger';
+import { AuthGuard } from './guard/auth.guard';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { UserInfo } from '@/user/decorator/user-info.decorator';
+import { UpdateUserInfoDto } from './dto/update-user-info.dto';
 
 function RegisterSwagger() {
   return applyDecorators(...ApiRegister());
@@ -21,7 +32,7 @@ function LoginSwagger() {
   return applyDecorators(...ApiLogin());
 }
 function RotateTokenSwagger() {
-  return applyDecorators(...ApiRotateToken());
+  return applyDecorators(ApiRotateToken());
 }
 
 @Controller('auth')
@@ -40,12 +51,18 @@ export class AuthController {
   @Post('login/local')
   @LoginSwagger()
   async loginLocal(@Request() req: { user: JwtPayload }) {
-    return {
-      refreshToken: await this.authService.issueToken(req.user, true),
-      accessToken: await this.authService.issueToken(req.user, false),
-    };
+    const refreshToken = await this.authService.issueToken(req.user, true);
+    const accessToken = await this.authService.issueToken(req.user, false);
+
+    // DB에 refreshToken 저장
+    await this.authService.saveRefreshToken(req.user.sub, refreshToken);
+
+    return { refreshToken, accessToken };
   }
 
+  // API 테스트는 되는데, 스웨거에서 403 권한없음이 나와서 확인해보니
+  // accessToken이 없거나 만료되었을 때 호출하므로 인증이 필요 없는 엔드포인트 -> @Public() 데코레이터 추가
+  @Public()
   @Post('token/access')
   @RotateTokenSwagger()
   async rotateRefreshToken(@Body('refreshToken') refreshToken: string) {
@@ -69,5 +86,23 @@ export class AuthController {
     const accessToken = await this.authService.issueToken(newPayload, false);
 
     return { accessToken };
+  }
+
+  @Post('logout')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(200)
+  async logout(@Request() req: { user: JwtPayload }) {
+    await this.authService.logout(req.user.sub);
+    return { message: '로그아웃 되었습니다.' };
+  }
+
+  //User 기본정보 수정 API
+  @Patch('me')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiUpdateMe()
+  updateMyInfo(@UserInfo() userInfo: UserInfo, @Body() dto: UpdateUserInfoDto) {
+    return this.authService.updateMyInfo(userInfo.sub, dto);
   }
 }

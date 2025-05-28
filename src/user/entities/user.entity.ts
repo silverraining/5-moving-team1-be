@@ -1,3 +1,4 @@
+import { Exclude } from 'class-transformer';
 import { BaseTable } from 'src/common/entity/base-table.entity';
 import { CustomerProfile } from 'src/customer-profile/entities/customer-profile.entity';
 import { MoverProfile } from 'src/mover-profile/entities/mover-profile.entity';
@@ -39,6 +40,7 @@ export class User extends BaseTable {
   @Column({ unique: true })
   email: string;
 
+  @Exclude()
   @Column({ nullable: true })
   password?: string;
 
@@ -48,8 +50,8 @@ export class User extends BaseTable {
   @Column({ nullable: true })
   snsId?: string;
 
-  @Column({ nullable: true })
-  refreshToken?: string;
+  @Column({ type: 'text', nullable: true })
+  refreshToken: string | null;
 
   // User : Notification <-> 1:N 관계
   @OneToMany(() => Notification, (notification) => notification.user)
@@ -68,4 +70,5 @@ export class User extends BaseTable {
     cascade: true,
   })
   customerProfile?: CustomerProfile;
+  currentRefreshToken: null;
 }
