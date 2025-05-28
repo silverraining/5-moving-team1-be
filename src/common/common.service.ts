@@ -74,8 +74,6 @@ export class CommonService {
     qb.take(take);
 
     const results = await qb.getMany();
-    console.log('cursor pagination results: ', results);
-
     const nextCursor = this.generateNextCursor(results, order);
 
     return { qb, nextCursor };
@@ -159,8 +157,8 @@ export class CommonService {
         return field;
 
       case OrderField.CONFIRMED_ESTIMATE_COUNT:
-        qb.leftJoin(`${qb.alias}.estimateOffers`, 'offer')
-          .addSelect('COUNT(offer.id)', field)
+        qb.leftJoin(`${qb.alias}.estimateOffers`, 'estimate_offer')
+          .addSelect('COUNT(*)', field)
           .groupBy(`${qb.alias}.id`);
         return field;
 
