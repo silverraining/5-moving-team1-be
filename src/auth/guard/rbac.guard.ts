@@ -12,10 +12,9 @@ export class RbacGuard implements CanActivate {
     const handler = context.getHandler(); // 	현재 실행 중인 메서드(핸들러)를 반환
     const controller = context.getClass(); //	현재 실행 중인 컨트롤러 클래스를 반환
 
-    const isPublicOnMethod = this.reflector.get<boolean>(Public, handler); // 핸들러에서 Public 데코레이터를 찾음
-    const isPublicOnClass = this.reflector.get<boolean>(Public, controller); // 컨트롤러에서 Public 데코레이터를 찾음
+    const isPublic = this.reflector.get<boolean>(Public, handler); // 핸들러에서 Public 데코레이터를 찾음
 
-    if (isPublicOnMethod || isPublicOnClass) return true;
+    if (isPublic) return true;
 
     let role = this.reflector.get<Role>(RBAC, handler); // 핸들러에서 RBAC 데코레이터를 찾음
     if (!role) role = this.reflector.get<Role>(RBAC, controller); // 핸들러에서 찾지 못하면 컨트롤러에서 찾음
