@@ -1,3 +1,4 @@
+import { Exclude } from 'class-transformer';
 import { BaseTable } from 'src/common/entity/base-table.entity';
 import { CustomerProfile } from 'src/customer-profile/entities/customer-profile.entity';
 import { MoverProfile } from 'src/mover-profile/entities/mover-profile.entity';
@@ -39,6 +40,7 @@ export class User extends BaseTable {
   @Column({ unique: true })
   email: string;
 
+  @Exclude()
   @Column({ nullable: true })
   password?: string;
 
