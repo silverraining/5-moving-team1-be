@@ -39,7 +39,7 @@ export const ApiRegister = () => [
       example: {
         id: '5cf532a2-c1de-4549-b0c7-61f0bdfd62de',
         role: 'CUSTOMER',
-        name: '홍길동동',
+        name: '홍길동',
         phone: '01012345777',
         email: 'hong@example.com',
         provider: 'LOCAL',
