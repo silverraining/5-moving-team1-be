@@ -148,21 +148,21 @@ export class CommonService {
     switch (field) {
       case OrderField.REVIEW_COUNT:
         qb.leftJoin(`${qb.alias}.reviews`, 'review')
-          .addSelect('COUNT(*)', 'reviewcount')
+          .addSelect('COUNT(*)', field)
           .groupBy(`${qb.alias}.id`);
-        return 'reviewcount';
+        return field;
 
       case OrderField.AVERAGE_RATING:
         qb.leftJoin(`${qb.alias}.reviews`, 'review')
-          .addSelect('AVG(review.rating)', 'averageRating')
+          .addSelect('AVG(review.rating)', field)
           .groupBy(`${qb.alias}.id`);
-        return 'averageRating';
+        return field;
 
       case OrderField.CONFIRMED_ESTIMATE_COUNT:
         qb.leftJoin(`${qb.alias}.estimateOffers`, 'offer')
-          .addSelect('COUNT(offer.id)', 'confirmedEstimateCount')
+          .addSelect('COUNT(offer.id)', field)
           .groupBy(`${qb.alias}.id`);
-        return 'confirmedEstimateCount';
+        return field;
 
       case OrderField.EXPERIENCE:
         // experience는 mover스키마에서만 필요

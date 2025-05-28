@@ -1,10 +1,11 @@
 import { IsInt, IsObject, IsOptional, IsString } from 'class-validator';
 
 export enum OrderField {
-  REVIEW_COUNT = 'reviewCount', // 리뷰 수
-  AVERAGE_RATING = 'averageRating', // 평균 평점
+  // string 맵핑 값에 무조건 소문자로 정의 postgreSQL에서 소문자만 인식함
+  REVIEW_COUNT = 'review_count', // 리뷰 수
+  AVERAGE_RATING = 'average_rating', // 평균 평점
   EXPERIENCE = 'experience', // 경력
-  CONFIRMED_ESTIMATE_COUNT = 'confirmedEstimateCount', // 확정 견적 수
+  CONFIRMED_ESTIMATE_COUNT = 'confirmed_estimate_count', // 확정 견적 수
 }
 
 export enum OrderDirection {
