@@ -13,6 +13,7 @@ import { LocalAuthGuard } from './strategy/local.strategy';
 import { JwtPayload } from 'src/common/types/payload.type';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { ApiLogin, ApiRegister, ApiRotateToken } from './docs/swagger';
+import { AuthGuard } from './guard/auth.guard';
 
 function RegisterSwagger() {
   return applyDecorators(...ApiRegister());
@@ -72,5 +73,12 @@ export class AuthController {
     const accessToken = await this.authService.issueToken(newPayload, false);
 
     return { accessToken };
+  }
+
+  @Post('logout')
+  @UseGuards(AuthGuard)
+  async logout(@Request() req: { user: JwtPayload }) {
+    await this.authService.logout(req.user.sub);
+    return { message: '로그아웃 되었습니다.' };
   }
 }
