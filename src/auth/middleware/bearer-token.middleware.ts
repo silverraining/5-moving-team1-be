@@ -3,7 +3,6 @@ import {
   NestMiddleware,
   BadRequestException,
   UnauthorizedException,
-  HttpException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -37,7 +36,10 @@ export class BearerTokenMiddleware implements NestMiddleware {
         decodedPayload.type !== 'refresh' &&
         decodedPayload.type !== 'access'
       ) {
-        throw new UnauthorizedException('잘못된 토큰 입니다!'); // 401
+        throw new UnauthorizedException({
+          message: '잘못된 토큰 타입입니다',
+          errorCode: 'INVALID_TOKEN_TYPE',
+        });
       }
 
       const isRefreshToken = decodedPayload.type === 'refresh';
@@ -52,7 +54,10 @@ export class BearerTokenMiddleware implements NestMiddleware {
       next();
     } catch (e) {
       if (e instanceof Error && e.name === 'TokenExpiredError') {
-        throw new HttpException('만료된 토큰입니다!', 498); // 498
+        throw new UnauthorizedException({
+          message: '토큰이 만료되었습니다',
+          errorCode: 'TOKEN_EXPIRED',
+        });
       }
       next();
     }
