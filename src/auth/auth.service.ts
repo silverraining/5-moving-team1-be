@@ -154,15 +154,17 @@ export class AuthService {
    * @returns void
    * @throws UnauthorizedException - 유저를 찾을 수 없는 경우
    */
-  async logout(userId: string): Promise<void> {
+  async logout(userId: string) {
     const user = await this.userRepository.findOneBy({ id: userId });
 
     if (!user) {
-      throw new UnauthorizedException('유저를 찾을 수 없습니다.');
+      throw new NotFoundException('유저를 찾을 수 없습니다.');
     }
 
     user.refreshToken = null;
     await this.userRepository.save(user);
+
+    return { message: '로그아웃 되었습니다.' };
   }
   /**
    * 인증된 사용자의 정보(이름, 전화번호, 비밀번호)를 수정합니다.
