@@ -23,7 +23,7 @@ import {
 import { AuthGuard } from './guard/auth.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
-import { UpdateUserInfoDto } from './dto/update-user-info.dto';
+import { UpdateUserDto } from '@/user/dto/update-user.dto';
 
 function RegisterSwagger() {
   return applyDecorators(...ApiRegister());
@@ -103,7 +103,7 @@ export class AuthController {
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiUpdateMe()
-  updateMyInfo(@UserInfo() userInfo: UserInfo, @Body() dto: UpdateUserInfoDto) {
+  updateMyInfo(@UserInfo() userInfo: UserInfo, @Body() dto: UpdateUserDto) {
     return this.authService.updateMyInfo(userInfo.sub, dto);
   }
 }

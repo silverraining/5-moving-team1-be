@@ -13,10 +13,17 @@ import { JwtService } from '@nestjs/jwt';
 import { envVariableKeys } from 'src/common/const/env.const';
 import { JwtPayload } from 'src/common/types/payload.type';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
-import { UpdateUserInfoDto } from './dto/update-user-info.dto';
+import { UpdateUserDto } from '@/user/dto/update-user.dto';
 
 @Injectable()
 export class AuthService {
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    private readonly configService: ConfigService,
+    private readonly jwtService: JwtService,
+  ) {}
+
   async saveRefreshToken(userId: string, refreshToken: string): Promise<void> {
     const user = await this.userRepository.findOneBy({ id: userId });
 
@@ -27,12 +34,6 @@ export class AuthService {
     user.refreshToken = refreshToken;
     await this.userRepository.save(user);
   }
-  constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-    private readonly configService: ConfigService,
-    private readonly jwtService: JwtService,
-  ) {}
 
   /**
    * 회원가입
@@ -134,7 +135,7 @@ export class AuthService {
       payload = this.jwtService.verify(token, {
         secret: refreshTokenSecret,
       });
-    } catch (e) {
+    } catch (_error) {
       throw new UnauthorizedException('리프레시 토큰이 유효하지 않습니다.');
     }
 
@@ -175,7 +176,7 @@ export class AuthService {
    * @throws QueryFailedError - 중복된 전화번호 등 DB 제약 조건 위반 시
    */
 
-  async updateMyInfo(userId: string, dto: UpdateUserInfoDto) {
+  async updateMyInfo(userId: string, dto: UpdateUserDto) {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException('사용자를 찾을 수 없습니다.');

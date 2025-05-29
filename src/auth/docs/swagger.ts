@@ -6,7 +6,7 @@ import {
 } from '@nestjs/swagger';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { applyDecorators } from '@nestjs/common';
-import { UpdateUserInfoDto } from '../dto/update-user-info.dto';
+import { UpdateUserDto } from '@/user/dto/update-user.dto';
 export const ApiRegister = () => [
   ApiOperation({
     summary: '회원가입',
@@ -222,7 +222,7 @@ export function ApiUpdateMe() {
     }),
     ApiBody({
       description: '수정할 필드 (이름, 비밀번호, 전화번호 중 선택적)',
-      type: UpdateUserInfoDto,
+      type: UpdateUserDto,
       examples: {
         nameOnly: {
           summary: '이름만 수정',
@@ -299,7 +299,7 @@ export function ApiUpdateMe() {
         example: {
           statusCode: 401,
           message: '만료된 토큰입니다!',
-          error: 'Unauthorized',
+          errorCode: 'TOKEN_EXPIRED',
         },
       },
     }),
