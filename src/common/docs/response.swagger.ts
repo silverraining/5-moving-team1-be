@@ -1,0 +1,102 @@
+// 200
+type CODE_200_TYPE = {
+  description?: string;
+  schema: object;
+};
+export const CODE_200_SUCCESS = ({ description, schema }: CODE_200_TYPE) => {
+  return {
+    status: 200,
+    description: description || '조회 성공한 경우',
+    schema: schema,
+  };
+};
+
+// 201
+type CODE_201_TYPE = {
+  description?: string;
+  schema: object;
+};
+export const CODE_201_CREATED = ({ description, schema }: CODE_201_TYPE) => {
+  return {
+    status: 201,
+    description: description || '생성 성공한 경우',
+    schema: schema,
+  };
+};
+
+// 400
+type ErrorExample = {
+  key: string;
+  summary: string;
+  value: {
+    statusCode: number;
+    message: string[];
+    error: string;
+  };
+};
+export const CODE_400_BAD_REQUEST = (errorExamples: ErrorExample[]) => {
+  return {
+    status: 400,
+    description: '입력값 유효성 검사 실패',
+    content: {
+      'application/json': {
+        examples: Object.fromEntries(
+          errorExamples.map((example) => [
+            example.key,
+            {
+              summary: example.summary,
+              value: example.value,
+            },
+          ]),
+        ),
+      },
+    },
+  };
+};
+
+// 401
+export const CODE_401_RESPONSES = {
+  status: 401,
+  description: '토큰 인증 오류',
+  content: {
+    'application/json': {
+      examples: {
+        tokenExpired: {
+          summary: '토큰 만료',
+          value: {
+            statusCode: 401,
+            message: '토큰이 만료되었습니다',
+            errorCode: 'TOKEN_EXPIRED',
+          },
+        },
+        invalidTokenType: {
+          summary: '잘못된 토큰 타입',
+          value: {
+            statusCode: 401,
+            message: '잘못된 토큰 타입입니다',
+            errorCode: 'INVALID_TOKEN_TYPE',
+          },
+        },
+      },
+    },
+  },
+};
+
+// 404
+type CODE_404_TYPE = {
+  description?: string;
+  message?: string;
+};
+export const CODE_404_NOT_FOUND = ({ description, message }: CODE_404_TYPE) => {
+  return {
+    status: 404,
+    description: description || '리소스가 존재하지 않는 경우',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: message || '리소스를 찾을 수 없습니다.',
+        error: 'Not Found',
+      },
+    },
+  };
+};

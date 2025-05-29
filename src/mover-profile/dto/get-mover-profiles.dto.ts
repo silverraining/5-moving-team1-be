@@ -1,4 +1,3 @@
-import { ApiProperty } from '@nestjs/swagger';
 import { IsObject } from 'class-validator';
 import {
   ServiceRegion,
@@ -31,19 +30,11 @@ export class GetMoverProfilesDto extends CursorPaginationDto {
   @HasAtLeastOneTrue({
     message: '서비스 유형은 최소 하나 이상 선택되어야 합니다.',
   })
-  @ApiProperty({
-    description: '서비스 유형',
-    example: defaultServiceTypeMap,
-  })
   serviceType: Partial<ServiceTypeMap> = defaultServiceTypeMap;
 
   @IsObject()
   @HasAtLeastOneTrue({
     message: '서비스 지역은 최소 하나 이상 선택되어야 합니다.',
-  })
-  @ApiProperty({
-    description: '서비스 지역',
-    example: defaultServiceRegionMap,
   })
   serviceRegion: Partial<ServiceRegionMap> = defaultServiceRegionMap;
 }
