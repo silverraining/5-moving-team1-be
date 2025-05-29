@@ -10,10 +10,8 @@ import {
 import { CustomerProfileService } from './customer-profile.service';
 import { CreateCustomerProfileDto } from './dto/create-customer-profile.dto';
 import { UpdateCustomerProfileDto } from './dto/update-customer-profile.dto';
-import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('customer-profile')
-@ApiBearerAuth()
 export class CustomerProfileController {
   constructor(
     private readonly customerProfileService: CustomerProfileService,

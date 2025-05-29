@@ -21,7 +21,6 @@ import {
   ApiRotateToken,
   ApiUpdateMe,
 } from './docs/swagger';
-import { ApiBearerAuth } from '@nestjs/swagger';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
 import { UpdateUserDto } from '@/user/dto/update-user.dto';
 
@@ -36,7 +35,6 @@ function RotateTokenSwagger() {
 }
 
 @Controller('auth')
-@ApiBearerAuth()
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
