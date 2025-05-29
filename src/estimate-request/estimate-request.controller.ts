@@ -1,15 +1,36 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Request,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
 import { EstimateRequestService } from './estimate-request.service';
 import { CreateEstimateRequestDto } from './dto/create-estimate-request.dto';
+import { AuthGuard } from '@/auth/guard/auth.guard';
 import { UpdateEstimateRequestDto } from './dto/update-estimate-request.dto';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { UserInfo } from '@/user/decorator/user-info.decorator';
 
+@ApiTags('EstimateRequest')
+@ApiBearerAuth()
+@UseGuards(AuthGuard)
 @Controller('estimate-request')
 export class EstimateRequestController {
-  constructor(private readonly estimateRequestService: EstimateRequestService) {}
+  constructor(
+    private readonly estimateRequestService: EstimateRequestService,
+  ) {}
 
   @Post()
-  create(@Body() createEstimateRequestDto: CreateEstimateRequestDto) {
-    return this.estimateRequestService.create(createEstimateRequestDto);
+  async create(
+    @Body() dto: CreateEstimateRequestDto,
+    @UserInfo() user: UserInfo, // 커스텀 데코레이터로 사용자 정보 받는다고 가정
+  ) {
+    return this.estimateRequestService.create(dto, user);
   }
 
   @Get()
@@ -23,7 +44,10 @@ export class EstimateRequestController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateEstimateRequestDto: UpdateEstimateRequestDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateEstimateRequestDto: UpdateEstimateRequestDto,
+  ) {
     return this.estimateRequestService.update(+id, updateEstimateRequestDto);
   }
 
