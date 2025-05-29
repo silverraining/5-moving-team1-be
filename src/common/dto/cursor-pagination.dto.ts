@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { IsInt, IsObject, IsOptional, IsString } from 'class-validator';
 
 export enum OrderField {
@@ -21,13 +22,28 @@ export interface OrderItemMap {
 export class CursorPaginationDto {
   @IsString()
   @IsOptional()
+  @ApiProperty({
+    description: '페이지네이션 커서',
+    example:
+      'eyJ2YWx1ZXMiOnsiaWQiOiI2YTU1NDlkMi01NzMwLTQyZWMtYmUzMy01YzVkZGYxOTE4ZDMifSwib3JkZXIiOnsiZmllbGQiOiJjb25maXJtZWRfZXN0aW1hdGVfY291bnQiLCJkaXJlY3Rpb24iOiJERVNDIn19',
+  })
   cursor?: string;
 
   @IsObject()
-  @IsOptional()
-  order?: OrderItemMap;
+  @ApiProperty({
+    description: '정렬 기준',
+    example: {
+      field: OrderField.REVIEW_COUNT,
+      direction: OrderDirection.DESC,
+    },
+  })
+  order: OrderItemMap;
 
   @IsInt()
   @IsOptional()
+  @ApiProperty({
+    description: '페이지 크기',
+    example: 5,
+  })
   take?: number = 5;
 }

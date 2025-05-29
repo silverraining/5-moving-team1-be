@@ -13,6 +13,7 @@ import { LocalAuthGuard } from './strategy/local.strategy';
 import { JwtPayload } from 'src/common/types/payload.type';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { ApiLogin, ApiRegister, ApiRotateToken } from './docs/swagger';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 function RegisterSwagger() {
   return applyDecorators(...ApiRegister());
@@ -25,6 +26,7 @@ function RotateTokenSwagger() {
 }
 
 @Controller('auth')
+@ApiBearerAuth()
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 

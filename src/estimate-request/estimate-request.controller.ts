@@ -1,11 +1,23 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { EstimateRequestService } from './estimate-request.service';
 import { CreateEstimateRequestDto } from './dto/create-estimate-request.dto';
 import { UpdateEstimateRequestDto } from './dto/update-estimate-request.dto';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('estimate-request')
+@ApiBearerAuth()
 export class EstimateRequestController {
-  constructor(private readonly estimateRequestService: EstimateRequestService) {}
+  constructor(
+    private readonly estimateRequestService: EstimateRequestService,
+  ) {}
 
   @Post()
   create(@Body() createEstimateRequestDto: CreateEstimateRequestDto) {
@@ -23,7 +35,10 @@ export class EstimateRequestController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateEstimateRequestDto: UpdateEstimateRequestDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateEstimateRequestDto: UpdateEstimateRequestDto,
+  ) {
     return this.estimateRequestService.update(+id, updateEstimateRequestDto);
   }
 
