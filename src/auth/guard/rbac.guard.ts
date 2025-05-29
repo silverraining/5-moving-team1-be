@@ -9,23 +9,21 @@ export class RbacGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const isPublic = this.reflector.get<boolean>(Public, context.getHandler());
-    if (isPublic) {
-      return true;
-    }
+    const handler = context.getHandler(); // 	현재 실행 중인 메서드(핸들러)를 반환
+    const controller = context.getClass(); //	현재 실행 중인 컨트롤러 클래스를 반환
 
-    const role = this.reflector.get<Role>(RBAC, context.getHandler());
+    const isPublic = this.reflector.get<boolean>(Public, handler); // 핸들러에서 Public 데코레이터를 찾음
 
-    if (!role) {
-      return true;
-    }
+    if (isPublic) return true;
+
+    let role = this.reflector.get<Role>(RBAC, handler); // 핸들러에서 RBAC 데코레이터를 찾음
+    if (!role) role = this.reflector.get<Role>(RBAC, controller); // 핸들러에서 찾지 못하면 컨트롤러에서 찾음
+    if (!role) return true; // 둘 다 없으면 전역이므로 접근 허용
 
     const req = context.switchToHttp().getRequest();
     const user = req.user;
 
-    if (!user) {
-      return false;
-    }
+    if (!user) return false;
 
     return user.role === role;
   }

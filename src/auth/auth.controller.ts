@@ -36,6 +36,7 @@ function RotateTokenSwagger() {
 }
 
 @Controller('auth')
+@ApiBearerAuth()
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 

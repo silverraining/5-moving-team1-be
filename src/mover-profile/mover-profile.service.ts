@@ -5,12 +5,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { MoverProfile } from './entities/mover-profile.entity';
 import { Repository } from 'typeorm';
 import { UserInfo } from 'src/user/decorator/user-info.decorator';
+import { GetMoverProfilesDto } from './dto/get-mover-profiles.dto';
+import { CommonService, Service } from 'src/common/common.service';
+import { MOVER_PROFILE_QB_ALIAS } from 'src/common/const/qb-alias';
 
 @Injectable()
 export class MoverProfileService {
   constructor(
     @InjectRepository(MoverProfile)
     private readonly moverProfileRepository: Repository<MoverProfile>,
+    private readonly commonService: CommonService,
   ) {}
 
   create(createMoverProfileDto: CreateMoverProfileDto, userInfo: UserInfo) {
@@ -21,8 +25,36 @@ export class MoverProfileService {
     return this.moverProfileRepository.save(profile);
   }
 
-  findAll() {
-    return `This action returns all moverProfile`;
+  async findAll(dto: GetMoverProfilesDto) {
+    const { serviceType, serviceRegion } = dto; // 필터 조건 추출
+
+    const qb = this.moverProfileRepository.createQueryBuilder(
+      MOVER_PROFILE_QB_ALIAS,
+    );
+
+    // 1. 서비스 유형 필터링 적용
+    this.commonService.applyServiceFilterToQb(
+      qb,
+      serviceType,
+      Service.ServiceType,
+      MOVER_PROFILE_QB_ALIAS,
+    );
+
+    // 2. 서비스 지역 필터링 적용
+    this.commonService.applyServiceFilterToQb(
+      qb,
+      serviceRegion,
+      Service.ServiceRegion,
+      MOVER_PROFILE_QB_ALIAS,
+    );
+
+    // 3. 커서 기반 페이징 적용
+    const { nextCursor } =
+      await this.commonService.applyCursorPaginationParamsToQb(qb, dto);
+
+    const [data, count] = await qb.getManyAndCount(); // 데이터와 총 개수 반환합니다.
+
+    return { movers: data, count, nextCursor };
   }
 
   async findOne(userId: string) {
@@ -45,9 +77,5 @@ export class MoverProfileService {
     Object.assign(profile, updateMoverProfileDto);
 
     return this.moverProfileRepository.save(profile);
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} moverProfile`;
   }
 }

@@ -16,6 +16,13 @@ export class QueryFailedExceptionFilter implements ExceptionFilter {
       message = '중복 키 에러!';
     }
 
+    console.error(
+      'QueryFailedError:',
+      exception.message,
+      exception.detail,
+      exception.stack,
+    );
+
     response.status(status).json({
       statusCode: status,
       timestamp: new Date().toISOString(),
