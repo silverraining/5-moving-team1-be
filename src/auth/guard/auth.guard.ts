@@ -1,4 +1,9 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Public } from '../decorator/public.decorator';
 
@@ -16,7 +21,8 @@ export class AuthGuard implements CanActivate {
     }
 
     if (!request.user || request.user.type !== 'access') {
-      return false;
+      throw new UnauthorizedException('액세스 토큰이 필요합니다.');
+      // return false;
     }
     return true;
   }

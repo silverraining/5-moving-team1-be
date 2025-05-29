@@ -68,6 +68,7 @@ import { ResponseTimeInterceptor } from './common/interceptor/response-time.inte
           Review,
         ], // 엔티티 등록
         synchronize: true,
+        ssl: { rejectUnauthorized: false },
       }),
       inject: [ConfigService],
     }),
