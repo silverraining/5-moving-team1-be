@@ -25,7 +25,7 @@ export class MoverProfileController {
     @Body() createMoverProfileDto: CreateMoverProfileDto,
     @UserInfo() userInfo: UserInfo,
   ) {
-    return this.moverProfileService.create(createMoverProfileDto, userInfo);
+    return this.moverProfileService.create(userInfo.sub, createMoverProfileDto);
   }
 
   /**
