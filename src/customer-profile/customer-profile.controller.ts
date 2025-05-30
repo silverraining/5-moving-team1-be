@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch } from '@nestjs/common';
 import { CustomerProfileService } from './customer-profile.service';
 import { CreateCustomerProfileDto } from './dto/create-customer-profile.dto';
 import { UpdateCustomerProfileDto } from './dto/update-customer-profile.dto';
@@ -29,11 +29,14 @@ export class CustomerProfileController {
     return this.customerProfileService.findOne(userInfo.sub);
   }
 
-  @Patch(':id')
+  @Patch('me')
   update(
-    @Param('id') id: string,
     @Body() updateCustomerProfileDto: UpdateCustomerProfileDto,
+    @UserInfo() userInfo: UserInfo,
   ) {
-    return this.customerProfileService.update(+id, updateCustomerProfileDto);
+    return this.customerProfileService.update(
+      userInfo.sub,
+      updateCustomerProfileDto,
+    );
   }
 }
