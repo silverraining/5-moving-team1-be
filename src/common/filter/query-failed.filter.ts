@@ -27,8 +27,6 @@ export class QueryFailedExceptionFilter implements ExceptionFilter {
       exception.stack,
     );
 
-    console.error('exception.detail,: ', exception.detail);
-
     res.status(status).json({
       statusCode: status,
       timestamp: new Date().toISOString(),
