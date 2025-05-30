@@ -10,10 +10,8 @@ import {
 import { EstimateOfferService } from './estimate-offer.service';
 import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
 import { UpdateEstimateOfferDto } from './dto/update-estimate-offer.dto';
-import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('estimate-offer')
-@ApiBearerAuth()
 export class EstimateOfferController {
   constructor(private readonly estimateOfferService: EstimateOfferService) {}
 

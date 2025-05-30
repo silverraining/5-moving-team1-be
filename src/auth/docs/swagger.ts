@@ -6,7 +6,16 @@ import {
 } from '@nestjs/swagger';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { applyDecorators } from '@nestjs/common';
-import { UpdateUserInfoDto } from '../dto/update-user-info.dto';
+import { UpdateUserDto } from '@/user/dto/update-user.dto';
+import {
+  CODE_400_BAD_REQUEST,
+  CODE_401_RESPONSES,
+} from '@/common/docs/response.swagger';
+import {
+  nameValidationError,
+  passwordValidationError,
+} from '@/common/docs/validation.swagger';
+
 export const ApiRegister = () => [
   ApiOperation({
     summary: '회원가입',
@@ -222,7 +231,7 @@ export function ApiUpdateMe() {
     }),
     ApiBody({
       description: '수정할 필드 (이름, 비밀번호, 전화번호 중 선택적)',
-      type: UpdateUserInfoDto,
+      type: UpdateUserDto,
       examples: {
         nameOnly: {
           summary: '이름만 수정',
@@ -262,46 +271,9 @@ export function ApiUpdateMe() {
         },
       },
     }),
-    ApiResponse({
-      status: 400,
-      description: '입력값 유효성 검사 실패',
-      content: {
-        'application/json': {
-          examples: {
-            nameValidationError: {
-              summary: '이름 유효성 실패',
-              value: {
-                statusCode: 400,
-                message: [
-                  '이름은 2자 이상 20자 이하로 한글, 영어, 숫자와 그 조합만 가능하며, 공백과 특수문자는 사용할 수 없습니다.',
-                ],
-                error: 'Bad Request',
-              },
-            },
-            passwordValidationError: {
-              summary: '비밀번호 유효성 실패',
-              value: {
-                statusCode: 400,
-                message: [
-                  '비밀번호는 8자 이상 20자 이하의 영문, 숫자, 특수문자 조합을 공백 없이 입력해야 합니다.',
-                ],
-                error: 'Bad Request',
-              },
-            },
-          },
-        },
-      },
-    }),
-    ApiResponse({
-      status: 401,
-      description: '토큰이 없거나 만료된 경우',
-      schema: {
-        example: {
-          statusCode: 401,
-          message: '만료된 토큰입니다!',
-          error: 'Unauthorized',
-        },
-      },
-    }),
+    ApiResponse(
+      CODE_400_BAD_REQUEST([nameValidationError, passwordValidationError]),
+    ),
+    ApiResponse(CODE_401_RESPONSES),
   );
 }

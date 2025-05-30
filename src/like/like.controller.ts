@@ -10,10 +10,8 @@ import {
 import { LikeService } from './like.service';
 import { CreateLikeDto } from './dto/create-like.dto';
 import { UpdateLikeDto } from './dto/update-like.dto';
-import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('like')
-@ApiBearerAuth()
 export class LikeController {
   constructor(private readonly likeService: LikeService) {}
 
