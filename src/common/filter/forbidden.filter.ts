@@ -7,7 +7,7 @@ import {
 
 @Catch(ForbiddenException)
 export class ForbiddenExceptionFilter implements ExceptionFilter {
-  catch(exception: any, host: ArgumentsHost) {
+  catch(exception: ForbiddenException, host: ArgumentsHost) {
     const context = host.switchToHttp();
     const response = context.getResponse();
     const request = context.getRequest();
