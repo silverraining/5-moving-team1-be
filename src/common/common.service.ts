@@ -143,37 +143,41 @@ export class CommonService {
     // 정렬 필드에 따라 쿼리 빌더에 조인 및 선택 추가
     // 추가적으로 필요한 경우, OrderField enum에 추가 정의 후 아래 switch 문에 추가
 
-    const isUsingView = qb.alias === MOVER_PROFILE_VIEW_QB_ALIAS;
+    // 뷰가 조인되어 있는지 확인 (join 정보에서 mover_profile_view가 있는지)
+    const joinNames = qb.expressionMap.joinAttributes.map(
+      (join) => join.alias?.name,
+    );
+    const isViewJoined = joinNames.includes(MOVER_PROFILE_VIEW_QB_ALIAS);
 
     switch (field) {
       case OrderField.REVIEW_COUNT:
-        if (isUsingView) {
-          // 뷰를 사용하는 경우 미리 계산된 필드 사용
-          return `${qb.alias}.review_count`;
+        if (isViewJoined) {
+          // 뷰가 조인된 경우 미리 계산된 필드 사용
+          return `${MOVER_PROFILE_VIEW_QB_ALIAS}.review_count`;
         }
-        // 엔티티를 사용하는 경우 조인하여 계산
+        // 뷰가 조인되지 않은 경우 조인하여 계산
         qb.leftJoin(`${qb.alias}.reviews`, 'review')
           .addSelect('COUNT(*)', field)
           .groupBy(`${qb.alias}.id`);
         return field;
 
       case OrderField.AVERAGE_RATING:
-        if (isUsingView) {
-          // 뷰를 사용하는 경우 미리 계산된 필드 사용
-          return `${qb.alias}.average_rating`;
+        if (isViewJoined) {
+          // 뷰가 조인된 경우 미리 계산된 필드 사용
+          return `${MOVER_PROFILE_VIEW_QB_ALIAS}.average_rating`;
         }
-        // 엔티티를 사용하는 경우 조인하여 계산
+        // 뷰가 조인되지 않은 경우 조인하여 계산
         qb.leftJoin(`${qb.alias}.reviews`, 'review')
           .addSelect('AVG(review.rating)', field)
           .groupBy(`${qb.alias}.id`);
         return field;
 
       case OrderField.CONFIRMED_ESTIMATE_COUNT:
-        if (isUsingView) {
-          // 뷰를 사용하는 경우 미리 계산된 필드 사용
-          return `${qb.alias}.estimate_offer_count`;
+        if (isViewJoined) {
+          // 뷰가 조인된 경우 미리 계산된 필드 사용
+          return `${MOVER_PROFILE_VIEW_QB_ALIAS}.estimate_offer_count`;
         }
-        // 엔티티를 사용하는 경우 조인하여 계산
+        // 뷰가 조인되지 않은 경우 조인하여 계산
         qb.leftJoin(`${qb.alias}.estimateOffers`, 'estimate_offer')
           .addSelect('COUNT(*)', field)
           .groupBy(`${qb.alias}.id`);

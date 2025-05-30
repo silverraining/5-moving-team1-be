@@ -14,7 +14,6 @@ import {
   MOVER_PROFILE_QB_ALIAS,
   MOVER_PROFILE_VIEW_QB_ALIAS,
 } from 'src/common/const/qb-alias';
-import { MoverProfileView } from './view/mover-profile.view';
 import { OrderField } from 'src/common/dto/cursor-pagination.dto';
 
 @Injectable()
@@ -22,8 +21,6 @@ export class MoverProfileService {
   constructor(
     @InjectRepository(MoverProfile)
     private readonly moverProfileRepository: Repository<MoverProfile>,
-    @InjectRepository(MoverProfileView)
-    private readonly moverProfileViewRepository: Repository<MoverProfileView>,
     private readonly commonService: CommonService,
   ) {}
 
@@ -45,9 +42,8 @@ export class MoverProfileService {
   }
 
   async findAll(dto: GetMoverProfilesDto) {
-    const { serviceType, serviceRegion, order } = dto; // 필터 조건 추출
+    const { serviceType, serviceRegion, order } = dto;
 
-    // 정렬 필드가 집계 필드인지 확인
     const isAggregateField =
       order &&
       [
@@ -56,53 +52,66 @@ export class MoverProfileService {
         OrderField.CONFIRMED_ESTIMATE_COUNT,
       ].includes(order.field);
 
-    let qb;
-    let alias;
-
     if (isAggregateField) {
-      // 집계 필드 정렬시 뷰 사용
-      qb = this.moverProfileViewRepository.createQueryBuilder(
-        MOVER_PROFILE_VIEW_QB_ALIAS,
+      // 집계 필드 정렬시: MoverProfile을 베이스로 하고 뷰와 조인
+      const qb = this.moverProfileRepository.createQueryBuilder(
+        MOVER_PROFILE_QB_ALIAS,
       );
-      alias = MOVER_PROFILE_VIEW_QB_ALIAS;
 
-      // 뷰는 집계 데이터만 있으므로, 실제 프로필 데이터를 가져오기 위해 조인
+      // 뷰와 조인해서 집계 데이터 가져오기
       qb.leftJoin(
-        MoverProfile,
-        MOVER_PROFILE_QB_ALIAS,
-        `${MOVER_PROFILE_VIEW_QB_ALIAS}.id = ${MOVER_PROFILE_QB_ALIAS}.id`,
-      ).addSelect(`${MOVER_PROFILE_QB_ALIAS}.*`);
-    } else {
-      // 일반 필드 정렬시 엔티티 사용
-      qb = this.moverProfileRepository.createQueryBuilder(
+        'mover_profile_view',
+        MOVER_PROFILE_VIEW_QB_ALIAS,
+        `${MOVER_PROFILE_QB_ALIAS}.id = ${MOVER_PROFILE_VIEW_QB_ALIAS}.id`,
+      );
+
+      // 서비스 필터링 적용 (MoverProfile 기준)
+      this.commonService.applyServiceFilterToQb(
+        qb,
+        serviceType,
+        Service.ServiceType,
         MOVER_PROFILE_QB_ALIAS,
       );
-      alias = MOVER_PROFILE_QB_ALIAS;
+
+      this.commonService.applyServiceFilterToQb(
+        qb,
+        serviceRegion,
+        Service.ServiceRegion,
+        MOVER_PROFILE_QB_ALIAS,
+      );
+
+      // 커서 기반 페이징 적용
+      const { nextCursor } =
+        await this.commonService.applyCursorPaginationParamsToQb(qb, dto);
+
+      const [data, count] = await qb.getManyAndCount();
+      return { movers: data, count, nextCursor };
+    } else {
+      // 일반 필드 정렬시: 기존 로직 사용
+      const qb = this.moverProfileRepository.createQueryBuilder(
+        MOVER_PROFILE_QB_ALIAS,
+      );
+
+      this.commonService.applyServiceFilterToQb(
+        qb,
+        serviceType,
+        Service.ServiceType,
+        MOVER_PROFILE_QB_ALIAS,
+      );
+
+      this.commonService.applyServiceFilterToQb(
+        qb,
+        serviceRegion,
+        Service.ServiceRegion,
+        MOVER_PROFILE_QB_ALIAS,
+      );
+
+      const { nextCursor } =
+        await this.commonService.applyCursorPaginationParamsToQb(qb, dto);
+
+      const [data, count] = await qb.getManyAndCount();
+      return { movers: data, count, nextCursor };
     }
-
-    // 1. 서비스 유형 필터링 적용
-    this.commonService.applyServiceFilterToQb(
-      qb,
-      serviceType,
-      Service.ServiceType,
-      alias,
-    );
-
-    // 2. 서비스 지역 필터링 적용
-    this.commonService.applyServiceFilterToQb(
-      qb,
-      serviceRegion,
-      Service.ServiceRegion,
-      alias,
-    );
-
-    // 3. 커서 기반 페이징 적용
-    const { nextCursor } =
-      await this.commonService.applyCursorPaginationParamsToQb(qb, dto);
-
-    const [data, count] = await qb.getManyAndCount(); // 데이터와 총 개수 반환합니다.
-
-    return { movers: data, count, nextCursor };
   }
 
   async findOne(userId: string) {
