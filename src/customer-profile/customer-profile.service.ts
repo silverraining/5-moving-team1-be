@@ -48,11 +48,28 @@ export class CustomerProfileService {
     return profile;
   }
 
-  update(id: number, updateCustomerProfileDto: UpdateCustomerProfileDto) {
-    return `This action updates a #${id} customerProfile`;
-  }
+  async update(
+    userId: string,
+    updateCustomerProfileDto: UpdateCustomerProfileDto,
+  ) {
+    const profile = await this.customerProfileRepository.findOneBy({
+      user: { id: userId },
+    });
 
-  remove(id: number) {
-    return `This action removes a #${id} customerProfile`;
+    if (!profile) {
+      throw new NotFoundException('고객님의 프로필을 찾을 수 없습니다!');
+    }
+
+    Object.assign(profile, updateCustomerProfileDto);
+
+    const updatedProfile = await this.customerProfileRepository.save(profile);
+
+    if (!updatedProfile) {
+      throw new InternalServerErrorException(
+        '고객님의 프로필 업데이트에 실패했습니다!',
+      );
+    }
+
+    return updatedProfile;
   }
 }
