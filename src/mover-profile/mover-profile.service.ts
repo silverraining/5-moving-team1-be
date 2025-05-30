@@ -22,6 +22,11 @@ export class MoverProfileService {
       user: { id: userInfo.sub }, // 관계 설정, 외래 키 자동 매핑
       ...createMoverProfileDto,
     };
+
+    if (!profile) {
+      throw new NotFoundException('기사님의 프로필을 찾을 수 없습니다.');
+    }
+
     return this.moverProfileRepository.save(profile);
   }
 
@@ -61,6 +66,11 @@ export class MoverProfileService {
     const profile = await this.moverProfileRepository.findOne({
       where: { user: { id: userId } }, // user의 id로 프로필 찾기
     });
+
+    if (!profile) {
+      throw new NotFoundException('기사님의 프로필을 찾을 수 없습니다.');
+    }
+
     return profile;
   }
 
