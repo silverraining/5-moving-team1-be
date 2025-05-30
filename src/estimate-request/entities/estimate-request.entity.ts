@@ -51,7 +51,7 @@ export class EstimateRequest extends BaseTable {
   targetMoverIds?: string[]; // 지정 견적 요청을 보낸 기사 id 목록 (견적 요청 시점에 기사가 없을 수 있음 )
 
   @Column({ type: 'uuid', nullable: true })
-  confirmedOfferId: string | null; // 확정된 제안 견적 id(estimateOfferId)
+  confirmedOfferId?: string; // 확정된 제안 견적 id
 
   // customer : estimateRequest <-> 1:N 관계
   @ManyToOne(() => CustomerProfile, (customer) => customer.estimateRequests)

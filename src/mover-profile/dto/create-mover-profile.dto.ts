@@ -16,10 +16,10 @@ import { HasAtLeastOneTrue } from 'src/common/validator/service.validator';
 
 export class CreateMoverProfileDto {
   @IsString()
-  @Length(2, 20, { message: '닉네임은 2자 이상 20자 이하여야 합니다.' })
+  @Length(2, 20, { message: '별명은 2자 이상 20자 이하여야 합니다.' })
   @Matches(/^[가-힣a-zA-Z0-9]+$/, {
     message:
-      '닉네임은 한글, 영문, 숫자만 사용할 수 있으며 공백 및 특수문자는 허용되지 않습니다.',
+      '별명은 한글, 영문, 숫자만 사용할 수 있으며 공백 및 특수문자는 허용되지 않습니다.',
   })
   nickname: string;
 

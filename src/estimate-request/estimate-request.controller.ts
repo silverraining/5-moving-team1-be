@@ -5,20 +5,15 @@ import {
   Body,
   Patch,
   Param,
-  Request,
   Delete,
-  UseGuards,
 } from '@nestjs/common';
 import { EstimateRequestService } from './estimate-request.service';
 import { CreateEstimateRequestDto } from './dto/create-estimate-request.dto';
-import { AuthGuard } from '@/auth/guard/auth.guard';
+
 import { UpdateEstimateRequestDto } from './dto/update-estimate-request.dto';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+
 import { UserInfo } from '@/user/decorator/user-info.decorator';
 
-@ApiTags('EstimateRequest')
-@ApiBearerAuth()
-@UseGuards(AuthGuard)
 @Controller('estimate-request')
 export class EstimateRequestController {
   constructor(
@@ -28,7 +23,7 @@ export class EstimateRequestController {
   @Post()
   async create(
     @Body() dto: CreateEstimateRequestDto,
-    @UserInfo() user: UserInfo, // 커스텀 데코레이터로 사용자 정보 받는다고 가정
+    @UserInfo() user: UserInfo, // UserInfo 데코레이터를 통해 현재 로그인한 유저 정보 가져오기
   ) {
     return this.estimateRequestService.create(dto, user);
   }

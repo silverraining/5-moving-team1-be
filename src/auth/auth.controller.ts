@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   HttpCode,
+  HttpStatus,
   Patch,
   Post,
   Request,
@@ -16,14 +17,13 @@ import { JwtPayload } from 'src/common/types/payload.type';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import {
   ApiLogin,
+  ApiLogout,
   ApiRegister,
   ApiRotateToken,
   ApiUpdateMe,
 } from './docs/swagger';
-import { AuthGuard } from './guard/auth.guard';
-import { ApiBearerAuth } from '@nestjs/swagger';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
-import { UpdateUserInfoDto } from './dto/update-user-info.dto';
+import { UpdateUserDto } from '@/user/dto/update-user.dto';
 
 function RegisterSwagger() {
   return applyDecorators(...ApiRegister());
@@ -34,7 +34,12 @@ function LoginSwagger() {
 function RotateTokenSwagger() {
   return applyDecorators(ApiRotateToken());
 }
-
+function LogoutSwagger() {
+  return applyDecorators(ApiLogout());
+}
+function UpdateMeSwagger() {
+  return applyDecorators(ApiUpdateMe());
+}
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -89,20 +94,17 @@ export class AuthController {
   }
 
   @Post('logout')
-  @UseGuards(AuthGuard)
-  @ApiBearerAuth()
-  @HttpCode(200)
-  async logout(@Request() req: { user: JwtPayload }) {
-    await this.authService.logout(req.user.sub);
+  @LogoutSwagger()
+  @HttpCode(HttpStatus.OK)
+  async logout(@UserInfo() userInfo: UserInfo, @Request() req: any) {
+    await this.authService.logout(userInfo.sub);
     return { message: '로그아웃 되었습니다.' };
   }
 
   //User 기본정보 수정 API
   @Patch('me')
-  @UseGuards(AuthGuard)
-  @ApiBearerAuth()
-  @ApiUpdateMe()
-  updateMyInfo(@UserInfo() userInfo: UserInfo, @Body() dto: UpdateUserInfoDto) {
+  @UpdateMeSwagger()
+  updateMyInfo(@UserInfo() userInfo: UserInfo, @Body() dto: UpdateUserDto) {
     return this.authService.updateMyInfo(userInfo.sub, dto);
   }
 }
