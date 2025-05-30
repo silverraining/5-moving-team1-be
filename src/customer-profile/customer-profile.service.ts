@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateCustomerProfileDto } from './dto/create-customer-profile.dto';
 import { UpdateCustomerProfileDto } from './dto/update-customer-profile.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -24,18 +28,24 @@ export class CustomerProfileService {
     const newProfile = await this.customerProfileRepository.save(profileData);
 
     if (!newProfile) {
-      throw new InternalServerErrorException('프로필 생성에 실패했습니다!');
+      throw new InternalServerErrorException(
+        '고객님의 프로필 생성에 실패했습니다!',
+      );
     }
 
     return newProfile;
   }
 
-  findAll() {
-    return `This action returns all customerProfile`;
-  }
+  findOne(userId: string) {
+    const profile = this.customerProfileRepository.findOneBy({
+      user: { id: userId },
+    });
 
-  findOne(id: number) {
-    return `This action returns a #${id} customerProfile`;
+    if (!profile) {
+      throw new NotFoundException('고객님의 프로필을 찾을 수 없습니다!');
+    }
+
+    return profile;
   }
 
   update(id: number, updateCustomerProfileDto: UpdateCustomerProfileDto) {

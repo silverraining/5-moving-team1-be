@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param } from '@nestjs/common';
 import { CustomerProfileService } from './customer-profile.service';
 import { CreateCustomerProfileDto } from './dto/create-customer-profile.dto';
 import { UpdateCustomerProfileDto } from './dto/update-customer-profile.dto';
@@ -32,14 +24,9 @@ export class CustomerProfileController {
     );
   }
 
-  @Get()
-  findAll() {
-    return this.customerProfileService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.customerProfileService.findOne(+id);
+  @Get('me')
+  findOne(@UserInfo() userInfo: UserInfo) {
+    return this.customerProfileService.findOne(userInfo.sub);
   }
 
   @Patch(':id')
@@ -48,10 +35,5 @@ export class CustomerProfileController {
     @Body() updateCustomerProfileDto: UpdateCustomerProfileDto,
   ) {
     return this.customerProfileService.update(+id, updateCustomerProfileDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.customerProfileService.remove(+id);
   }
 }
