@@ -1,10 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateMoverProfileDto } from './dto/create-mover-profile.dto';
 import { UpdateMoverProfileDto } from './dto/update-mover-profile.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoverProfile } from './entities/mover-profile.entity';
 import { Repository } from 'typeorm';
-import { UserInfo } from 'src/user/decorator/user-info.decorator';
 import { GetMoverProfilesDto } from './dto/get-mover-profiles.dto';
 import { CommonService, Service } from 'src/common/common.service';
 import { MOVER_PROFILE_QB_ALIAS } from 'src/common/const/qb-alias';
@@ -17,17 +20,19 @@ export class MoverProfileService {
     private readonly commonService: CommonService,
   ) {}
 
-  create(createMoverProfileDto: CreateMoverProfileDto, userInfo: UserInfo) {
-    const profile = {
-      user: { id: userInfo.sub }, // 관계 설정, 외래 키 자동 매핑
+  async create(userId: string, createMoverProfileDto: CreateMoverProfileDto) {
+    const profileData = {
+      user: { id: userId }, // 관계 설정, 외래 키 자동 매핑
       ...createMoverProfileDto,
     };
 
-    if (!profile) {
-      throw new NotFoundException('기사님의 프로필을 찾을 수 없습니다.');
+    const newProfile = await this.moverProfileRepository.save(profileData);
+
+    if (!newProfile) {
+      throw new InternalServerErrorException('프로필 생성에 실패했습니다!');
     }
 
-    return this.moverProfileRepository.save(profile);
+    return newProfile;
   }
 
   async findAll(dto: GetMoverProfilesDto) {
@@ -63,8 +68,8 @@ export class MoverProfileService {
   }
 
   async findOne(userId: string) {
-    const profile = await this.moverProfileRepository.findOne({
-      where: { user: { id: userId } }, // user의 id로 프로필 찾기
+    const profile = await this.moverProfileRepository.findOneBy({
+      user: { id: userId }, // user의 id로 프로필 찾기
     });
 
     if (!profile) {
@@ -75,8 +80,8 @@ export class MoverProfileService {
   }
 
   async update(userId: string, updateMoverProfileDto: UpdateMoverProfileDto) {
-    const profile = await this.moverProfileRepository.findOne({
-      where: { user: { id: userId } }, // user의 id로 프로필 찾기
+    const profile = await this.moverProfileRepository.findOneBy({
+      user: { id: userId }, // user의 id로 프로필 찾기
     });
 
     if (!profile) {
@@ -86,6 +91,12 @@ export class MoverProfileService {
     // DTO 객체의 값들을 profile 객체에 덮어씌움
     Object.assign(profile, updateMoverProfileDto);
 
-    return this.moverProfileRepository.save(profile);
+    const updatedProfile = await this.moverProfileRepository.save(profile);
+
+    if (!updatedProfile) {
+      throw new InternalServerErrorException('프로필 업데이트에 실패했습니다.');
+    }
+
+    return updatedProfile;
   }
 }
