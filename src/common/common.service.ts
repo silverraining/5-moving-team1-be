@@ -7,7 +7,7 @@ import {
   OrderItemMap,
 } from './dto/cursor-pagination.dto';
 import * as _ from 'lodash';
-import { MOVER_PROFILE_QB_ALIAS } from './const/qb-alias';
+import { MOVER_PROFILE_VIEW_QB_ALIAS } from './const/qb-alias';
 
 export enum Service {
   ServiceType = 'serviceType',
@@ -143,20 +143,37 @@ export class CommonService {
     // 정렬 필드에 따라 쿼리 빌더에 조인 및 선택 추가
     // 추가적으로 필요한 경우, OrderField enum에 추가 정의 후 아래 switch 문에 추가
 
+    const isUsingView = qb.alias === MOVER_PROFILE_VIEW_QB_ALIAS;
+
     switch (field) {
       case OrderField.REVIEW_COUNT:
+        if (isUsingView) {
+          // 뷰를 사용하는 경우 미리 계산된 필드 사용
+          return `${qb.alias}.review_count`;
+        }
+        // 엔티티를 사용하는 경우 조인하여 계산
         qb.leftJoin(`${qb.alias}.reviews`, 'review')
           .addSelect('COUNT(*)', field)
           .groupBy(`${qb.alias}.id`);
         return field;
 
       case OrderField.AVERAGE_RATING:
+        if (isUsingView) {
+          // 뷰를 사용하는 경우 미리 계산된 필드 사용
+          return `${qb.alias}.average_rating`;
+        }
+        // 엔티티를 사용하는 경우 조인하여 계산
         qb.leftJoin(`${qb.alias}.reviews`, 'review')
           .addSelect('AVG(review.rating)', field)
           .groupBy(`${qb.alias}.id`);
         return field;
 
       case OrderField.CONFIRMED_ESTIMATE_COUNT:
+        if (isUsingView) {
+          // 뷰를 사용하는 경우 미리 계산된 필드 사용
+          return `${qb.alias}.estimate_offer_count`;
+        }
+        // 엔티티를 사용하는 경우 조인하여 계산
         qb.leftJoin(`${qb.alias}.estimateOffers`, 'estimate_offer')
           .addSelect('COUNT(*)', field)
           .groupBy(`${qb.alias}.id`);
@@ -164,7 +181,7 @@ export class CommonService {
 
       case OrderField.EXPERIENCE:
         // experience는 mover스키마에서만 필요
-        return `${MOVER_PROFILE_QB_ALIAS}.experience`; // 실제 컬럼
+        return `${qb.alias}.experience`; // 실제 컬럼
 
       default:
         throw new BadRequestException('올바른 정렬 필드를 선택해주세요.');

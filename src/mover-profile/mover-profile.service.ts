@@ -10,13 +10,20 @@ import { MoverProfile } from './entities/mover-profile.entity';
 import { Repository } from 'typeorm';
 import { GetMoverProfilesDto } from './dto/get-mover-profiles.dto';
 import { CommonService, Service } from 'src/common/common.service';
-import { MOVER_PROFILE_QB_ALIAS } from 'src/common/const/qb-alias';
+import {
+  MOVER_PROFILE_QB_ALIAS,
+  MOVER_PROFILE_VIEW_QB_ALIAS,
+} from 'src/common/const/qb-alias';
+import { MoverProfileView } from './view/mover-profile.view';
+import { OrderField } from 'src/common/dto/cursor-pagination.dto';
 
 @Injectable()
 export class MoverProfileService {
   constructor(
     @InjectRepository(MoverProfile)
     private readonly moverProfileRepository: Repository<MoverProfile>,
+    @InjectRepository(MoverProfileView)
+    private readonly moverProfileViewRepository: Repository<MoverProfileView>,
     private readonly commonService: CommonService,
   ) {}
 
@@ -38,18 +45,47 @@ export class MoverProfileService {
   }
 
   async findAll(dto: GetMoverProfilesDto) {
-    const { serviceType, serviceRegion } = dto; // 필터 조건 추출
+    const { serviceType, serviceRegion, order } = dto; // 필터 조건 추출
 
-    const qb = this.moverProfileRepository.createQueryBuilder(
-      MOVER_PROFILE_QB_ALIAS,
-    );
+    // 정렬 필드가 집계 필드인지 확인
+    const isAggregateField =
+      order &&
+      [
+        OrderField.REVIEW_COUNT,
+        OrderField.AVERAGE_RATING,
+        OrderField.CONFIRMED_ESTIMATE_COUNT,
+      ].includes(order.field);
+
+    let qb;
+    let alias;
+
+    if (isAggregateField) {
+      // 집계 필드 정렬시 뷰 사용
+      qb = this.moverProfileViewRepository.createQueryBuilder(
+        MOVER_PROFILE_VIEW_QB_ALIAS,
+      );
+      alias = MOVER_PROFILE_VIEW_QB_ALIAS;
+
+      // 뷰는 집계 데이터만 있으므로, 실제 프로필 데이터를 가져오기 위해 조인
+      qb.leftJoin(
+        MoverProfile,
+        MOVER_PROFILE_QB_ALIAS,
+        `${MOVER_PROFILE_VIEW_QB_ALIAS}.id = ${MOVER_PROFILE_QB_ALIAS}.id`,
+      ).addSelect(`${MOVER_PROFILE_QB_ALIAS}.*`);
+    } else {
+      // 일반 필드 정렬시 엔티티 사용
+      qb = this.moverProfileRepository.createQueryBuilder(
+        MOVER_PROFILE_QB_ALIAS,
+      );
+      alias = MOVER_PROFILE_QB_ALIAS;
+    }
 
     // 1. 서비스 유형 필터링 적용
     this.commonService.applyServiceFilterToQb(
       qb,
       serviceType,
       Service.ServiceType,
-      MOVER_PROFILE_QB_ALIAS,
+      alias,
     );
 
     // 2. 서비스 지역 필터링 적용
@@ -57,7 +93,7 @@ export class MoverProfileService {
       qb,
       serviceRegion,
       Service.ServiceRegion,
-      MOVER_PROFILE_QB_ALIAS,
+      alias,
     );
 
     // 3. 커서 기반 페이징 적용
