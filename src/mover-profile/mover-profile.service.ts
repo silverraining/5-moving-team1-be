@@ -29,7 +29,9 @@ export class MoverProfileService {
     const newProfile = await this.moverProfileRepository.save(profileData);
 
     if (!newProfile) {
-      throw new InternalServerErrorException('프로필 생성에 실패했습니다!');
+      throw new InternalServerErrorException(
+        '기사님의 프로필 생성에 실패했습니다!',
+      );
     }
 
     return newProfile;
