@@ -4,16 +4,16 @@ import { QueryFailedError } from 'typeorm';
 @Catch(QueryFailedError)
 export class QueryFailedExceptionFilter implements ExceptionFilter {
   catch(exception: any, host: ArgumentsHost) {
-    const context = host.switchToHttp();
-    const response = context.getResponse();
-    const request = context.getRequest();
+    const ctx = host.switchToHttp(); // context
+    const res = ctx.getResponse(); // response
+    const req = ctx.getRequest(); // request
 
-    const status = 400;
-
+    let status = 400; // Bad Request
     let message = '데이터 베이스 에러 발생!';
 
     if (exception.message.includes('duplicate key')) {
-      message = '중복 키 에러!';
+      status = 409; // Conflict
+      message = '이미 존재하는 데이터입니다!';
     }
 
     console.error(
@@ -23,10 +23,10 @@ export class QueryFailedExceptionFilter implements ExceptionFilter {
       exception.stack,
     );
 
-    response.status(status).json({
+    res.status(status).json({
       statusCode: status,
       timestamp: new Date().toISOString(),
-      path: request.url,
+      path: req.url,
       message,
     });
   }
