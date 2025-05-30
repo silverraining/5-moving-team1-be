@@ -10,6 +10,7 @@ import {
 import { CustomerProfileService } from './customer-profile.service';
 import { CreateCustomerProfileDto } from './dto/create-customer-profile.dto';
 import { UpdateCustomerProfileDto } from './dto/update-customer-profile.dto';
+import { UserInfo } from '@/user/decorator/user-info.decorator';
 
 @Controller('customer-profile')
 export class CustomerProfileController {
@@ -18,8 +19,14 @@ export class CustomerProfileController {
   ) {}
 
   @Post()
-  create(@Body() createCustomerProfileDto: CreateCustomerProfileDto) {
-    return this.customerProfileService.create(createCustomerProfileDto);
+  create(
+    @Body() createCustomerProfileDto: CreateCustomerProfileDto,
+    @UserInfo() userInfo: UserInfo,
+  ) {
+    return this.customerProfileService.create(
+      userInfo.sub,
+      createCustomerProfileDto,
+    );
   }
 
   @Get()
