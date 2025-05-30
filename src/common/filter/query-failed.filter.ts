@@ -1,9 +1,13 @@
 import { ArgumentsHost, Catch, ExceptionFilter } from '@nestjs/common';
 import { QueryFailedError } from 'typeorm';
 
+type QueryFailedErrorWithDetail = QueryFailedError & {
+  detail?: string;
+};
+
 @Catch(QueryFailedError)
 export class QueryFailedExceptionFilter implements ExceptionFilter {
-  catch(exception: any, host: ArgumentsHost) {
+  catch(exception: QueryFailedErrorWithDetail, host: ArgumentsHost) {
     const ctx = host.switchToHttp(); // context
     const res = ctx.getResponse(); // response
     const req = ctx.getRequest(); // request
@@ -13,7 +17,7 @@ export class QueryFailedExceptionFilter implements ExceptionFilter {
 
     if (exception.message.includes('duplicate key')) {
       status = 409; // Conflict
-      message = '이미 존재하는 데이터입니다!';
+      message = '이미 존재하는 데이터입니다';
     }
 
     console.error(
@@ -22,6 +26,8 @@ export class QueryFailedExceptionFilter implements ExceptionFilter {
       exception.detail,
       exception.stack,
     );
+
+    console.error('exception.detail,: ', exception.detail);
 
     res.status(status).json({
       statusCode: status,
