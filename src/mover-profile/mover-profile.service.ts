@@ -94,8 +94,9 @@ export class MoverProfileService {
         (entity: MoverProfile, index: number) => ({
           ...entity,
           review_count:
-            rawResults[index][`${MOVER_PROFILE_VIEW_QB_ALIAS}_review_count`] ||
-            0,
+            parseInt(
+              rawResults[index][`${MOVER_PROFILE_VIEW_QB_ALIAS}_review_count`],
+            ) || 0,
           average_rating:
             parseFloat(
               rawResults[index][
@@ -103,9 +104,11 @@ export class MoverProfileService {
               ],
             ) || 0,
           estimate_offer_count:
-            rawResults[index][
-              `${MOVER_PROFILE_VIEW_QB_ALIAS}_estimate_offer_count`
-            ] || 0,
+            parseInt(
+              rawResults[index][
+                `${MOVER_PROFILE_VIEW_QB_ALIAS}_estimate_offer_count`
+              ],
+            ) || 0,
         }),
       );
 
