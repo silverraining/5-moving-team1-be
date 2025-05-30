@@ -63,7 +63,10 @@ export class MoverProfileService {
         'mover_profile_view',
         MOVER_PROFILE_VIEW_QB_ALIAS,
         `${MOVER_PROFILE_QB_ALIAS}.id = ${MOVER_PROFILE_VIEW_QB_ALIAS}.id`,
-      );
+      )
+        .addSelect(`${MOVER_PROFILE_VIEW_QB_ALIAS}.review_count`)
+        .addSelect(`${MOVER_PROFILE_VIEW_QB_ALIAS}.average_rating`)
+        .addSelect(`${MOVER_PROFILE_VIEW_QB_ALIAS}.estimate_offer_count`);
 
       // 서비스 필터링 적용 (MoverProfile 기준)
       this.commonService.applyServiceFilterToQb(
