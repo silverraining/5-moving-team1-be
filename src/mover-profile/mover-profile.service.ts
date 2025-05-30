@@ -96,7 +96,9 @@ export class MoverProfileService {
     const updatedProfile = await this.moverProfileRepository.save(profile);
 
     if (!updatedProfile) {
-      throw new InternalServerErrorException('프로필 업데이트에 실패했습니다.');
+      throw new InternalServerErrorException(
+        '기사님의 프로필 업데이트에 실패했습니다!',
+      );
     }
 
     return updatedProfile;
