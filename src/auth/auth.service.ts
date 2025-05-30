@@ -104,7 +104,26 @@ export class AuthService {
     const refreshTokenSecret = this.configService.get<string>(
       envVariableKeys.refreshToken,
     );
+    //환경에 따라 토큰 만료 시간을 다르게 적용
+    const env = this.configService.get<string>(envVariableKeys.env);
+    let accessExpiresIn: string;
+    let refreshExpiresIn: string;
 
+    if (env === 'prod') {
+      accessExpiresIn = this.configService.get<string>(
+        envVariableKeys.accessTokenExpirationProd,
+      );
+      refreshExpiresIn = this.configService.get<string>(
+        envVariableKeys.refreshTokenExpirationProd,
+      );
+    } else {
+      accessExpiresIn = this.configService.get<string>(
+        envVariableKeys.accessTokenExpirationDev,
+      );
+      refreshExpiresIn = this.configService.get<string>(
+        envVariableKeys.refreshTokenExpirationDev,
+      );
+    }
     const newPayload = {
       sub: payload.sub,
       role: payload.role,
@@ -113,7 +132,7 @@ export class AuthService {
 
     const tokenOptions = {
       secret: isRefreshToken ? refreshTokenSecret : accessTokenSecret,
-      expiresIn: isRefreshToken ? '24h' : 300,
+      expiresIn: isRefreshToken ? refreshExpiresIn : accessExpiresIn,
     };
 
     return await this.jwtService.signAsync(newPayload, tokenOptions);

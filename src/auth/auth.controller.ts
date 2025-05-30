@@ -25,28 +25,13 @@ import {
 import { UserInfo } from '@/user/decorator/user-info.decorator';
 import { UpdateUserDto } from '@/user/dto/update-user.dto';
 
-function RegisterSwagger() {
-  return applyDecorators(...ApiRegister());
-}
-function LoginSwagger() {
-  return applyDecorators(...ApiLogin());
-}
-function RotateTokenSwagger() {
-  return applyDecorators(ApiRotateToken());
-}
-function LogoutSwagger() {
-  return applyDecorators(ApiLogout());
-}
-function UpdateMeSwagger() {
-  return applyDecorators(ApiUpdateMe());
-}
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
   @Post('register')
-  @RegisterSwagger()
+  @applyDecorators(...ApiRegister())
   registerLocal(@Body() createUserDto: CreateUserDto) {
     return this.authService.register(createUserDto);
   }
@@ -54,7 +39,7 @@ export class AuthController {
   @Public()
   @UseGuards(LocalAuthGuard)
   @Post('login/local')
-  @LoginSwagger()
+  @applyDecorators(...ApiLogin())
   async loginLocal(@Request() req: { user: JwtPayload }) {
     const refreshToken = await this.authService.issueToken(req.user, true);
     const accessToken = await this.authService.issueToken(req.user, false);
@@ -65,11 +50,9 @@ export class AuthController {
     return { refreshToken, accessToken };
   }
 
-  // API 테스트는 되는데, 스웨거에서 403 권한없음이 나와서 확인해보니
-  // accessToken이 없거나 만료되었을 때 호출하므로 인증이 필요 없는 엔드포인트 -> @Public() 데코레이터 추가
   @Public()
   @Post('token/access')
-  @RotateTokenSwagger()
+  @ApiRotateToken()
   async rotateRefreshToken(@Body('refreshToken') refreshToken: string) {
     if (!refreshToken) {
       throw new UnauthorizedException('리프레시 토큰이 필요합니다.');
@@ -94,16 +77,16 @@ export class AuthController {
   }
 
   @Post('logout')
-  @LogoutSwagger()
+  @ApiLogout()
   @HttpCode(HttpStatus.OK)
-  async logout(@UserInfo() userInfo: UserInfo, @Request() req: any) {
+  async logout(@UserInfo() userInfo: UserInfo) {
     await this.authService.logout(userInfo.sub);
     return { message: '로그아웃 되었습니다.' };
   }
 
   //User 기본정보 수정 API
   @Patch('me')
-  @UpdateMeSwagger()
+  @ApiUpdateMe()
   updateMyInfo(@UserInfo() userInfo: UserInfo, @Body() dto: UpdateUserDto) {
     return this.authService.updateMyInfo(userInfo.sub, dto);
   }
