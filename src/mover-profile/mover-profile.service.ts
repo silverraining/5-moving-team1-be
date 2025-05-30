@@ -87,8 +87,30 @@ export class MoverProfileService {
       const { nextCursor } =
         await this.commonService.applyCursorPaginationParamsToQb(qb, dto);
 
-      const [data, count] = await qb.getManyAndCount();
-      return { movers: data, count, nextCursor };
+      const { entities, raw: rawResults } = await qb.getRawAndEntities();
+
+      // 엔티티와 뷰 데이터를 병합
+      const moversWithAggregates = entities.map(
+        (entity: MoverProfile, index: number) => ({
+          ...entity,
+          review_count:
+            rawResults[index][`${MOVER_PROFILE_VIEW_QB_ALIAS}_review_count`] ||
+            0,
+          average_rating:
+            parseFloat(
+              rawResults[index][
+                `${MOVER_PROFILE_VIEW_QB_ALIAS}_average_rating`
+              ],
+            ) || 0,
+          estimate_offer_count:
+            rawResults[index][
+              `${MOVER_PROFILE_VIEW_QB_ALIAS}_estimate_offer_count`
+            ] || 0,
+        }),
+      );
+
+      const count = await qb.getCount();
+      return { movers: moversWithAggregates, count, nextCursor };
     } else {
       // 일반 필드 정렬시: 기존 로직 사용
       const qb = this.moverProfileRepository.createQueryBuilder(
