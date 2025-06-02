@@ -7,6 +7,7 @@ import { MoverProfileView } from './view/mover-profile.view';
 import { CommonModule } from 'src/common/common.module';
 import { CustomerProfile } from '@/customer-profile/entities/customer-profile.entity';
 import { EstimateRequest } from '@/estimate-request/entities/estimate-request.entity';
+import { Review } from '@/review/entities/review.entity';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { EstimateRequest } from '@/estimate-request/entities/estimate-request.en
       MoverProfileView,
       CustomerProfile,
       EstimateRequest,
+      Review,
     ]),
     CommonModule,
   ],

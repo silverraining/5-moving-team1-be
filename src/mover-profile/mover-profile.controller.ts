@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param } from '@nestjs/common';
 import { MoverProfileService } from './mover-profile.service';
 import { CreateMoverProfileDto } from './dto/create-mover-profile.dto';
 import { UpdateMoverProfileDto } from './dto/update-mover-profile.dto';
@@ -44,8 +44,14 @@ export class MoverProfileController {
 
   @Get('me')
   @ApiGetMyMoverProfile()
-  findOne(@UserInfo() userInfo: UserInfo) {
-    return this.moverProfileService.findOne(userInfo.sub);
+  findMe(@UserInfo() userInfo: UserInfo) {
+    return this.moverProfileService.findMe(userInfo.sub);
+  }
+
+  @Get(':id')
+  @Public()
+  findOne(@Param('id') id: string) {
+    return this.moverProfileService.findOne(id);
   }
 
   @Patch('me')
