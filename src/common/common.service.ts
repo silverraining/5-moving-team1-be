@@ -102,7 +102,7 @@ export class CommonService {
      * }
      */
 
-    const lastItem = results[results.length - 1];
+    const lastItem = results.at(-1);
     const { field } = order;
     const value = lastItem[field];
 
