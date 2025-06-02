@@ -24,6 +24,7 @@ import {
 } from '@/common/const/query-builder.const';
 import { Role } from '@/user/entities/user.entity';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
+import { Review } from '@/review/entities/review.entity';
 
 @Injectable()
 export class MoverProfileService {
@@ -34,6 +35,8 @@ export class MoverProfileService {
     private readonly customerProfileRepository: Repository<CustomerProfile>,
     @InjectRepository(EstimateRequest)
     private readonly estimateRequestRepository: Repository<EstimateRequest>,
+    @InjectRepository(Review)
+    private readonly reviewRepository: Repository<Review>,
     private readonly commonService: CommonService,
   ) {}
 
@@ -151,16 +154,58 @@ export class MoverProfileService {
     }));
   }
 
-  async findOne(userId: string) {
-    const profile = await this.moverProfileRepository.findOneBy({
-      user: { id: userId }, // user의 id로 프로필 찾기
+  async findOne(moverId: string) {
+    const profile = await this.moverProfileRepository.findOne({
+      where: { id: moverId },
     });
 
     if (!profile) {
       throw new NotFoundException('기사님의 프로필을 찾을 수 없습니다.');
     }
 
-    return profile;
+    const reviews = await this.reviewRepository.find({
+      where: { mover: { id: profile.id } },
+      relations: ['customer', 'customer.user'],
+      select: {
+        rating: true, // 리뷰 평점
+        comment: true, // 리뷰 내용
+        createdAt: true, // 리뷰 작성일
+        customer: {
+          user: {
+            email: true, // 고객 이메일
+          },
+        },
+      },
+    });
+
+    return { ...profile, reviews };
+  }
+
+  async findMe(userId: string) {
+    const profile = await this.moverProfileRepository.findOne({
+      where: { user: { id: userId } }, // userId 대신 userInfo.sub 사용
+    });
+
+    if (!profile) {
+      throw new NotFoundException('기사님의 프로필을 찾을 수 없습니다.');
+    }
+
+    const reviews = await this.reviewRepository.find({
+      where: { mover: { id: profile.id } },
+      relations: ['customer', 'customer.user'],
+      select: {
+        rating: true, // 리뷰 평점
+        comment: true, // 리뷰 내용
+        createdAt: true, // 리뷰 작성일
+        customer: {
+          user: {
+            email: true, // 고객 이메일
+          },
+        },
+      },
+    });
+
+    return { ...profile, reviews };
   }
 
   async update(userId: string, updateMoverProfileDto: UpdateMoverProfileDto) {
