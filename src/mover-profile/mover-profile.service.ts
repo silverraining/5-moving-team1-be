@@ -91,35 +91,12 @@ export class MoverProfileService {
     const { nextCursor } =
       await this.commonService.applyCursorPaginationParamsToQb(qb, dto);
 
-    const { entities, raw: rawResults } = await qb.getRawAndEntities();
+    const { entities, raw: aggregates } = await qb.getRawAndEntities();
 
     // 엔티티와 뷰 데이터를 병합
-    const moversWithAggregates = entities.map(
-      (entity: MoverProfile, index: number) => ({
-        ...entity,
-        [OrderField.REVIEW_COUNT]:
-          parseInt(
-            rawResults[index][
-              `${MOVER_PROFILE_VIEW_TABLE}_${OrderField.REVIEW_COUNT}`
-            ],
-          ) || 0,
-        [OrderField.AVERAGE_RATING]:
-          parseFloat(
-            rawResults[index][
-              `${MOVER_PROFILE_VIEW_TABLE}_${OrderField.AVERAGE_RATING}`
-            ],
-          ) || 0.0,
-        [OrderField.CONFIRMED_ESTIMATE_COUNT]:
-          parseInt(
-            rawResults[index][
-              `${MOVER_PROFILE_VIEW_TABLE}_${OrderField.CONFIRMED_ESTIMATE_COUNT}`
-            ],
-          ) || 0,
-        likeCount:
-          parseInt(
-            rawResults[index][`${MOVER_PROFILE_VIEW_TABLE}_like_count`],
-          ) || 0,
-      }),
+    const moversWithAggregates = this.mergeEntityWithAggregates(
+      entities,
+      aggregates,
     );
 
     // 고객일 경우, 해당 기사에게 지정 견적 요청을 했는지
@@ -137,11 +114,41 @@ export class MoverProfileService {
         select: ['targetMoverIds'], // 필요한 필드만 가져오기
       });
 
-      targetMoverIds = estimateRequest.targetMoverIds;
+      targetMoverIds = estimateRequest.targetMoverIds; // 지정 견적 요청을 한 기사 ID 목록
     }
 
     const count = await qb.getCount();
     return { movers: moversWithAggregates, count, nextCursor, targetMoverIds };
+  }
+
+  private mergeEntityWithAggregates(
+    entities: MoverProfile[],
+    aggregates: MoverProfileView[],
+  ) {
+    return entities.map((entity, index) => ({
+      ...entity,
+      [OrderField.REVIEW_COUNT]:
+        parseInt(
+          aggregates[index][
+            `${MOVER_PROFILE_VIEW_TABLE}_${OrderField.REVIEW_COUNT}`
+          ],
+        ) || 0,
+      [OrderField.AVERAGE_RATING]:
+        parseFloat(
+          aggregates[index][
+            `${MOVER_PROFILE_VIEW_TABLE}_${OrderField.AVERAGE_RATING}`
+          ],
+        ) || 0.0,
+      [OrderField.CONFIRMED_ESTIMATE_COUNT]:
+        parseInt(
+          aggregates[index][
+            `${MOVER_PROFILE_VIEW_TABLE}_${OrderField.CONFIRMED_ESTIMATE_COUNT}`
+          ],
+        ).toFixed(1) || 0,
+      likeCount:
+        parseInt(aggregates[index][`${MOVER_PROFILE_VIEW_TABLE}_like_count`]) ||
+        0,
+    }));
   }
 
   async findOne(userId: string) {

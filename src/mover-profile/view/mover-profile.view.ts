@@ -33,15 +33,15 @@ export class MoverProfileView {
   @ViewColumn()
   id: string;
 
-  @ViewColumn({ name: OrderField.REVIEW_COUNT })
-  reviewCount: number;
+  @ViewColumn()
+  [OrderField.REVIEW_COUNT]: number;
 
-  @ViewColumn({ name: OrderField.AVERAGE_RATING })
-  averageRating: number;
+  @ViewColumn()
+  [OrderField.AVERAGE_RATING]: number;
 
-  @ViewColumn({ name: OrderField.CONFIRMED_ESTIMATE_COUNT })
-  confirmedEstimateCount: number;
+  @ViewColumn()
+  [OrderField.CONFIRMED_ESTIMATE_COUNT]: number;
 
-  @ViewColumn({ name: 'like_count' })
-  likeCount: number;
+  @ViewColumn()
+  like_count: number;
 }
