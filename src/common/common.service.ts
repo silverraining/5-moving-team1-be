@@ -82,7 +82,10 @@ export class CommonService {
     return { qb, nextCursor };
   }
 
-  generateNextCursor<T>(results: T[], order: OrderItemMap): string | null {
+  private generateNextCursor<T>(
+    results: T[],
+    order: OrderItemMap,
+  ): string | null {
     if (results.length === 0) return null;
 
     /**
@@ -142,7 +145,10 @@ export class CommonService {
     qb.andWhere(conditions.join(' OR'));
   }
 
-  getOrderFieldAlias<T>(qb: SelectQueryBuilder<T>, field: OrderField): string {
+  private getOrderFieldAlias<T>(
+    qb: SelectQueryBuilder<T>,
+    field: OrderField,
+  ): string {
     // 정렬 필드에 따라 쿼리 빌더에 조인 및 선택 추가
     // 추가적으로 필요한 경우, OrderField enum에 추가 정의 후 아래 switch 문에 추가
 
