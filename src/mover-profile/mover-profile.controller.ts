@@ -38,8 +38,8 @@ export class MoverProfileController {
   @Post('search')
   @Public()
   @ApiGetMoverProfiles()
-  findAll(@Body() dto: GetMoverProfilesDto) {
-    return this.moverProfileService.findAll(dto);
+  findAll(@UserInfo() userInfo: UserInfo, @Body() dto: GetMoverProfilesDto) {
+    return this.moverProfileService.findAll(userInfo, dto);
   }
 
   @Get('me')
