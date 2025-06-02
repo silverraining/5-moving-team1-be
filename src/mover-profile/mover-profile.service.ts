@@ -6,21 +6,35 @@ import {
 import { CreateMoverProfileDto } from './dto/create-mover-profile.dto';
 import { UpdateMoverProfileDto } from './dto/update-mover-profile.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MoverProfile } from './entities/mover-profile.entity';
 import { Repository } from 'typeorm';
+import { MoverProfile } from './entities/mover-profile.entity';
+import { MoverProfileView } from './view/mover-profile.view';
+import { CustomerProfile } from '@/customer-profile/entities/customer-profile.entity';
+import {
+  EstimateRequest,
+  RequestStatus,
+} from '@/estimate-request/entities/estimate-request.entity';
 import { GetMoverProfilesDto } from './dto/get-mover-profiles.dto';
+import { OrderField } from '@/common/dto/cursor-pagination.dto';
 import { CommonService, Service } from 'src/common/common.service';
 import {
-  MOVER_PROFILE_QB_ALIAS,
-  MOVER_PROFILE_VIEW_QB_ALIAS,
-} from 'src/common/const/qb-alias';
-import { OrderField } from 'src/common/dto/cursor-pagination.dto';
+  MOVER_PROFILE_LIST_SELECT,
+  MOVER_PROFILE_TABLE,
+  MOVER_PROFILE_VIEW_SELECT,
+  MOVER_PROFILE_VIEW_TABLE,
+} from '@/common/const/query-builder.const';
+import { Role } from '@/user/entities/user.entity';
+import { UserInfo } from '@/user/decorator/user-info.decorator';
 
 @Injectable()
 export class MoverProfileService {
   constructor(
     @InjectRepository(MoverProfile)
     private readonly moverProfileRepository: Repository<MoverProfile>,
+    @InjectRepository(CustomerProfile)
+    private readonly customerProfileRepository: Repository<CustomerProfile>,
+    @InjectRepository(EstimateRequest)
+    private readonly estimateRequestRepository: Repository<EstimateRequest>,
     private readonly commonService: CommonService,
   ) {}
 
@@ -41,105 +55,94 @@ export class MoverProfileService {
     return newProfile;
   }
 
-  async findAll(dto: GetMoverProfilesDto) {
-    const { serviceType, serviceRegion, order } = dto;
+  async findAll(user: UserInfo, dto: GetMoverProfilesDto) {
+    const { serviceType, serviceRegion } = dto;
+    const { sub: userId, role } = user;
+    const isCustomer = role === Role.CUSTOMER;
+    let targetMoverIds: string[] = [];
 
-    const isAggregateField =
-      order &&
-      [
-        OrderField.REVIEW_COUNT,
-        OrderField.AVERAGE_RATING,
-        OrderField.CONFIRMED_ESTIMATE_COUNT,
-      ].includes(order.field);
+    // 집계 필드 정렬시: MoverProfile을 베이스로 하고 뷰와 조인
+    const qb = this.moverProfileRepository
+      .createQueryBuilder(MOVER_PROFILE_TABLE)
+      .select(MOVER_PROFILE_LIST_SELECT);
 
-    if (isAggregateField) {
-      // 집계 필드 정렬시: MoverProfile을 베이스로 하고 뷰와 조인
-      const qb = this.moverProfileRepository.createQueryBuilder(
-        MOVER_PROFILE_QB_ALIAS,
-      );
+    // 뷰와 조인해서 집계 데이터 가져오기
+    qb.leftJoin(
+      MoverProfileView,
+      MOVER_PROFILE_VIEW_TABLE,
+      `${MOVER_PROFILE_TABLE}.id = ${MOVER_PROFILE_VIEW_TABLE}.id`,
+    ).addSelect(MOVER_PROFILE_VIEW_SELECT);
 
-      // 뷰와 조인해서 집계 데이터 가져오기
-      qb.leftJoin(
-        'mover_profile_view',
-        MOVER_PROFILE_VIEW_QB_ALIAS,
-        `${MOVER_PROFILE_QB_ALIAS}.id = ${MOVER_PROFILE_VIEW_QB_ALIAS}.id`,
-      )
-        .addSelect(`${MOVER_PROFILE_VIEW_QB_ALIAS}.review_count`)
-        .addSelect(`${MOVER_PROFILE_VIEW_QB_ALIAS}.average_rating`)
-        .addSelect(`${MOVER_PROFILE_VIEW_QB_ALIAS}.estimate_offer_count`);
+    // 서비스 필터링 적용 (MoverProfile 기준)
+    this.commonService.applyServiceFilterToQb(
+      qb,
+      serviceType,
+      Service.ServiceType,
+      MOVER_PROFILE_TABLE,
+    );
 
-      // 서비스 필터링 적용 (MoverProfile 기준)
-      this.commonService.applyServiceFilterToQb(
-        qb,
-        serviceType,
-        Service.ServiceType,
-        MOVER_PROFILE_QB_ALIAS,
-      );
+    this.commonService.applyServiceFilterToQb(
+      qb,
+      serviceRegion,
+      Service.ServiceRegion,
+      MOVER_PROFILE_TABLE,
+    );
 
-      this.commonService.applyServiceFilterToQb(
-        qb,
-        serviceRegion,
-        Service.ServiceRegion,
-        MOVER_PROFILE_QB_ALIAS,
-      );
+    // 커서 기반 페이징 적용
+    const { nextCursor } =
+      await this.commonService.applyCursorPaginationParamsToQb(qb, dto);
 
-      // 커서 기반 페이징 적용
-      const { nextCursor } =
-        await this.commonService.applyCursorPaginationParamsToQb(qb, dto);
+    const { entities, raw: rawResults } = await qb.getRawAndEntities();
 
-      const { entities, raw: rawResults } = await qb.getRawAndEntities();
+    // 엔티티와 뷰 데이터를 병합
+    const moversWithAggregates = entities.map(
+      (entity: MoverProfile, index: number) => ({
+        ...entity,
+        [OrderField.REVIEW_COUNT]:
+          parseInt(
+            rawResults[index][
+              `${MOVER_PROFILE_VIEW_TABLE}_${OrderField.REVIEW_COUNT}`
+            ],
+          ) || 0,
+        [OrderField.AVERAGE_RATING]:
+          parseFloat(
+            rawResults[index][
+              `${MOVER_PROFILE_VIEW_TABLE}_${OrderField.AVERAGE_RATING}`
+            ],
+          ) || 0.0,
+        [OrderField.CONFIRMED_ESTIMATE_COUNT]:
+          parseInt(
+            rawResults[index][
+              `${MOVER_PROFILE_VIEW_TABLE}_${OrderField.CONFIRMED_ESTIMATE_COUNT}`
+            ],
+          ) || 0,
+        likeCount:
+          parseInt(
+            rawResults[index][`${MOVER_PROFILE_VIEW_TABLE}_like_count`],
+          ) || 0,
+      }),
+    );
 
-      // 엔티티와 뷰 데이터를 병합
-      const moversWithAggregates = entities.map(
-        (entity: MoverProfile, index: number) => ({
-          ...entity,
-          review_count:
-            parseInt(
-              rawResults[index][`${MOVER_PROFILE_VIEW_QB_ALIAS}_review_count`],
-            ) || 0,
-          average_rating:
-            parseFloat(
-              rawResults[index][
-                `${MOVER_PROFILE_VIEW_QB_ALIAS}_average_rating`
-              ],
-            ) || 0,
-          estimate_offer_count:
-            parseInt(
-              rawResults[index][
-                `${MOVER_PROFILE_VIEW_QB_ALIAS}_estimate_offer_count`
-              ],
-            ) || 0,
-        }),
-      );
+    // 고객일 경우, 해당 기사에게 지정 견적 요청을 했는지
+    if (isCustomer) {
+      const customer = await this.customerProfileRepository.findOne({
+        where: { user: { id: userId } },
+        select: ['id'], // 필요한 필드만 가져오기
+      });
 
-      const count = await qb.getCount();
-      return { movers: moversWithAggregates, count, nextCursor };
-    } else {
-      // 일반 필드 정렬시: 기존 로직 사용
-      const qb = this.moverProfileRepository.createQueryBuilder(
-        MOVER_PROFILE_QB_ALIAS,
-      );
+      const estimateRequest = await this.estimateRequestRepository.findOne({
+        where: {
+          customer: { id: customer.id },
+          status: RequestStatus.PENDING,
+        },
+        select: ['targetMoverIds'], // 필요한 필드만 가져오기
+      });
 
-      this.commonService.applyServiceFilterToQb(
-        qb,
-        serviceType,
-        Service.ServiceType,
-        MOVER_PROFILE_QB_ALIAS,
-      );
-
-      this.commonService.applyServiceFilterToQb(
-        qb,
-        serviceRegion,
-        Service.ServiceRegion,
-        MOVER_PROFILE_QB_ALIAS,
-      );
-
-      const { nextCursor } =
-        await this.commonService.applyCursorPaginationParamsToQb(qb, dto);
-
-      const [data, count] = await qb.getManyAndCount();
-      return { movers: data, count, nextCursor };
+      targetMoverIds = estimateRequest.targetMoverIds;
     }
+
+    const count = await qb.getCount();
+    return { movers: moversWithAggregates, count, nextCursor, targetMoverIds };
   }
 
   async findOne(userId: string) {

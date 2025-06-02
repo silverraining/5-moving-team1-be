@@ -7,7 +7,10 @@ import {
   OrderItemMap,
 } from './dto/cursor-pagination.dto';
 import * as _ from 'lodash';
-import { MOVER_PROFILE_VIEW_QB_ALIAS } from './const/qb-alias';
+import {
+  MOVER_PROFILE_TABLE,
+  MOVER_PROFILE_VIEW_TABLE,
+} from './const/query-builder.const';
 
 export enum Service {
   ServiceType = 'serviceType',
@@ -147,45 +150,24 @@ export class CommonService {
     const joinNames = qb.expressionMap.joinAttributes.map(
       (join) => join.alias?.name,
     );
-    const isViewJoined = joinNames.includes(MOVER_PROFILE_VIEW_QB_ALIAS);
+    const isViewJoined = joinNames.includes(MOVER_PROFILE_VIEW_TABLE);
 
     switch (field) {
+      // MoverProfile 기준 정렬 필드
       case OrderField.REVIEW_COUNT:
-        if (isViewJoined) {
-          // 뷰가 조인된 경우 미리 계산된 필드 사용
-          return `${MOVER_PROFILE_VIEW_QB_ALIAS}.review_count`;
-        }
-        // 뷰가 조인되지 않은 경우 조인하여 계산
-        qb.leftJoin(`${qb.alias}.reviews`, 'review')
-          .addSelect('COUNT(*)', field)
-          .groupBy(`${qb.alias}.id`);
-        return field;
-
       case OrderField.AVERAGE_RATING:
-        if (isViewJoined) {
-          // 뷰가 조인된 경우 미리 계산된 필드 사용
-          return `${MOVER_PROFILE_VIEW_QB_ALIAS}.average_rating`;
-        }
-        // 뷰가 조인되지 않은 경우 조인하여 계산
-        qb.leftJoin(`${qb.alias}.reviews`, 'review')
-          .addSelect('AVG(review.rating)', field)
-          .groupBy(`${qb.alias}.id`);
-        return field;
-
       case OrderField.CONFIRMED_ESTIMATE_COUNT:
-        if (isViewJoined) {
-          // 뷰가 조인된 경우 미리 계산된 필드 사용
-          return `${MOVER_PROFILE_VIEW_QB_ALIAS}.estimate_offer_count`;
+        if (!isViewJoined) {
+          // 뷰가 join 되어있지 않으면 예외 처리
+          throw new BadRequestException(
+            `${field} 정렬 필드를 사용하려면 뷰(${MOVER_PROFILE_VIEW_TABLE})가 조인되어야 합니다.`,
+          );
         }
-        // 뷰가 조인되지 않은 경우 조인하여 계산
-        qb.leftJoin(`${qb.alias}.estimateOffers`, 'estimate_offer')
-          .addSelect('COUNT(*)', field)
-          .groupBy(`${qb.alias}.id`);
-        return field;
+        return `${MOVER_PROFILE_VIEW_TABLE}.${field}`;
 
+      // experience는 mover스키마에서만 필요
       case OrderField.EXPERIENCE:
-        // experience는 mover스키마에서만 필요
-        return `${qb.alias}.experience`; // 실제 컬럼
+        return `${MOVER_PROFILE_TABLE}.${field}`; // 실제 컬럼
 
       default:
         throw new BadRequestException('올바른 정렬 필드를 선택해주세요.');
