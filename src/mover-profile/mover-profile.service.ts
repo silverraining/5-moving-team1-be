@@ -20,7 +20,6 @@ import { CommonService, Service } from 'src/common/common.service';
 import {
   MOVER_PROFILE_LIST_SELECT,
   MOVER_PROFILE_TABLE,
-  MOVER_PROFILE_VIEW_SELECT,
   MOVER_PROFILE_VIEW_TABLE,
 } from '@/common/const/query-builder.const';
 import { Role } from '@/user/entities/user.entity';
@@ -67,11 +66,11 @@ export class MoverProfileService {
       .select(MOVER_PROFILE_LIST_SELECT);
 
     // 뷰와 조인해서 집계 데이터 가져오기
-    qb.leftJoin(
+    qb.leftJoinAndSelect(
       MoverProfileView,
       MOVER_PROFILE_VIEW_TABLE,
       `${MOVER_PROFILE_TABLE}.id = ${MOVER_PROFILE_VIEW_TABLE}.id`,
-    ).addSelect(MOVER_PROFILE_VIEW_SELECT);
+    );
 
     // 서비스 필터링 적용 (MoverProfile 기준)
     this.commonService.applyServiceFilterToQb(
