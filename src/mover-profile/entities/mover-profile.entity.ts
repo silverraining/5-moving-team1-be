@@ -16,8 +16,9 @@ import {
 import { Like } from 'src/like/entities/like.entity';
 import { EstimateOffer } from 'src/estimate-offer/entities/estimate-offer.entity';
 import { Review } from 'src/review/entities/review.entity';
+import { MOVER_PROFILE_TABLE } from '@/common/const/query-builder.const';
 
-@Entity()
+@Entity(MOVER_PROFILE_TABLE)
 export class MoverProfile extends BaseTable {
   @PrimaryGeneratedColumn('uuid')
   id: string;
