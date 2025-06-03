@@ -157,8 +157,8 @@ export class MoverProfileService {
   }
 
   async findMe(userId: string) {
-    const profile = await this.moverProfileRepository.findOne({
-      where: { user: { id: userId } },
+    const profile = await this.moverProfileRepository.findOneBy({
+      user: { id: userId },
     });
 
     if (!profile) {
@@ -196,8 +196,8 @@ export class MoverProfileService {
   }
 
   async findOne(moverId: string) {
-    const profile = await this.moverProfileRepository.findOne({
-      where: { id: moverId },
+    const profile = await this.moverProfileRepository.findOneBy({
+      id: moverId,
     });
 
     if (!profile) {
