@@ -14,6 +14,11 @@ import { envVariableKeys } from 'src/common/const/env.const';
 import { JwtPayload } from 'src/common/types/payload.type';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { UpdateUserDto } from '@/user/dto/update-user.dto';
+import {
+  invalidRefreshTokenException,
+  noRefreshTokenException,
+  tokenVerificationFailedException,
+} from 'src/common/const/exception.const';
 
 @Injectable()
 export class AuthService {
@@ -37,8 +42,7 @@ export class AuthService {
       throw new UnauthorizedException('유저를 찾을 수 없습니다.');
     }
 
-    user.refreshToken = refreshToken;
-    await this.userRepository.save(user);
+    await this.userRepository.update(userId, { refreshToken });
   }
 
   /**
@@ -63,13 +67,11 @@ export class AuthService {
     const HASH_ROUNDS = this.configService.get<number>('HASH_ROUNDS') ?? 10;
     const hashedPassword = await bcrypt.hash(password, HASH_ROUNDS);
 
-    await this.userRepository.save({
+    const newUser = await this.userRepository.save({
       email,
       password: hashedPassword,
       ...userData,
     });
-
-    const newUser = await this.userRepository.findOneBy({ email });
 
     return newUser;
   }
@@ -173,23 +175,16 @@ export class AuthService {
 
       const user = await this.userRepository.findOneBy({ id: payload.sub });
 
-      if (!user || user.refreshToken !== refreshToken) {
-        if (user) {
-          await this.userRepository.update(user.id, { refreshToken: null });
-        }
+      if (!user) throw invalidRefreshTokenException;
 
-        throw new UnauthorizedException({
-          message: '리프레시 토큰이 유효하지 않습니다.',
-          errorCode: 'INVALID_REFRESH_TOKEN',
-        });
+      if (user.refreshToken !== refreshToken) {
+        await this.userRepository.update(user.id, { refreshToken: null });
+        throw invalidRefreshTokenException;
       }
 
       return user;
     } catch (err) {
-      throw new UnauthorizedException({
-        message: '리프레시 토큰 검증에 실패했습니다.',
-        errorCode: 'TOKEN_VERIFICATION_FAILED',
-      });
+      throw tokenVerificationFailedException;
     }
   }
   /**
@@ -203,20 +198,10 @@ export class AuthService {
     refreshToken: string,
   ): Promise<{ accessToken: string }> {
     if (!refreshToken) {
-      throw new UnauthorizedException({
-        message: '리프레시 토큰이 필요합니다.',
-        errorCode: 'NO_REFRESH_TOKEN',
-      });
+      throw noRefreshTokenException;
     }
 
-    const user = await this.verifyRefreshToken(refreshToken);
-
-    if (!user) {
-      throw new UnauthorizedException({
-        message: '리프레시 토큰이 유효하지 않습니다.',
-        errorCode: 'INVALID_REFRESH_TOKEN',
-      });
-    }
+    const user = await this.verifyRefreshToken(refreshToken); // 여기서 에러 throw
 
     const payload: JwtPayload = {
       sub: user.id,
@@ -228,6 +213,7 @@ export class AuthService {
 
     return { accessToken };
   }
+
   /**
    * 사용자 로그아웃 처리 (refreshToken 무효화)
    * @param userId - 로그아웃할 사용자 ID
@@ -241,14 +227,14 @@ export class AuthService {
       throw new NotFoundException('유저를 찾을 수 없습니다.');
     }
 
-    user.refreshToken = null;
-    await this.userRepository.save(user);
+    await this.userRepository.update(user.id, { refreshToken: null });
 
     return {
       message: '로그아웃 되었습니다.',
       action: 'removeTokens', // 프론트에서 토큰 삭제 필요
     };
   }
+
   /**
    *  사용자의 기본 정보(이름, 전화번호, 비밀번호)수정
    *
