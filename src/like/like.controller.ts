@@ -1,42 +1,29 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
 import { LikeService } from './like.service';
-import { CreateLikeDto } from './dto/create-like.dto';
-import { UpdateLikeDto } from './dto/update-like.dto';
+import { UserInfo } from '@/user/decorator/user-info.decorator';
+import { RBAC } from '@/auth/decorator/rbac.decorator';
+import { Role } from '@/user/entities/user.entity';
 
 @Controller('like')
+@RBAC(Role.CUSTOMER) // 좋아요는 고객만 가능
 export class LikeController {
   constructor(private readonly likeService: LikeService) {}
 
-  @Post()
-  create(@Body() createLikeDto: CreateLikeDto) {
-    return this.likeService.create(createLikeDto);
+  @Post(':moverId')
+  async create(
+    @UserInfo() userInfo: UserInfo,
+    @Param('moverId') moverId: string,
+  ) {
+    return this.likeService.create(userInfo.sub, moverId);
   }
 
   @Get()
-  findAll() {
-    return this.likeService.findAll();
+  findAll(@UserInfo() userInfo: UserInfo) {
+    return this.likeService.findAll(userInfo.sub);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.likeService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateLikeDto: UpdateLikeDto) {
-    return this.likeService.update(+id, updateLikeDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.likeService.remove(+id);
+  @Delete(':moverId')
+  remove(@UserInfo() userInfo: UserInfo, @Param('moverId') moverId: string) {
+    return this.likeService.remove(userInfo.sub, moverId);
   }
 }

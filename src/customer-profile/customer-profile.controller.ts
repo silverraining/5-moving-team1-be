@@ -6,7 +6,7 @@ import { UserInfo } from '@/user/decorator/user-info.decorator';
 import { RBAC } from '@/auth/decorator/rbac.decorator';
 import { Role } from '@/user/entities/user.entity';
 
-@Controller('customer-profile')
+@Controller('customer')
 @RBAC(Role.CUSTOMER)
 export class CustomerProfileController {
   constructor(

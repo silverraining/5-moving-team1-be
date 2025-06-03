@@ -9,3 +9,11 @@ export const MOVER_PROFILE_LIST_SELECT = [
   `${MOVER_PROFILE_TABLE}.intro`,
   `${MOVER_PROFILE_TABLE}.serviceType`,
 ];
+
+export const LIKED_MOVER_LIST_SELECT = [
+  `${MOVER_PROFILE_TABLE}.id`,
+  `${MOVER_PROFILE_TABLE}.nickname`,
+  `${MOVER_PROFILE_TABLE}.imageUrl`,
+  `${MOVER_PROFILE_TABLE}.experience`,
+  `${MOVER_PROFILE_TABLE}.serviceType`,
+];
