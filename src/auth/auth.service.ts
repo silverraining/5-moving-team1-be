@@ -14,6 +14,11 @@ import { envVariableKeys } from 'src/common/const/env.const';
 import { JwtPayload } from 'src/common/types/payload.type';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { UpdateUserDto } from '@/user/dto/update-user.dto';
+import {
+  invalidRefreshTokenException,
+  noRefreshTokenException,
+  tokenVerificationFailedException,
+} from 'src/common/const/exception.const';
 
 @Injectable()
 export class AuthService {
@@ -23,7 +28,13 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
   ) {}
-
+  /**
+   * 사용자 ID 기준으로 refreshToken을 저장
+   *
+   * @param userId - 사용자 ID
+   * @param refreshToken - 저장할 리프레시 토큰
+   * @throws UnauthorizedException - 사용자를 찾을 수 없는 경우
+   */
   async saveRefreshToken(userId: string, refreshToken: string): Promise<void> {
     const user = await this.userRepository.findOneBy({ id: userId });
 
@@ -31,8 +42,7 @@ export class AuthService {
       throw new UnauthorizedException('유저를 찾을 수 없습니다.');
     }
 
-    user.refreshToken = refreshToken;
-    await this.userRepository.save(user);
+    await this.userRepository.update(userId, { refreshToken });
   }
 
   /**
@@ -57,15 +67,26 @@ export class AuthService {
     const HASH_ROUNDS = this.configService.get<number>('HASH_ROUNDS') ?? 10;
     const hashedPassword = await bcrypt.hash(password, HASH_ROUNDS);
 
-    await this.userRepository.save({
+    const newUser = await this.userRepository.save({
       email,
       password: hashedPassword,
       ...userData,
     });
 
-    const newUser = await this.userRepository.findOneBy({ email });
-
     return newUser;
+  }
+  /**
+   * 로그인 처리 및 토큰 발급
+   *
+   * @param user - JWT payload (로그인된 사용자 정보)
+   * @returns accessToken, refreshToken
+   */
+  async login(user: JwtPayload) {
+    const refreshToken = await this.issueToken(user, true);
+    const accessToken = await this.issueToken(user, false);
+    await this.saveRefreshToken(user.sub, refreshToken);
+
+    return { refreshToken, accessToken };
   }
 
   /**
@@ -104,7 +125,26 @@ export class AuthService {
     const refreshTokenSecret = this.configService.get<string>(
       envVariableKeys.refreshToken,
     );
+    //환경에 따라 토큰 만료 시간을 다르게 적용
+    const env = this.configService.get<string>(envVariableKeys.env);
+    let accessExpiresIn: string;
+    let refreshExpiresIn: string;
 
+    if (env === 'prod') {
+      accessExpiresIn = this.configService.get<string>(
+        envVariableKeys.accessTokenExpirationProd,
+      );
+      refreshExpiresIn = this.configService.get<string>(
+        envVariableKeys.refreshTokenExpirationProd,
+      );
+    } else {
+      accessExpiresIn = this.configService.get<string>(
+        envVariableKeys.accessTokenExpirationDev,
+      );
+      refreshExpiresIn = this.configService.get<string>(
+        envVariableKeys.refreshTokenExpirationDev,
+      );
+    }
     const newPayload = {
       sub: payload.sub,
       role: payload.role,
@@ -113,7 +153,7 @@ export class AuthService {
 
     const tokenOptions = {
       secret: isRefreshToken ? refreshTokenSecret : accessTokenSecret,
-      expiresIn: isRefreshToken ? '24h' : 300,
+      expiresIn: isRefreshToken ? refreshExpiresIn : accessExpiresIn,
     };
 
     return await this.jwtService.signAsync(newPayload, tokenOptions);
@@ -125,34 +165,60 @@ export class AuthService {
    * @returns 사용자 정보 (유효한 경우)
    * @throws UnauthorizedException - 토큰 검증 실패 또는 무효화된 토큰
    */
-  async verifyRefreshToken(token: string): Promise<User | null> {
-    const refreshTokenSecret = this.configService.get<string>(
-      envVariableKeys.refreshToken,
-    );
-    let payload: JwtPayload;
+  async verifyRefreshToken(refreshToken: string): Promise<User> {
+    const secret = this.configService.get<string>(envVariableKeys.refreshToken);
 
     try {
-      payload = this.jwtService.verify(token, {
-        secret: refreshTokenSecret,
+      const payload = this.jwtService.verify<JwtPayload>(refreshToken, {
+        secret,
       });
-    } catch (_error) {
-      throw new UnauthorizedException('리프레시 토큰이 유효하지 않습니다.');
+
+      const user = await this.userRepository.findOneBy({ id: payload.sub });
+
+      if (!user) throw invalidRefreshTokenException;
+
+      if (user.refreshToken !== refreshToken) {
+        await this.userRepository.update(user.id, { refreshToken: null });
+        throw invalidRefreshTokenException;
+      }
+
+      return user;
+    } catch (err) {
+      throw tokenVerificationFailedException;
+    }
+  }
+  /**
+   * 리프레시 토큰을 사용해 accessToken 재발급
+   *
+   * @param refreshToken - 클라이언트가 보낸 refreshToken
+   * @returns 새 accessToken
+   * @throws UnauthorizedException - 토큰 없음 또는 검증 실패
+   */
+  async rotateAccessToken(
+    refreshToken: string,
+  ): Promise<{ accessToken: string }> {
+    if (!refreshToken) {
+      throw noRefreshTokenException;
     }
 
-    const user = await this.userRepository.findOneBy({ id: payload.sub });
+    const user = await this.verifyRefreshToken(refreshToken); // 여기서 에러 throw
 
-    if (!user || user.refreshToken !== token) {
-      throw new UnauthorizedException('리프레시 토큰이 유효하지 않습니다.');
-    }
+    const payload: JwtPayload = {
+      sub: user.id,
+      role: user.role,
+      type: null,
+    };
 
-    return user;
+    const accessToken = await this.issueToken(payload, false);
+
+    return { accessToken };
   }
 
   /**
    * 사용자 로그아웃 처리 (refreshToken 무효화)
    * @param userId - 로그아웃할 사용자 ID
-   * @returns void
-   * @throws UnauthorizedException - 유저를 찾을 수 없는 경우
+   * @returns 로그아웃 메시지
+   * @throws NotFoundException - 사용자를 찾을 수 없는 경우
    */
   async logout(userId: string) {
     const user = await this.userRepository.findOneBy({ id: userId });
@@ -161,21 +227,23 @@ export class AuthService {
       throw new NotFoundException('유저를 찾을 수 없습니다.');
     }
 
-    user.refreshToken = null;
-    await this.userRepository.save(user);
+    await this.userRepository.update(user.id, { refreshToken: null });
 
-    return { message: '로그아웃 되었습니다.' };
+    return {
+      message: '로그아웃 되었습니다.',
+      action: 'removeTokens', // 프론트에서 토큰 삭제 필요
+    };
   }
+
   /**
-   * 인증된 사용자의 정보(이름, 전화번호, 비밀번호)를 수정합니다.
+   *  사용자의 기본 정보(이름, 전화번호, 비밀번호)수정
    *
    * @param userId - 수정할 사용자 본인의 ID
-   * @param dto - update-user-info DTO (name, phone, password 중 일부 또는 전부)
+   * @param dto - update-user DTO (이름, 전화번호, 비밀번호)
    *
    * @returns 수정 완료 메시지 객체
    *
-   * @throws NotFoundException - 사용자를 찾을 수 없는 경우
-   * @throws QueryFailedError - 중복된 전화번호 등 DB 제약 조건 위반 시
+   * @throws  NotFoundException - 사용자를 찾을 수 없는 경우
    */
 
   async updateMyInfo(userId: string, dto: UpdateUserDto) {

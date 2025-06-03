@@ -9,7 +9,10 @@ import {
 } from '@nestjs/common';
 import { EstimateRequestService } from './estimate-request.service';
 import { CreateEstimateRequestDto } from './dto/create-estimate-request.dto';
+
 import { UpdateEstimateRequestDto } from './dto/update-estimate-request.dto';
+
+import { UserInfo } from '@/user/decorator/user-info.decorator';
 
 @Controller('estimate-request')
 export class EstimateRequestController {
@@ -18,8 +21,11 @@ export class EstimateRequestController {
   ) {}
 
   @Post()
-  create(@Body() createEstimateRequestDto: CreateEstimateRequestDto) {
-    return this.estimateRequestService.create(createEstimateRequestDto);
+  async create(
+    @Body() dto: CreateEstimateRequestDto,
+    @UserInfo() user: UserInfo, // UserInfo 데코레이터를 통해 현재 로그인한 유저 정보 가져오기
+  ) {
+    return this.estimateRequestService.create(dto, user);
   }
 
   @Get()

@@ -8,7 +8,11 @@ const dbDatabase = 'DB_DATABASE';
 const hashRounds = 'HASH_ROUNDS';
 const accessToken = 'ACCESS_TOKEN_SECRET';
 const refreshToken = 'REFRESH_TOKEN_SECRET';
-
+// 토큰 만료 시간 관련 키 추가
+const accessTokenExpirationDev = 'ACCESS_TOKEN_EXPIRATION_DEV';
+const accessTokenExpirationProd = 'ACCESS_TOKEN_EXPIRATION_PROD';
+const refreshTokenExpirationDev = 'REFRESH_TOKEN_EXPIRATION_DEV';
+const refreshTokenExpirationProd = 'REFRESH_TOKEN_EXPIRATION_PROD';
 export const envVariableKeys = {
   env,
   dbType,
@@ -20,4 +24,9 @@ export const envVariableKeys = {
   hashRounds,
   accessToken,
   refreshToken,
+
+  accessTokenExpirationDev,
+  accessTokenExpirationProd,
+  refreshTokenExpirationDev,
+  refreshTokenExpirationProd,
 };

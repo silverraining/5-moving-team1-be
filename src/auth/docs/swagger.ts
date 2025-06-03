@@ -166,7 +166,7 @@ export const ApiRotateToken = () =>
       },
     }),
     ApiResponse({
-      status: 201,
+      status: 200,
       description: '새 액세스 토큰 발급',
       schema: {
         example: {
