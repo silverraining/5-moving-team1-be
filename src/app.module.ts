@@ -19,6 +19,7 @@ import { ReviewModule } from './review/review.module';
 import { User } from './user/entities/user.entity';
 import { Notification } from './notification/entities/notification.entity';
 import { MoverProfile } from './mover-profile/entities/mover-profile.entity';
+import { MoverProfileView } from './mover-profile/view/mover-profile.view';
 import { CustomerProfile } from './customer-profile/entities/customer-profile.entity';
 import { Like } from './like/entities/like.entity';
 import { EstimateRequest } from './estimate-request/entities/estimate-request.entity';
@@ -61,6 +62,7 @@ import { ResponseTimeInterceptor } from './common/interceptor/response-time.inte
           User,
           Notification,
           MoverProfile,
+          MoverProfileView,
           CustomerProfile,
           Like,
           EstimateRequest,

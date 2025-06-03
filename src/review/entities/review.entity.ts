@@ -19,6 +19,7 @@ export class Review extends BaseTable {
     type: 'uuid',
   })
   @OneToOne(() => EstimateOffer, (offer) => offer.review)
+  @JoinColumn({ name: 'estimateOfferId' }) // FK 컬럼 이름 지정
   estimateOffer: EstimateOffer; // 견적 제안 id
 
   @PrimaryColumn({
@@ -26,6 +27,7 @@ export class Review extends BaseTable {
     type: 'uuid',
   })
   @ManyToOne(() => CustomerProfile, (customer) => customer.reviews)
+  @JoinColumn({ name: 'customerId' }) // FK 컬럼 이름 지정
   customer: CustomerProfile; // 고객 id
 
   @Column()

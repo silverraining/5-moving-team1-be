@@ -7,7 +7,10 @@ import {
   OrderItemMap,
 } from './dto/cursor-pagination.dto';
 import * as _ from 'lodash';
-import { MOVER_PROFILE_QB_ALIAS } from './const/qb-alias';
+import {
+  MOVER_PROFILE_TABLE,
+  MOVER_PROFILE_VIEW_TABLE,
+} from './const/query-builder.const';
 
 export enum Service {
   ServiceType = 'serviceType',
@@ -79,7 +82,10 @@ export class CommonService {
     return { qb, nextCursor };
   }
 
-  generateNextCursor<T>(results: T[], order: OrderItemMap): string | null {
+  private generateNextCursor<T>(
+    results: T[],
+    order: OrderItemMap,
+  ): string | null {
     if (results.length === 0) return null;
 
     /**
@@ -96,7 +102,7 @@ export class CommonService {
      * }
      */
 
-    const lastItem = results[results.length - 1];
+    const lastItem = results.at(-1);
     const { field } = order;
     const value = lastItem[field];
 
@@ -139,32 +145,35 @@ export class CommonService {
     qb.andWhere(conditions.join(' OR'));
   }
 
-  getOrderFieldAlias<T>(qb: SelectQueryBuilder<T>, field: OrderField): string {
+  private getOrderFieldAlias<T>(
+    qb: SelectQueryBuilder<T>,
+    field: OrderField,
+  ): string {
     // 정렬 필드에 따라 쿼리 빌더에 조인 및 선택 추가
     // 추가적으로 필요한 경우, OrderField enum에 추가 정의 후 아래 switch 문에 추가
 
+    // 뷰가 조인되어 있는지 확인 (join 정보에서 mover_profile_view가 있는지)
+    const joinNames = qb.expressionMap.joinAttributes.map(
+      (join) => join.alias?.name,
+    );
+    const isViewJoined = joinNames.includes(MOVER_PROFILE_VIEW_TABLE);
+
     switch (field) {
+      // MoverProfile 기준 정렬 필드
       case OrderField.REVIEW_COUNT:
-        qb.leftJoin(`${qb.alias}.reviews`, 'review')
-          .addSelect('COUNT(*)', field)
-          .groupBy(`${qb.alias}.id`);
-        return field;
-
       case OrderField.AVERAGE_RATING:
-        qb.leftJoin(`${qb.alias}.reviews`, 'review')
-          .addSelect('AVG(review.rating)', field)
-          .groupBy(`${qb.alias}.id`);
-        return field;
-
       case OrderField.CONFIRMED_ESTIMATE_COUNT:
-        qb.leftJoin(`${qb.alias}.estimateOffers`, 'estimate_offer')
-          .addSelect('COUNT(*)', field)
-          .groupBy(`${qb.alias}.id`);
-        return field;
+        if (!isViewJoined) {
+          // 뷰가 join 되어있지 않으면 예외 처리
+          throw new BadRequestException(
+            `${field} 정렬 필드를 사용하려면 뷰(${MOVER_PROFILE_VIEW_TABLE})가 조인되어야 합니다.`,
+          );
+        }
+        return `${MOVER_PROFILE_VIEW_TABLE}.${field}`;
 
+      // experience는 mover스키마에서만 필요
       case OrderField.EXPERIENCE:
-        // experience는 mover스키마에서만 필요
-        return `${MOVER_PROFILE_QB_ALIAS}.experience`; // 실제 컬럼
+        return `${MOVER_PROFILE_TABLE}.${field}`; // 실제 컬럼
 
       default:
         throw new BadRequestException('올바른 정렬 필드를 선택해주세요.');
