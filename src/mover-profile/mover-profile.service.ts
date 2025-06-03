@@ -126,7 +126,7 @@ export class MoverProfileService {
     return { movers: moversWithAggregates, count, nextCursor, targetMoverIds };
   }
 
-  private mergeEntityWithAggregates(
+  mergeEntityWithAggregates(
     entities: MoverProfile[],
     aggregates: MoverProfileView[],
   ) {

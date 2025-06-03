@@ -1,5 +1,5 @@
 import { BaseTable } from 'src/common/entity/base-table.entity';
-import { Entity, ManyToOne, PrimaryColumn } from 'typeorm';
+import { Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
 import { CustomerProfile } from 'src/customer-profile/entities/customer-profile.entity';
 import { MoverProfile } from 'src/mover-profile/entities/mover-profile.entity';
 
@@ -10,6 +10,7 @@ export class Like extends BaseTable {
     name: 'moverId',
     type: 'uuid',
   }) // PK 설정
+  @JoinColumn({ name: 'moverId' }) // FK 설정
   @ManyToOne(() => MoverProfile, (mover) => mover.likedCustomers)
   mover: MoverProfile;
 
@@ -18,6 +19,7 @@ export class Like extends BaseTable {
     name: 'customerId',
     type: 'uuid',
   }) // PK 설정
+  @JoinColumn({ name: 'customerId' }) // FK 설정
   @ManyToOne(() => CustomerProfile, (customer) => customer.likedMovers)
   customer: CustomerProfile;
 }

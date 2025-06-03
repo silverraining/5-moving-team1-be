@@ -22,5 +22,6 @@ import { Review } from '@/review/entities/review.entity';
   ],
   controllers: [MoverProfileController],
   providers: [MoverProfileService],
+  exports: [MoverProfileService],
 })
 export class MoverProfileModule {}
