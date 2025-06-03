@@ -23,7 +23,13 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
   ) {}
-
+  /**
+   * 사용자 ID 기준으로 refreshToken을 저장
+   *
+   * @param userId - 사용자 ID
+   * @param refreshToken - 저장할 리프레시 토큰
+   * @throws UnauthorizedException - 사용자를 찾을 수 없는 경우
+   */
   async saveRefreshToken(userId: string, refreshToken: string): Promise<void> {
     const user = await this.userRepository.findOneBy({ id: userId });
 
@@ -66,6 +72,19 @@ export class AuthService {
     const newUser = await this.userRepository.findOneBy({ email });
 
     return newUser;
+  }
+  /**
+   * 로그인 처리 및 토큰 발급
+   *
+   * @param user - JWT payload (로그인된 사용자 정보)
+   * @returns accessToken, refreshToken
+   */
+  async login(user: JwtPayload) {
+    const refreshToken = await this.issueToken(user, true);
+    const accessToken = await this.issueToken(user, false);
+    await this.saveRefreshToken(user.sub, refreshToken);
+
+    return { refreshToken, accessToken };
   }
 
   /**
@@ -144,34 +163,76 @@ export class AuthService {
    * @returns 사용자 정보 (유효한 경우)
    * @throws UnauthorizedException - 토큰 검증 실패 또는 무효화된 토큰
    */
-  async verifyRefreshToken(token: string): Promise<User | null> {
-    const refreshTokenSecret = this.configService.get<string>(
-      envVariableKeys.refreshToken,
-    );
-    let payload: JwtPayload;
+  async verifyRefreshToken(refreshToken: string): Promise<User> {
+    const secret = this.configService.get<string>(envVariableKeys.refreshToken);
 
     try {
-      payload = this.jwtService.verify(token, {
-        secret: refreshTokenSecret,
+      const payload = this.jwtService.verify<JwtPayload>(refreshToken, {
+        secret,
       });
-    } catch (_error) {
-      throw new UnauthorizedException('리프레시 토큰이 유효하지 않습니다.');
+
+      const user = await this.userRepository.findOneBy({ id: payload.sub });
+
+      if (!user || user.refreshToken !== refreshToken) {
+        if (user) {
+          await this.userRepository.update(user.id, { refreshToken: null });
+        }
+
+        throw new UnauthorizedException({
+          message: '리프레시 토큰이 유효하지 않습니다.',
+          errorCode: 'INVALID_REFRESH_TOKEN',
+        });
+      }
+
+      return user;
+    } catch (err) {
+      throw new UnauthorizedException({
+        message: '리프레시 토큰 검증에 실패했습니다.',
+        errorCode: 'TOKEN_VERIFICATION_FAILED',
+      });
     }
-
-    const user = await this.userRepository.findOneBy({ id: payload.sub });
-
-    if (!user || user.refreshToken !== token) {
-      throw new UnauthorizedException('리프레시 토큰이 유효하지 않습니다.');
-    }
-
-    return user;
   }
+  /**
+   * 리프레시 토큰을 사용해 accessToken 재발급
+   *
+   * @param refreshToken - 클라이언트가 보낸 refreshToken
+   * @returns 새 accessToken
+   * @throws UnauthorizedException - 토큰 없음 또는 검증 실패
+   */
+  async rotateAccessToken(
+    refreshToken: string,
+  ): Promise<{ accessToken: string }> {
+    if (!refreshToken) {
+      throw new UnauthorizedException({
+        message: '리프레시 토큰이 필요합니다.',
+        errorCode: 'NO_REFRESH_TOKEN',
+      });
+    }
 
+    const user = await this.verifyRefreshToken(refreshToken);
+
+    if (!user) {
+      throw new UnauthorizedException({
+        message: '리프레시 토큰이 유효하지 않습니다.',
+        errorCode: 'INVALID_REFRESH_TOKEN',
+      });
+    }
+
+    const payload: JwtPayload = {
+      sub: user.id,
+      role: user.role,
+      type: null,
+    };
+
+    const accessToken = await this.issueToken(payload, false);
+
+    return { accessToken };
+  }
   /**
    * 사용자 로그아웃 처리 (refreshToken 무효화)
    * @param userId - 로그아웃할 사용자 ID
-   * @returns void
-   * @throws UnauthorizedException - 유저를 찾을 수 없는 경우
+   * @returns 로그아웃 메시지
+   * @throws NotFoundException - 사용자를 찾을 수 없는 경우
    */
   async logout(userId: string) {
     const user = await this.userRepository.findOneBy({ id: userId });
@@ -183,18 +244,20 @@ export class AuthService {
     user.refreshToken = null;
     await this.userRepository.save(user);
 
-    return { message: '로그아웃 되었습니다.' };
+    return {
+      message: '로그아웃 되었습니다.',
+      action: 'removeTokens', // 프론트에서 토큰 삭제 필요
+    };
   }
   /**
-   * 인증된 사용자의 정보(이름, 전화번호, 비밀번호)를 수정합니다.
+   *  사용자의 기본 정보(이름, 전화번호, 비밀번호)수정
    *
    * @param userId - 수정할 사용자 본인의 ID
-   * @param dto - update-user-info DTO (name, phone, password 중 일부 또는 전부)
+   * @param dto - update-user DTO (이름, 전화번호, 비밀번호)
    *
    * @returns 수정 완료 메시지 객체
    *
-   * @throws NotFoundException - 사용자를 찾을 수 없는 경우
-   * @throws QueryFailedError - 중복된 전화번호 등 DB 제약 조건 위반 시
+   * @throws  NotFoundException - 사용자를 찾을 수 없는 경우
    */
 
   async updateMyInfo(userId: string, dto: UpdateUserDto) {
