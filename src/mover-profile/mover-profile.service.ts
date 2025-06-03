@@ -31,6 +31,8 @@ export class MoverProfileService {
   constructor(
     @InjectRepository(MoverProfile)
     private readonly moverProfileRepository: Repository<MoverProfile>,
+    @InjectRepository(MoverProfileView)
+    private readonly moverProfileViewRepository: Repository<MoverProfileView>,
     @InjectRepository(CustomerProfile)
     private readonly customerProfileRepository: Repository<CustomerProfile>,
     @InjectRepository(EstimateRequest)
@@ -147,21 +149,33 @@ export class MoverProfileService {
           aggregates[index][
             `${MOVER_PROFILE_VIEW_TABLE}_${OrderField.CONFIRMED_ESTIMATE_COUNT}`
           ],
-        ).toFixed(1) || 0,
+        ) || 0,
       likeCount:
         parseInt(aggregates[index][`${MOVER_PROFILE_VIEW_TABLE}_like_count`]) ||
         0,
     }));
   }
 
-  async findOne(moverId: string) {
-    const profile = await this.moverProfileRepository.findOne({
-      where: { id: moverId },
+  async findMe(userId: string) {
+    const profile = await this.moverProfileRepository.findOneBy({
+      user: { id: userId },
     });
 
     if (!profile) {
       throw new NotFoundException('기사님의 프로필을 찾을 수 없습니다.');
     }
+
+    const aggregate = await this.moverProfileViewRepository.findOne({
+      where: { id: profile.id },
+      select: [
+        OrderField.REVIEW_COUNT, // 리뷰 개수
+        OrderField.AVERAGE_RATING, // 평균 평점
+        OrderField.CONFIRMED_ESTIMATE_COUNT, // 확정된 견적 요청 개수
+        'like_count', // 좋아요 개수
+      ],
+    });
+
+    const mover = this.mergeEntityWithAggregates([profile], [aggregate])[0];
 
     const reviews = await this.reviewRepository.find({
       where: { mover: { id: profile.id } },
@@ -178,20 +192,32 @@ export class MoverProfileService {
       },
     });
 
-    return { ...profile, reviews };
+    return { ...mover, reviews };
   }
 
-  async findMe(userId: string) {
-    const profile = await this.moverProfileRepository.findOne({
-      where: { user: { id: userId } }, // userId 대신 userInfo.sub 사용
+  async findOne(moverId: string) {
+    const profile = await this.moverProfileRepository.findOneBy({
+      id: moverId,
     });
 
     if (!profile) {
       throw new NotFoundException('기사님의 프로필을 찾을 수 없습니다.');
     }
 
+    const aggregate = await this.moverProfileViewRepository.findOne({
+      where: { id: moverId },
+      select: [
+        OrderField.REVIEW_COUNT, // 리뷰 개수
+        OrderField.AVERAGE_RATING, // 평균 평점
+        OrderField.CONFIRMED_ESTIMATE_COUNT, // 확정된 견적 요청 개수
+        'like_count', // 좋아요 개수
+      ],
+    });
+
+    const mover = this.mergeEntityWithAggregates([profile], [aggregate])[0];
+
     const reviews = await this.reviewRepository.find({
-      where: { mover: { id: profile.id } },
+      where: { mover: { id: moverId } },
       relations: ['customer', 'customer.user'],
       select: {
         rating: true, // 리뷰 평점
@@ -205,7 +231,7 @@ export class MoverProfileService {
       },
     });
 
-    return { ...profile, reviews };
+    return { ...mover, reviews };
   }
 
   async update(userId: string, updateMoverProfileDto: UpdateMoverProfileDto) {
