@@ -69,3 +69,21 @@ export function ApiCreateEstimateRequest() {
     ApiResponse(CODE_401_RESPONSES),
   );
 }
+
+export function ApiGetMyEstimateHistory() {
+  return applyDecorators(
+    ApiOperation({
+      summary: '받았던 견적 목록 조회',
+      description:
+        '고객이 생성한 견적 요청 중 완료(COMPLETE), 취소(CANCELED), 만료(EXPIRED)된 요청 목록에 대해 받았던 견적서 목록을 조회합니다.',
+    }),
+    ApiBearerAuth(),
+    ApiResponse({
+      status: 200,
+      description: '받았던 견적 목록 조회 성공',
+      type: EstimateRequestResponseDto,
+      isArray: true,
+    }),
+    ApiResponse(CODE_401_RESPONSES),
+  );
+}
