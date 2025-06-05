@@ -34,9 +34,10 @@ export class EstimateOfferService {
     //개발중 예외처리 TODO: 추후에 수정
     if (!estimateRequestId) {
       throw new BadRequestException(
-        'estimateRequestId 쿼리 파라미터가 필요합니다.',
+        '견적 요청 ID 파라미터(requestId)가 필요합니다.',
       );
-    } // 견적 요청 조회 및 본인 여부 확인
+    }
+    // 견적 요청 조회 및 본인 여부 확인
     const request = await this.requestRepository.findOne({
       where: { id: estimateRequestId },
       relations: ['customer', 'customer.user'],

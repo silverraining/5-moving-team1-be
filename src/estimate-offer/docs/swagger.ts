@@ -1,10 +1,5 @@
 import { applyDecorators } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiQuery,
-  ApiResponse,
-} from '@nestjs/swagger';
+import { ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { EstimateOfferResponseDto } from '../dto/estimate-offer-response.dto';
 
 export function ApiGetEstimateOffers() {
@@ -15,8 +10,8 @@ export function ApiGetEstimateOffers() {
       description:
         '특정 견적 요청 ID에 해당하는 모든 이사 제안 목록을 조회합니다. 로그인한 고객 본인의 요청에 한해서만 조회 가능합니다.',
     }),
-    ApiQuery({
-      name: 'id',
+    ApiParam({
+      name: 'requestId',
       required: true,
       description: '견적 요청 ID (UUID)',
       example: '1c340ecf-e7f8-4431-bad2-dc19ea9ff3e7',

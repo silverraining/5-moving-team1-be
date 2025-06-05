@@ -13,20 +13,25 @@ import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
 import { UpdateEstimateOfferDto } from './dto/update-estimate-offer.dto';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
 import { ApiGetEstimateOffers } from './docs/swagger';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 @Controller('estimate-offer')
 export class EstimateOfferController {
   constructor(private readonly estimateOfferService: EstimateOfferService) {}
 
-  @Get()
+  @Get(':requestId')
   @ApiBearerAuth()
+  @ApiParam({
+    name: 'requestId',
+    description: '견적 요청 ID (UUID)',
+    type: String,
+  })
   @ApiGetEstimateOffers()
   async getOffersByEstimateRequestId(
-    @Query('id') estimateRequestId: string,
-    @UserInfo() userInfo: UserInfo, // 현재 로그인한 유저 정보
+    @Param('requestId') requestId: string,
+    @UserInfo() userInfo: UserInfo,
   ) {
     return this.estimateOfferService.findByEstimateRequestId(
-      estimateRequestId,
+      requestId,
       userInfo.sub,
     );
   }
