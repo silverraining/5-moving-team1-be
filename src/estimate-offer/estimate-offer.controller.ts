@@ -6,15 +6,27 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { EstimateOfferService } from './estimate-offer.service';
 import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
 import { UpdateEstimateOfferDto } from './dto/update-estimate-offer.dto';
+import { UserInfo } from '@/user/decorator/user-info.decorator';
 
 @Controller('estimate-offer')
 export class EstimateOfferController {
   constructor(private readonly estimateOfferService: EstimateOfferService) {}
 
+  @Get()
+  async getOffersByEstimateRequestId(
+    @Query('id') estimateRequestId: string,
+    @UserInfo() userInfo: UserInfo, // 현재 로그인한 유저 정보
+  ) {
+    return this.estimateOfferService.findByEstimateRequestId(
+      estimateRequestId,
+      userInfo.sub,
+    );
+  }
   @Post()
   create(@Body() createEstimateOfferDto: CreateEstimateOfferDto) {
     return this.estimateOfferService.create(createEstimateOfferDto);
@@ -23,11 +35,6 @@ export class EstimateOfferController {
   @Get()
   findAll() {
     return this.estimateOfferService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.estimateOfferService.findOne(+id);
   }
 
   @Patch(':id')
