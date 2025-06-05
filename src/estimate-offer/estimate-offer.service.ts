@@ -76,12 +76,12 @@ export class EstimateOfferService {
         comment: offer.comment,
         status: offer.status,
         isTargeted: offer.isTargeted,
-        isConfirmed: offer.isConfirmed,
+        isConfirmed: offer.isConfirmed, // 견적 제안이 확정되었는지 여부 TODO: 확정건수 응답에 포함시켜야함
         confirmedAt: offer.confirmedAt,
         mover: {
           nickname: mover.nickname,
           imageUrl: mover.imageUrl,
-          career: mover.experience,
+          experience: mover.experience,
           serviceType: mover.serviceType,
           serviceRegion: mover.serviceRegion as any as ServiceRegion,
           intro: mover.intro,
@@ -89,10 +89,77 @@ export class EstimateOfferService {
           reviewCount: reviews.length,
           likeCount: mover.likedCustomers?.length || 0,
           isLiked,
-          experience: mover.experience,
         },
       };
     });
+  }
+  /**
+   * 견적 요청 ID와 기사 ID로 견적 제안 상세 조회
+   * @param requestId
+   * @param moverId
+   * @param userId
+   * @returns 견적 제안 상세 정보
+   */
+  async findOneByCompositeKey(
+    requestId: string,
+    moverId: string,
+    userId?: string,
+  ): Promise<EstimateOfferResponseDto> {
+    const offer = await this.offerRepository.findOne({
+      where: { estimateRequestId: requestId, moverId },
+      relations: [
+        'mover',
+        'mover.likedCustomers',
+        'mover.reviews',
+        'estimateRequest',
+        'estimateRequest.customer',
+        'estimateRequest.customer.user',
+      ],
+    });
+
+    if (!offer) {
+      throw new BadRequestException('해당 견적 제안을 찾을 수 없습니다.');
+    }
+
+    // 고객 본인 확인
+    if (offer.estimateRequest.customer.user.id !== userId) {
+      throw new ForbiddenException('접근 권한이 없습니다.');
+    }
+
+    const mover = offer.mover;
+    const reviews = mover.reviews || [];
+
+    const rating =
+      reviews.length > 0
+        ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+        : 0;
+
+    const isLiked = userId
+      ? mover.likedCustomers?.some((like) => like.customer.id === userId)
+      : false;
+
+    return {
+      estimateRequestId: offer.estimateRequestId,
+      moverId: offer.moverId,
+      price: offer.price,
+      comment: offer.comment,
+      status: offer.status,
+      isTargeted: offer.isTargeted,
+      isConfirmed: offer.isConfirmed,
+      confirmedAt: offer.confirmedAt,
+      mover: {
+        nickname: mover.nickname,
+        imageUrl: mover.imageUrl,
+        experience: mover.experience,
+        serviceType: mover.serviceType,
+        serviceRegion: mover.serviceRegion as any as ServiceRegion,
+        intro: mover.intro,
+        rating: Number.isFinite(rating) ? Number(rating.toFixed(1)) : 0,
+        reviewCount: reviews.length,
+        likeCount: mover.likedCustomers?.length || 0,
+        isLiked,
+      },
+    };
   }
 
   create(createEstimateOfferDto: CreateEstimateOfferDto) {
