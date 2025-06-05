@@ -2,10 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateEstimateRequestDto } from './dto/create-estimate-request.dto';
 import { UpdateEstimateRequestDto } from './dto/update-estimate-request.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  EstimateRequest,
-  RequestStatus,
-} from './entities/estimate-request.entity';
+import { EstimateRequest } from './entities/estimate-request.entity';
 import { CustomerProfile } from '@/customer-profile/entities/customer-profile.entity';
 import { Repository } from 'typeorm';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
