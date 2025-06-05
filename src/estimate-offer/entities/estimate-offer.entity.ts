@@ -2,7 +2,14 @@ import { BaseTable } from 'src/common/entity/base-table.entity';
 import { EstimateRequest } from 'src/estimate-request/entities/estimate-request.entity';
 import { MoverProfile } from 'src/mover-profile/entities/mover-profile.entity';
 import { Review } from 'src/review/entities/review.entity';
-import { Column, Entity, ManyToOne, OneToOne, PrimaryColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToOne,
+  PrimaryColumn,
+} from 'typeorm';
 
 export enum OfferStatus {
   REQUESTED = 'REQUESTED', // 고객이 견적 요청 보냄 (기사 입장에선 대기 중)
@@ -10,26 +17,24 @@ export enum OfferStatus {
   REJECTED = 'REJECTED', // 기사님이 반려함
   CONFIRMED = 'CONFIRMED', // 고객이 확정함
   CANCELED = 'CANCELED', // 고객이 다른 기사 선택 → 자동 취소
-  COMPLETED = 'COMPLETED', // 이사 완료
+  COMPLETED = 'COMPLETED',
+  PENDING = 'PENDING', // 이사 완료
 }
 
 @Entity()
 export class EstimateOffer extends BaseTable {
-  // EstimateRequest : EstimateOffer <-> 1:N 관계
-  @PrimaryColumn({
-    name: 'estimateRequestId',
-    type: 'uuid',
-  }) // PK 설정
-  @ManyToOne(() => EstimateRequest, (estimate) => estimate.estimateOffers)
-  estimateRequest: EstimateRequest; // 견적 요청 id
+  /**@PrimaryColumn + @ManyToOne 조합 문제 발생
+  EstimateOffer 엔티티는 복합키(estimateRequestId, moverId)를 사용하고 있는데
+  @PrimaryColumn에 직접 @ManyToOne을 붙이면 TypeORM이 내부적으로 estimateRequest를
+  string으로 취급해 createdAt 같은 속성을 못 넣게 됩니다.
+  @ManyToOne은 @JoinColumn과 함께 별도의 FK 필드로 분리**/
 
+  // EstimateRequest : EstimateOffer <-> 1:N 관계
+  @PrimaryColumn({ type: 'uuid' })
+  estimateRequestId: string;
   // MoverProfile : EstimateOffer <-> 1:N 관계
-  @PrimaryColumn({
-    name: 'moverId',
-    type: 'uuid',
-  }) // PK 설정
-  @ManyToOne(() => MoverProfile, (mover) => mover.estimateOffers)
-  mover: MoverProfile; // 기사 id
+  @PrimaryColumn({ type: 'uuid' })
+  moverId: string;
 
   @Column()
   price: number; // 견적 가격
@@ -52,6 +57,14 @@ export class EstimateOffer extends BaseTable {
   // EstimateOffer : Review <-> 1:1 관계
   @OneToOne(() => Review, (review) => review.estimateOffer, { nullable: true })
   review?: Review; // 리뷰 목록
+  // 관계 설정
+  @ManyToOne(() => EstimateRequest, (e) => e.estimateOffers)
+  @JoinColumn({ name: 'estimateRequestId' })
+  estimateRequest: EstimateRequest;
+
+  @ManyToOne(() => MoverProfile, (m) => m.estimateOffers)
+  @JoinColumn({ name: 'moverId' })
+  mover: MoverProfile;
 }
 
 /**
