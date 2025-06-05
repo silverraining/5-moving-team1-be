@@ -11,12 +11,12 @@ import {
   CODE_401_RESPONSES,
 } from '@/common/docs/response.swagger';
 
-export function ApiGetEstimateOffers() {
+export function ApiGetPendingEstimateOffers() {
   return applyDecorators(
     ApiOperation({
-      summary: '견적 요청에 대한 오퍼 목록 조회',
+      summary: '대기 중인 견적 요청에 대한 오퍼 목록 조회',
       description:
-        '특정 견적 요청 ID에 해당하는 모든 이사 견적 목록을 조회합니다. 로그인한 고객 본인의 요청에 한해서만 조회 가능합니다.',
+        '로그인한 고객 본인의 견적 요청중 현재 상태가 PENDING인 견적 요청 ID에 대해 기사님들이 보낸 견적 목록을 조회합니다.',
     }),
     ApiBearerAuth(),
     ApiParam({
@@ -62,7 +62,7 @@ export function ApiGetEstimateOfferDetail() {
     ApiResponse({
       status: 200,
       description: '견적 제안 상세 조회 성공',
-      schema: { example: EstimateOfferResponseDto },
+      type: EstimateOfferResponseDto,
     }),
     ApiResponse(CODE_400_BAD_REQUEST([])),
     ApiResponse(CODE_401_RESPONSES),
