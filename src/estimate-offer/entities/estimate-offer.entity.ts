@@ -14,7 +14,7 @@ import {
 export enum OfferStatus {
   REQUESTED = 'REQUESTED', // 고객이 견적 요청 보냄 (기사 입장에선 대기 중)
   SUBMITTED = 'SUBMITTED', // 기사님이 견적서 보냄
-  REJECTED = 'REJECTED', // 기사님이 반려함
+  REJECTED = 'REJECTED', // 기사님이 반려함 -> TODO: 이거 estimate-request 상태인것 같아요
   CONFIRMED = 'CONFIRMED', // 고객이 확정함
   CANCELED = 'CANCELED', // 고객이 다른 기사 선택 → 자동 취소
   COMPLETED = 'COMPLETED',
