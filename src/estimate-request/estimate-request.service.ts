@@ -55,19 +55,6 @@ export class EstimateRequestService {
     });
   }
 
-  async findOneById(id: string) {
-    const result = await this.estimateRequestRepository.findOne({
-      where: { id },
-      relations: ['customer', 'customer.user'],
-    });
-
-    if (!result) throw new NotFoundException('견적 요청을 찾을 수 없습니다.');
-
-    return plainToInstance(EstimateRequestResponseDto, result, {
-      excludeExtraneousValues: true,
-    });
-  }
-
   findAll() {
     return `This action returns all estimateRequest`;
   }
