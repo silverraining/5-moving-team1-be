@@ -1,10 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateEstimateRequestDto } from './dto/create-estimate-request.dto';
 import { UpdateEstimateRequestDto } from './dto/update-estimate-request.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EstimateRequest } from './entities/estimate-request.entity';
+import {
+  EstimateRequest,
+  RequestStatus,
+} from './entities/estimate-request.entity';
 import { CustomerProfile } from '@/customer-profile/entities/customer-profile.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
 import { plainToInstance } from 'class-transformer';
 import { EstimateRequestResponseDto } from './dto/estimate-request-response.dto';
@@ -27,11 +34,19 @@ export class EstimateRequestService {
     if (!customer) {
       throw new NotFoundException('고객 프로필을 찾을 수 없습니다.');
     }
-    //TODO: 현재 유저가 진행 중인 견적 요청이 있는지 확인하는 로직 추가 필요
-    //이미 PENDING, CONFIRMED, CANCELED 상태의 견적 요청을 가지고 있다면, 새로운 요청 생성 불가
-    //COMPLETED 또는 EXPIRED 상태인 경우에만 새로운 요청 생성 가능
+    // 2. 현재 고객이 진행 중인 견적 요청이 있는지 확인
+    const activeRequest = await this.estimateRequestRepository.findOne({
+      where: {
+        customer: { id: customer.id },
+        status: In([RequestStatus.PENDING, RequestStatus.CONFIRMED]),
+      },
+    });
 
-    // 2. EstimateRequest 인스턴스 생성
+    if (activeRequest) {
+      throw new BadRequestException('진행 중인 견적 요청이 이미 존재합니다.');
+    }
+
+    // 3. EstimateRequest 인스턴스 생성
     const estimate = this.estimateRequestRepository.create({
       moveType: dto.moveType,
       moveDate: new Date(dto.moveDate),

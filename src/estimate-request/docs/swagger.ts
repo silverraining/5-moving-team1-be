@@ -54,7 +54,19 @@ export function ApiCreateEstimateRequest() {
         schema: { example: EstimateRequestResponseDto },
       }),
     ),
-    ApiResponse(CODE_400_BAD_REQUEST([])),
+    ApiResponse(
+      CODE_400_BAD_REQUEST([
+        {
+          key: 'ActiveEstimateExists',
+          summary: '진행 중인 요청 중복',
+          value: {
+            statusCode: 400,
+            message: '진행 중인 견적 요청이 이미 존재합니다.',
+            error: 'Bad Request',
+          },
+        },
+      ]),
+    ),
     ApiResponse(CODE_401_RESPONSES),
   );
 }
