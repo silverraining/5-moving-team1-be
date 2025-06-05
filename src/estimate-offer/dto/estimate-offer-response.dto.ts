@@ -15,7 +15,7 @@ export class EstimateOfferResponseDto {
   mover: {
     nickname: string;
     imageUrl?: string;
-    career: number;
+    experience: number;
     serviceType: ServiceTypeMap;
     serviceRegion: ServiceRegion;
     intro: string;
@@ -23,6 +23,5 @@ export class EstimateOfferResponseDto {
     reviewCount: number;
     likeCount: number;
     isLiked: boolean;
-    experience: number;
   };
 }
