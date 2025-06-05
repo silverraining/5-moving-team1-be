@@ -10,8 +10,11 @@ import { EstimateOffer } from './entities/estimate-offer.entity';
 import { Repository } from 'typeorm';
 import { EstimateOfferResponseDto } from './dto/estimate-offer-response.dto';
 import { ServiceRegion } from '@/common/const/service.const';
-import { EstimateRequest } from '@/estimate-request/entities/estimate-request.entity';
-
+import {
+  EstimateRequest,
+  RequestStatus,
+} from '@/estimate-request/entities/estimate-request.entity';
+import { plainToInstance } from 'class-transformer';
 @Injectable()
 export class EstimateOfferService {
   constructor(
@@ -21,23 +24,29 @@ export class EstimateOfferService {
     private readonly requestRepository: Repository<EstimateRequest>,
   ) {}
   /**
-   * 견적 요청 ID로 견적 목록 조회
-   * @param estimateRequestId 견적 요청 ID
-   * @param userId 현재 로그인한 유저 ID
-   * @returns 해당 요청 ID에 대한 견적 제안 목록
+   * 기사님의 확정 견적 수 계산
    */
-  async findByEstimateRequestId(
+  private async getConfirmedCountByMover(moverId: string): Promise<number> {
+    return this.offerRepository
+      .createQueryBuilder('offer')
+      .where('offer.moverId = :moverId', { moverId })
+      .andWhere('offer.isConfirmed = true')
+      .getCount();
+  }
+
+  /**
+   * 견적 요청 ID에 대한 오퍼 목록 조회
+   */
+  async getPendingOffersByRequestId(
     estimateRequestId: string,
     userId?: string,
   ): Promise<EstimateOfferResponseDto[]> {
-    // if (!estimateRequestId) return []; // estimateRequestId가 없으면 빈 배열 반환
-    //개발중 예외처리 TODO: 추후에 수정
     if (!estimateRequestId) {
       throw new BadRequestException(
         '견적 요청 ID 파라미터(requestId)가 필요합니다.',
       );
     }
-    // 견적 요청 조회 및 본인 여부 확인
+
     const request = await this.requestRepository.findOne({
       where: { id: estimateRequestId },
       relations: ['customer', 'customer.user'],
@@ -50,55 +59,76 @@ export class EstimateOfferService {
     if (request.customer.user.id !== userId) {
       throw new ForbiddenException();
     }
-    const offers = await this.offerRepository.find({
-      where: { estimateRequestId },
-      relations: ['mover', 'mover.likedCustomers', 'mover.reviews'],
-      order: { createdAt: 'DESC' },
-    });
 
-    return offers.map((offer) => {
-      const mover = offer.mover;
-      const reviews = mover.reviews || [];
+    // PENDING 상태의 오퍼만 조회
+    const offers = await this.offerRepository
+      .createQueryBuilder('offer')
+      .leftJoinAndSelect('offer.mover', 'mover')
+      .leftJoinAndSelect('mover.likedCustomers', 'likedCustomers')
+      .leftJoinAndSelect('mover.reviews', 'reviews')
+      .leftJoinAndSelect('offer.estimateRequest', 'estimateRequest')
+      .where('offer.estimateRequestId = :estimateRequestId', {
+        estimateRequestId,
+      })
+      .andWhere('estimateRequest.status = :status', {
+        status: RequestStatus.PENDING,
+      })
+      .orderBy('offer.createdAt', 'DESC')
+      .getMany();
 
-      const rating =
-        reviews.length > 0
-          ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-          : 0;
+    return await Promise.all(
+      offers.map(async (offer) => {
+        const mover = offer.mover;
+        const reviews = mover.reviews || [];
 
-      const isLiked = userId
-        ? mover.likedCustomers?.some((like) => like.customer.id === userId)
-        : false;
+        const rating =
+          reviews.length > 0
+            ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+            : 0;
 
-      return {
-        estimateRequestId: offer.estimateRequestId,
-        moverId: offer.moverId,
-        price: offer.price,
-        comment: offer.comment,
-        status: offer.status,
-        isTargeted: offer.isTargeted,
-        isConfirmed: offer.isConfirmed, // 견적 제안이 확정되었는지 여부 TODO: 확정건수 응답에 포함시켜야함
-        confirmedAt: offer.confirmedAt,
-        mover: {
-          nickname: mover.nickname,
-          imageUrl: mover.imageUrl,
-          experience: mover.experience,
-          serviceType: mover.serviceType,
-          serviceRegion: mover.serviceRegion as any as ServiceRegion,
-          intro: mover.intro,
-          rating: Number.isFinite(rating) ? Number(rating.toFixed(1)) : 0,
-          reviewCount: reviews.length,
-          likeCount: mover.likedCustomers?.length || 0,
-          isLiked,
-        },
-      };
-    });
+        const isLiked = userId
+          ? mover.likedCustomers?.some((like) => like.customer.id === userId)
+          : false;
+
+        const confirmedCount = await this.getConfirmedCountByMover(mover.id);
+
+        return plainToInstance(
+          EstimateOfferResponseDto,
+          {
+            estimateRequestId: offer.estimateRequestId,
+            moverId: offer.moverId,
+            price: offer.price,
+            status: offer.status,
+            requestStatus: offer.estimateRequest.status,
+            isTargeted: offer.isTargeted,
+            isConfirmed: offer.isConfirmed,
+            confirmedAt: offer.confirmedAt,
+            moveDate: offer.estimateRequest.moveDate,
+            moveType: offer.estimateRequest.moveType,
+            createdAt: offer.createdAt,
+            fromAddress: offer.estimateRequest.fromAddress,
+            toAddress: offer.estimateRequest.toAddress,
+            confirmedCount: confirmedCount,
+            mover: {
+              nickname: mover.nickname,
+              imageUrl: mover.imageUrl,
+              experience: mover.experience,
+              serviceType: mover.serviceType,
+              intro: mover.intro,
+              rating: Number.isFinite(rating) ? Number(rating.toFixed(1)) : 0,
+              reviewCount: reviews.length,
+              likeCount: mover.likedCustomers?.length || 0,
+              isLiked,
+            },
+          },
+          { excludeExtraneousValues: true },
+        );
+      }),
+    );
   }
+
   /**
-   * 견적 요청 ID와 기사 ID로 견적 제안 상세 조회
-   * @param requestId
-   * @param moverId
-   * @param userId
-   * @returns 견적 제안 상세 정보
+   * 견적 요청ID에 대한 오퍼 중 특정 기사 오퍼 상세 조회
    */
   async findOneByCompositeKey(
     requestId: string,
@@ -121,7 +151,6 @@ export class EstimateOfferService {
       throw new BadRequestException('해당 견적 제안을 찾을 수 없습니다.');
     }
 
-    // 고객 본인 확인
     if (offer.estimateRequest.customer.user.id !== userId) {
       throw new ForbiddenException('접근 권한이 없습니다.');
     }
@@ -138,40 +167,42 @@ export class EstimateOfferService {
       ? mover.likedCustomers?.some((like) => like.customer.id === userId)
       : false;
 
-    return {
-      estimateRequestId: offer.estimateRequestId,
-      moverId: offer.moverId,
-      price: offer.price,
-      comment: offer.comment,
-      status: offer.status,
-      isTargeted: offer.isTargeted,
-      isConfirmed: offer.isConfirmed,
-      confirmedAt: offer.confirmedAt,
-      mover: {
-        nickname: mover.nickname,
-        imageUrl: mover.imageUrl,
-        experience: mover.experience,
-        serviceType: mover.serviceType,
-        serviceRegion: mover.serviceRegion as any as ServiceRegion,
-        intro: mover.intro,
-        rating: Number.isFinite(rating) ? Number(rating.toFixed(1)) : 0,
-        reviewCount: reviews.length,
-        likeCount: mover.likedCustomers?.length || 0,
-        isLiked,
+    const confirmedCount = await this.getConfirmedCountByMover(mover.id);
+
+    return plainToInstance(
+      EstimateOfferResponseDto,
+      {
+        estimateRequestId: offer.estimateRequestId,
+        moverId: offer.moverId,
+        price: offer.price,
+        status: offer.status,
+        isTargeted: offer.isTargeted,
+        isConfirmed: offer.isConfirmed,
+        confirmedAt: offer.confirmedAt,
+        moveDate: offer.estimateRequest.moveDate,
+        moveType: offer.estimateRequest.moveType,
+        createdAt: offer.createdAt,
+        fromAddress: offer.estimateRequest.fromAddress,
+        toAddress: offer.estimateRequest.toAddress,
+        confirmedCount: confirmedCount,
+        mover: {
+          nickname: mover.nickname,
+          imageUrl: mover.imageUrl,
+          experience: mover.experience,
+          serviceType: mover.serviceType,
+          intro: mover.intro,
+          rating: Number.isFinite(rating) ? Number(rating.toFixed(1)) : 0,
+          reviewCount: reviews.length,
+          likeCount: mover.likedCustomers?.length || 0,
+          isLiked,
+        },
       },
-    };
+      { excludeExtraneousValues: true },
+    );
   }
 
   create(createEstimateOfferDto: CreateEstimateOfferDto) {
     return 'This action adds a new estimateOffer';
-  }
-
-  findAll() {
-    return `This action returns all estimateOffer`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} estimateOffer`;
   }
 
   update(id: number, updateEstimateOfferDto: UpdateEstimateOfferDto) {

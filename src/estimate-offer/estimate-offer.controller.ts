@@ -13,7 +13,7 @@ import { UpdateEstimateOfferDto } from './dto/update-estimate-offer.dto';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
 import {
   ApiGetEstimateOfferDetail,
-  ApiGetEstimateOffers,
+  ApiGetPendingEstimateOffers,
 } from './docs/swagger';
 import { ApiBearerAuth } from '@nestjs/swagger';
 
@@ -21,18 +21,20 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 @ApiBearerAuth()
 export class EstimateOfferController {
   constructor(private readonly estimateOfferService: EstimateOfferService) {}
-  // 견적 요청 ID로 견적 목록 조회
+
+  // 견적 요청 ID로 대기 중인 견적 목록 조회
   @Get(':requestId')
-  @ApiGetEstimateOffers()
+  @ApiGetPendingEstimateOffers()
   async getOffersByEstimateRequestId(
     @Param('requestId') requestId: string,
     @UserInfo() userInfo: UserInfo,
   ) {
-    return this.estimateOfferService.findByEstimateRequestId(
+    return this.estimateOfferService.getPendingOffersByRequestId(
       requestId,
       userInfo.sub,
     );
   }
+
   // 견적 요청 ID와 기사 ID로 견적 제안 상세 조회
   @Get(':requestId/:moverId')
   @ApiGetEstimateOfferDetail()
