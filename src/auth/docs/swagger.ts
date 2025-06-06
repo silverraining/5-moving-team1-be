@@ -109,8 +109,8 @@ export const ApiLogin = () => [
       basic: {
         summary: '기본 예시',
         value: {
-          email: 'hong@example.com',
-          password: 'P@ssw0rd!',
+          email: 'customer@moving.com',
+          password: 'moving123!',
         },
       },
     },

@@ -30,7 +30,7 @@ type ErrorExample = {
   summary: string;
   value: {
     statusCode: number;
-    message: string[];
+    message: string | string[];
     error: string;
   };
 };

@@ -23,7 +23,7 @@ export function ApiGetPendingEstimateOffers() {
       name: 'requestId',
       required: true,
       description: '견적 요청 ID (UUID)',
-      example: '1c340ecf-e7f8-4431-bad2-dc19ea9ff3e7',
+      example: '12e19ae8-5ff6-4316-ad45-d13c814234cd',
       type: String,
     }),
     ApiResponse({
@@ -50,18 +50,18 @@ export function ApiGetEstimateOfferDetail() {
     ApiParam({
       name: 'requestId',
       description: '견적 요청 ID (UUID)',
-      example: '1c340ecf-e7f8-4431-bad2-dc19ea9ff3e7',
+      example: '12e19ae8-5ff6-4316-ad45-d13c814234cd',
       type: String,
     }),
     ApiParam({
       name: 'moverId',
       description: '기사 ID (UUID)',
-      example: '89127260-7cc3-4706-b457-adb90a45cddf',
+      example: '9e633eb5-a794-4dfe-b246-02c572bb9952',
       type: String,
     }),
     ApiResponse({
       status: 200,
-      description: '견적 제안 상세 조회 성공',
+      description: '견적 상세 조회 성공',
       type: EstimateOfferResponseDto,
     }),
     ApiResponse(CODE_400_BAD_REQUEST([])),
