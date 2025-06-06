@@ -1,59 +1,31 @@
-import { ServiceRegionMap, ServiceTypeMap } from '@/common/const/service.const';
 import { Expose, Type } from 'class-transformer';
-import { Address } from 'src/estimate-request/entities/estimate-request.entity';
+import { EstimateOfferResponseDto } from '@/estimate-offer/dto/estimate-offer-response.dto';
+import { ServiceType } from '@/common/const/service.const';
 
-export class UserSummaryDto {
-  @Expose()
-  id: string;
-
-  @Expose()
-  name: string;
-}
-
-export class CustomerSummaryDto {
-  @Expose()
-  id: string;
-
-  @Expose()
-  imageUrl: string | null;
-
-  @Expose()
-  serviceType: ServiceTypeMap;
-
-  @Expose()
-  serviceRegion: ServiceRegionMap;
-
-  @Type(() => UserSummaryDto)
-  @Expose()
-  user: UserSummaryDto;
-}
+type FullAddress = {
+  fullAddress: string;
+};
 
 export class EstimateRequestResponseDto {
   @Expose()
   id: string;
 
   @Expose()
-  moveType: string;
+  createdAt: Date;
 
   @Expose()
-  status: string;
+  moveType: ServiceType;
 
   @Expose()
   moveDate: Date;
 
   @Expose()
-  fromAddress: Address;
+  fromAddressFull: FullAddress;
 
   @Expose()
-  toAddress: Address;
+  toAddressFull: FullAddress;
 
   @Expose()
-  targetMoverIds: string[] | null;
-
-  @Expose()
-  confirmedOfferId: string | null;
-
-  @Type(() => CustomerSummaryDto)
-  @Expose()
-  customer: CustomerSummaryDto;
+  @Type(() => EstimateOfferResponseDto)
+  estimateOffers: EstimateOfferResponseDto[];
 }
