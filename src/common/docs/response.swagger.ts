@@ -16,11 +16,11 @@ type CODE_201_TYPE = {
   description?: string;
   schema: object;
 };
-export const CODE_201_CREATED = ({ description, schema }: CODE_201_TYPE) => {
+export const CODE_201_CREATED = ({ description }: CODE_201_TYPE) => {
   return {
     status: 201,
     description: description || '생성 성공한 경우',
-    schema: schema,
+    // schema: schema,
   };
 };
 

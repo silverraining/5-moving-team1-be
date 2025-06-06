@@ -9,10 +9,10 @@ import { applyDecorators } from '@nestjs/common';
 import { CreateEstimateRequestDto } from '@/estimate-request/dto/create-estimate-request.dto';
 import { EstimateRequestResponseDto } from '@/estimate-request/dto/estimate-request-response.dto';
 import {
-  CODE_201_CREATED,
   CODE_400_BAD_REQUEST,
   CODE_401_RESPONSES,
 } from '@/common/docs/response.swagger';
+import { CreateEstimateRequestResponseDto } from '../dto/create-estimate-request.response.dto';
 
 export function ApiCreateEstimateRequest() {
   return applyDecorators(
@@ -48,12 +48,11 @@ export function ApiCreateEstimateRequest() {
         },
       },
     }),
-    ApiResponse(
-      CODE_201_CREATED({
-        description: '견적 요청 생성 성공',
-        schema: { example: EstimateRequestResponseDto },
-      }),
-    ),
+    ApiResponse({
+      status: 201,
+      description: '견적 요청 생성 성공',
+      type: CreateEstimateRequestResponseDto,
+    }),
     ApiResponse(
       CODE_400_BAD_REQUEST([
         {

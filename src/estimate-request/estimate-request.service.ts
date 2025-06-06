@@ -15,6 +15,7 @@ import { In, Repository } from 'typeorm';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
 import { plainToInstance } from 'class-transformer';
 import { EstimateRequestResponseDto } from './dto/estimate-request-response.dto';
+import { CreateEstimateRequestResponseDto } from './dto/create-estimate-request.response.dto';
 @Injectable()
 export class EstimateRequestService {
   constructor(
@@ -62,11 +63,19 @@ export class EstimateRequestService {
       relations: ['customer', 'customer.user'],
     });
 
-    return plainToInstance(EstimateRequestResponseDto, withRelations, {
-      excludeExtraneousValues: true,
-    });
+    //   return plainToInstance(EstimateRequestResponseDto, withRelations, {
+    //     excludeExtraneousValues: true,
+    //   });
+    // }
+    return plainToInstance(
+      CreateEstimateRequestResponseDto,
+      {
+        id: saved.id,
+        message: '견적 요청 생성 성공',
+      },
+      { excludeExtraneousValues: true },
+    );
   }
-
   findAll() {
     return `This action returns all estimateRequest`;
   }
