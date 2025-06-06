@@ -60,7 +60,20 @@ export class EstimateOfferService {
       throw new ForbiddenException();
     }
 
-    // PENDING 상태의 오퍼만 조회
+    // COMPLETED ,CANCELED,EXPIRED 일 경우 예외 처리 로직 추가
+    // 완료/취소/만료된 요청일 경우 예외 발생
+    if (
+      [
+        RequestStatus.COMPLETED,
+        RequestStatus.CANCELED,
+        RequestStatus.EXPIRED,
+      ].includes(request.status)
+    ) {
+      throw new BadRequestException(
+        '이사가 완료되었거나 취소된 견적 요청 ID 입니다.',
+      );
+    }
+
     const offers = await this.offerRepository
       .createQueryBuilder('offer')
       .leftJoinAndSelect('offer.mover', 'mover')
@@ -71,7 +84,7 @@ export class EstimateOfferService {
         estimateRequestId,
       })
       .andWhere('estimateRequest.status = :status', {
-        status: RequestStatus.PENDING,
+        status: RequestStatus.PENDING, // PENDING 상태의 오퍼만 조회
       })
       .orderBy('offer.createdAt', 'DESC')
       .getMany();

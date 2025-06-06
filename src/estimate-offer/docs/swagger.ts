@@ -28,11 +28,14 @@ export function ApiGetPendingEstimateOffers() {
     }),
     ApiResponse({
       status: 200,
-      description: '견적 목록 조회 성공',
+      description: '대기 중인 견적 목록 조회 성공',
       type: EstimateOfferResponseDto,
       isArray: true,
     }),
-    ApiResponse(CODE_400_BAD_REQUEST([])),
+    ApiResponse({
+      status: 400,
+      description: '잘못된 요청',
+    }),
     ApiResponse({
       status: 403,
       description: '권한 없음. 본인의 요청이 아닐 경우',
