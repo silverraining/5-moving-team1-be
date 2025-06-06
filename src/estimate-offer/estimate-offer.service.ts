@@ -106,8 +106,14 @@ export class EstimateOfferService {
             moveDate: offer.estimateRequest.moveDate,
             moveType: offer.estimateRequest.moveType,
             createdAt: offer.createdAt,
-            fromAddress: offer.estimateRequest.fromAddress,
-            toAddress: offer.estimateRequest.toAddress,
+            fromAddressMinimal: {
+              sido: offer.estimateRequest.fromAddress?.sido,
+              sigungu: offer.estimateRequest.fromAddress?.sigungu,
+            },
+            toAddressMinimal: {
+              sido: offer.estimateRequest.toAddress?.sido,
+              sigungu: offer.estimateRequest.toAddress?.sigungu,
+            },
             confirmedCount: confirmedCount,
             mover: {
               nickname: mover.nickname,
@@ -176,14 +182,19 @@ export class EstimateOfferService {
         moverId: offer.moverId,
         price: offer.price,
         status: offer.status,
+        requestStatus: offer.estimateRequest.status,
         isTargeted: offer.isTargeted,
         isConfirmed: offer.isConfirmed,
         confirmedAt: offer.confirmedAt,
         moveDate: offer.estimateRequest.moveDate,
         moveType: offer.estimateRequest.moveType,
         createdAt: offer.createdAt,
-        fromAddress: offer.estimateRequest.fromAddress,
-        toAddress: offer.estimateRequest.toAddress,
+        fromAddressFull: {
+          fullAddress: offer.estimateRequest.fromAddress?.fullAddress,
+        },
+        toAddressFull: {
+          fullAddress: offer.estimateRequest.toAddress?.fullAddress,
+        },
         confirmedCount: confirmedCount,
         mover: {
           nickname: mover.nickname,

@@ -8,11 +8,14 @@ import { OfferStatus } from '../entities/estimate-offer.entity';
 import { RequestStatus } from '@/estimate-request/entities/estimate-request.entity';
 
 type MinimalAddress = {
+  //목록 조회시 sido + sigungu '서울 강남구', '경기 성남시 분당구' 등
   sido: string;
   sigungu: string;
-  roadAddress?: string; // 상세페이지
 };
-
+type FullAddress = {
+  // 상세페이지에 필요한 전체 주소
+  fullAddress: string;
+};
 export class EstimateOfferResponseDto {
   @Expose()
   estimateRequestId: string;
@@ -49,23 +52,17 @@ export class EstimateOfferResponseDto {
   @Expose()
   createdAt: Date; // 상세페이지에 견적 요청일
 
-  // fromAddress → { sido, sigungu, roadAddress }만 추출
-  @Transform(({ obj }) => ({
-    sido: obj.fromAddress?.sido,
-    sigungu: obj.fromAddress?.sigungu,
-    roadAddress: obj.fromAddress?.roadAddress,
-  }))
   @Expose()
-  fromAddress: MinimalAddress;
+  toAddressMinimal: MinimalAddress;
 
-  @Transform(({ obj }) => ({
-    sido: obj.toAddress?.sido,
-    sigungu: obj.toAddress?.sigungu,
-    roadAddress: obj.toAddress?.roadAddress,
-  }))
   @Expose()
-  toAddress: MinimalAddress;
+  fromAddressMinimal: MinimalAddress;
 
+  @Expose()
+  toAddressFull: FullAddress;
+
+  @Expose()
+  fromAddressFull: FullAddress;
   @Expose()
   mover: {
     nickname: string;
