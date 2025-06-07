@@ -46,7 +46,7 @@ export function ApiGetPendingEstimateOffers() {
 export function ApiGetEstimateOfferDetail() {
   return applyDecorators(
     ApiOperation({
-      summary: '견적 제안 상세 조회',
+      summary: '견적 상세 조회',
       description: '특정 견적 요청에 대한 기사별 견적서를 상세 조회합니다.',
     }),
     ApiBearerAuth(),
