@@ -7,7 +7,10 @@ import {
 import { CreateEstimateRequestDto } from './dto/create-estimate-request.dto';
 import { EstimateRequestResponseDto } from './dto/estimate-request-response.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EstimateRequest } from './entities/estimate-request.entity';
+import {
+  EstimateRequest,
+  RequestStatus,
+} from './entities/estimate-request.entity';
 import { CustomerProfile } from '@/customer-profile/entities/customer-profile.entity';
 import { In, Repository } from 'typeorm';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
@@ -67,15 +70,7 @@ export class EstimateRequestService {
 
     // 3. 저장
     const saved = await this.estimateRequestRepository.save(estimate);
-    // const withRelations = await this.estimateRequestRepository.findOne({
-    //   where: { id: saved.id },
-    //   relations: ['customer', 'customer.user'],
-    // });
 
-    //   return plainToInstance(EstimateRequestResponseDto, withRelations, {
-    //     excludeExtraneousValues: true,
-    //   });
-    // }
     return plainToInstance(
       CreateEstimateRequestResponseDto,
       {
