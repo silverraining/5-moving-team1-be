@@ -23,13 +23,13 @@ import {
 
 @ApiBearerAuth()
 @Controller('estimate-request')
-@RBAC(Role.CUSTOMER)
 export class EstimateRequestController {
   constructor(
     private readonly estimateRequestService: EstimateRequestService,
   ) {}
 
   @Post()
+  @RBAC(Role.CUSTOMER)
   @ApiCreateEstimateRequest()
   async create(
     @Body() dto: CreateEstimateRequestDto,
@@ -39,6 +39,7 @@ export class EstimateRequestController {
   }
 
   @Get('history')
+  @RBAC(Role.CUSTOMER)
   @ApiGetMyEstimateHistory()
   async findAllRequestHistory(@UserInfo() user: UserInfo) {
     return this.estimateRequestService.findAllRequestHistory(user.sub);
