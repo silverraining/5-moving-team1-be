@@ -23,11 +23,11 @@ export class ResponseTimeInterceptor implements NestInterceptor {
 
         let logMessage = `[${request.method} ${request.path}] ${diff}ms`;
 
-        if (diff > 1000) {
+        if (diff > 10000) {
           logMessage = '!!!TIME OUT!!!' + logMessage;
           console.log(logMessage);
           throw new InternalServerErrorException(
-            '응답 시간이 1초를 초과하였습니다!',
+            '응답 시간이 10초를 초과하였습니다!',
           );
         }
 
