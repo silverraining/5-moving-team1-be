@@ -32,6 +32,7 @@ import { ForbiddenExceptionFilter } from './common/filter/forbidden.filter';
 import { RbacGuard } from './auth/guard/rbac.guard';
 import { QueryFailedExceptionFilter } from './common/filter/query-failed.filter';
 import { ResponseTimeInterceptor } from './common/interceptor/response-time.interceptor';
+import { S3Module } from './s3/s3.module';
 
 @Module({
   imports: [
@@ -83,6 +84,7 @@ import { ResponseTimeInterceptor } from './common/interceptor/response-time.inte
     EstimateOfferModule,
     ReviewModule,
     AuthModule,
+    S3Module,
   ],
   providers: [
     {
