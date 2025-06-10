@@ -53,6 +53,66 @@ export const MoverProfileListSchema = {
   },
 };
 
+export const MoverProfileDetailSchema = {
+  example: {
+    id: '8a12f8b9-1e4b-49f2-8302-4c5c8cbcb488',
+    nickname: '최강이사',
+    experience: 5,
+    averageRating: 4.8,
+    reviewCount: 10,
+    confirmedEstimateCount: 15,
+    like_count: 21,
+    reviews: [
+      {
+        rating: 5,
+        comment: '정말 친절하셨어요!',
+        createdAt: '2025-05-01T12:34:56.000Z',
+        customer: {
+          user: {
+            email: 'customer@example.com',
+          },
+        },
+      },
+    ],
+  },
+};
+
+export const CustomerProfileSchema = {
+  example: {
+    id: 'a1234567-b89c-1234-d567-890123456789',
+    imageUrl: 'https://example.com/customer.jpg',
+    serviceType: defaultServiceTypeMap,
+    serviceRegion: defaultServiceRegionMap,
+  },
+};
+
+export const CustomerProfileDetailSchema = {
+  example: {
+    name: '홍길동',
+    email: 'hong@example.com',
+    phone: '010-1234-5678',
+    id: 'a1234567-b89c-1234-d567-890123456789',
+    imageUrl: 'https://example.com/customer.jpg',
+    serviceType: defaultServiceTypeMap,
+    serviceRegion: defaultServiceRegionMap,
+  },
+};
+
+export const userDataSchema = {
+  example: {
+    refreshToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ...',
+    accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ...',
+    user: {
+      name: '홍길동',
+      email: 'hong@example.com',
+      phone: '01012345678',
+      role: 'CUSTOMER',
+      imageUrl: 'https://example.com/image.jpg',
+      provider: 'LOCAL',
+    },
+  },
+};
+
 export const MessageSchema = (message: string) => ({
   example: {
     message: message || '요청이 성공적으로 처리되었습니다.',

@@ -39,6 +39,7 @@ import { ResponseTimeInterceptor } from './common/interceptor/response-time.inte
       isGlobal: true,
       validationSchema: Joi.object({
         ENV: Joi.string().valid('dev', 'prod').required(),
+
         DB_TYPE: Joi.string().valid('postgres').required(),
         DB_HOST: Joi.string().required(),
         DB_PORT: Joi.number().required(),
@@ -48,6 +49,9 @@ import { ResponseTimeInterceptor } from './common/interceptor/response-time.inte
         HASH_ROUNDS: Joi.number().required(),
         ACCESS_TOKEN_SECRET: Joi.string().required(),
         REFRESH_TOKEN_SECRET: Joi.string().required(),
+
+        NAVER_CLIENT_ID: Joi.string().required(),
+        NAVER_CLIENT_SECRET: Joi.string().required(),
       }),
     }),
     TypeOrmModule.forRootAsync({
@@ -112,8 +116,10 @@ export class AppModule implements NestModule {
     consumer
       .apply(BearerTokenMiddleware)
       .exclude(
-        { path: 'auth/login/local', method: RequestMethod.POST }, /// 로그인 제외
         { path: 'auth/register', method: RequestMethod.POST }, /// 회원가입 제외
+        { path: 'auth/login/local', method: RequestMethod.POST }, /// 로컬 로그인 제외
+        { path: 'auth/login/:social', method: RequestMethod.GET }, /// 모든 소셜 로그인 (:social 매개변수 사용) 제외
+        { path: 'auth/callback/:social', method: RequestMethod.GET }, /// 모든 소셜 콜백 (:social 매개변수 사용) 제외
       )
       .forRoutes('*'); /// 모든 라우트에 미들웨어 적용
   }

@@ -8,13 +8,16 @@ import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { applyDecorators } from '@nestjs/common';
 import { UpdateUserDto } from '@/user/dto/update-user.dto';
 import {
+  CODE_201_CREATED,
   CODE_400_BAD_REQUEST,
   CODE_401_RESPONSES,
 } from '@/common/docs/response.swagger';
 import {
   nameValidationError,
   passwordValidationError,
+  unsupportedSocialLoginError,
 } from '@/common/docs/validation.swagger';
+import { userDataSchema } from '@/common/docs/schema.swagger';
 
 export const ApiRegister = () => [
   ApiOperation({
@@ -118,12 +121,7 @@ export const ApiLogin = () => [
   ApiResponse({
     status: 201,
     description: '로그인 성공 및 토큰 발급',
-    schema: {
-      example: {
-        refreshToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ...',
-        accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ...',
-      },
-    },
+    schema: userDataSchema,
   }),
   ApiResponse({
     status: 400,
@@ -137,6 +135,24 @@ export const ApiLogin = () => [
     },
   }),
 ];
+
+export const ApiSocialLogin = () =>
+  applyDecorators(
+    ApiOperation({
+      summary: '소셜 로그인',
+      description: `
+- 소셜 로그인 전략을 사용하여 사용자를 인증합니다.
+- 사용자는 소셜 로그인 후, 서버에서 발급한 액세스 토큰과 리프레시 토큰을 받습니다.
+    `,
+    }),
+    ApiResponse(
+      CODE_201_CREATED({
+        description: '로그인 성공 및 토큰 발급',
+        schema: userDataSchema,
+      }),
+    ),
+    ApiResponse(CODE_400_BAD_REQUEST([unsupportedSocialLoginError])),
+  );
 
 export const ApiRotateToken = () =>
   applyDecorators(

@@ -44,6 +44,28 @@ export const UpdateMoverProfileFullExample = {
   },
 };
 
+export const CreateCustomerProfileFullExample = {
+  summary: '[customer] 프로필 등록 예시',
+  value: {
+    imageUrl: 'https://example.com/image.jpg',
+    serviceType: defaultServiceTypeMap,
+    serviceRegion: defaultServiceRegionMap,
+  },
+};
+
+export const UpdateCustomerProfileFullExample = {
+  summary: '[customer] 프로필 수정 예시',
+  value: {
+    name: '새로운 이름',
+    phone: '010-1234-5678',
+    password: 'passwordTest1234!',
+    newPassword: 'passwordTest4321!',
+    imageUrl: 'https://example.com/image.jpg',
+    serviceType: defaultServiceTypeMap,
+    serviceRegion: defaultServiceRegionMap,
+  },
+};
+
 export const GetMoverProfilesFullExample = {
   summary: '[mover] 프로필 목록 조회 예시 (필터, 정렬 사용, 커서 있음)',
   value: {

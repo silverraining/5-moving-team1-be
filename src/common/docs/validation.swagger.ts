@@ -150,3 +150,13 @@ export const takeValidationError = {
     error: 'Bad Request',
   },
 };
+
+export const unsupportedSocialLoginError = {
+  key: 'unsupportedSocialLoginError',
+  summary: '지원하지 않는 소셜 로그인 시도',
+  value: {
+    statusCode: 400,
+    message: ['지원하지 않는 소셜 로그인입니다!'],
+    error: 'Bad Request',
+  },
+};
