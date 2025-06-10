@@ -3,18 +3,18 @@ import {
   ForbiddenException,
   Injectable,
 } from '@nestjs/common';
-import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
-import { UpdateEstimateOfferDto } from './dto/update-estimate-offer.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EstimateOffer } from './entities/estimate-offer.entity';
-import { Repository } from 'typeorm';
-import { EstimateOfferResponseDto } from './dto/estimate-offer-response.dto';
-import { ServiceRegion } from '@/common/const/service.const';
+import { In, Repository } from 'typeorm';
+import { EstimateOfferListResponseDto } from './dto/estimate-offer-list.response.dto';
+import { DataSource } from 'typeorm';
 import {
   EstimateRequest,
   RequestStatus,
 } from '@/estimate-request/entities/estimate-request.entity';
-import { plainToInstance } from 'class-transformer';
+import { MoverProfileView } from '@/mover-profile/view/mover-profile.view';
+import { EstimateOfferDetailResponseDto } from './dto/estimate-offer-detail.dto';
+import { OrderField } from '@/common/dto/cursor-pagination.dto';
 @Injectable()
 export class EstimateOfferService {
   constructor(
@@ -22,17 +22,8 @@ export class EstimateOfferService {
     private readonly offerRepository: Repository<EstimateOffer>,
     @InjectRepository(EstimateRequest)
     private readonly requestRepository: Repository<EstimateRequest>,
+    private readonly dataSource: DataSource,
   ) {}
-  /**
-   * 기사님의 확정 견적 수 계산
-   */
-  private async getConfirmedCountByMover(moverId: string): Promise<number> {
-    return this.offerRepository
-      .createQueryBuilder('offer')
-      .where('offer.moverId = :moverId', { moverId })
-      .andWhere('offer.isConfirmed = true')
-      .getCount();
-  }
 
   /**
    * 견적 요청 ID에 대한 오퍼 목록 조회
@@ -40,11 +31,9 @@ export class EstimateOfferService {
   async getPendingOffersByRequestId(
     estimateRequestId: string,
     userId?: string,
-  ): Promise<EstimateOfferResponseDto[]> {
+  ): Promise<EstimateOfferListResponseDto[]> {
     if (!estimateRequestId) {
-      throw new BadRequestException(
-        '견적 요청 ID 파라미터(requestId)가 필요합니다.',
-      );
+      throw new BadRequestException('견적 요청 ID 파라미터가 필요합니다.');
     }
 
     const request = await this.requestRepository.findOne({
@@ -60,8 +49,6 @@ export class EstimateOfferService {
       throw new ForbiddenException();
     }
 
-    // COMPLETED ,CANCELED,EXPIRED 일 경우 예외 처리 로직 추가
-    // 완료/취소/만료된 요청일 경우 예외 발생
     if (
       [
         RequestStatus.COMPLETED,
@@ -69,81 +56,49 @@ export class EstimateOfferService {
         RequestStatus.EXPIRED,
       ].includes(request.status)
     ) {
-      throw new BadRequestException(
-        '이사가 완료되었거나 취소된 견적 요청 ID 입니다.',
-      );
+      throw new BadRequestException('이미 완료되었거나 취소된 요청입니다.');
     }
 
-    const offers = await this.offerRepository
-      .createQueryBuilder('offer')
-      .leftJoinAndSelect('offer.mover', 'mover')
-      .leftJoinAndSelect('mover.likedCustomers', 'likedCustomers')
-      .leftJoinAndSelect('mover.reviews', 'reviews')
-      .leftJoinAndSelect('offer.estimateRequest', 'estimateRequest')
-      .where('offer.estimateRequestId = :estimateRequestId', {
-        estimateRequestId,
-      })
-      .andWhere('estimateRequest.status = :status', {
-        status: RequestStatus.PENDING, // PENDING 상태의 오퍼만 조회
-      })
-      .orderBy('offer.createdAt', 'DESC')
-      .getMany();
+    const offers = await this.offerRepository.find({
+      where: {
+        estimateRequest: {
+          id: estimateRequestId,
+          status: RequestStatus.PENDING,
+        },
+      },
+      relations: ['mover', 'mover.likedCustomers', 'estimateRequest'],
+      order: { createdAt: 'DESC' },
+    });
 
-    return await Promise.all(
-      offers.map(async (offer) => {
-        const mover = offer.mover;
-        const reviews = mover.reviews || [];
+    const moverViews = await this.dataSource
+      .getRepository(MoverProfileView)
+      .find({
+        where: { id: In(offers.map((o) => o.moverId)) },
+        select: [
+          'id',
+          OrderField.CONFIRMED_ESTIMATE_COUNT,
+          OrderField.REVIEW_COUNT,
+          OrderField.AVERAGE_RATING,
+          'like_count',
+        ],
+      });
 
-        const rating =
-          reviews.length > 0
-            ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-            : 0;
+    const moverViewMap = new Map(moverViews.map((view) => [view.id, view]));
 
-        const isLiked = userId
-          ? mover.likedCustomers?.some((like) => like.customer.id === userId)
-          : false;
+    return offers.map((offer) => {
+      const isLiked = offer.mover.likedCustomers?.some(
+        (like) => like.customer.id === userId,
+      );
+      const view = moverViewMap.get(offer.moverId);
 
-        const confirmedCount = await this.getConfirmedCountByMover(mover.id);
-
-        return plainToInstance(
-          EstimateOfferResponseDto,
-          {
-            estimateRequestId: offer.estimateRequestId,
-            moverId: offer.moverId,
-            price: offer.price,
-            status: offer.status,
-            requestStatus: offer.estimateRequest.status,
-            isTargeted: offer.isTargeted,
-            isConfirmed: offer.isConfirmed,
-            confirmedAt: offer.confirmedAt,
-            moveDate: offer.estimateRequest.moveDate,
-            moveType: offer.estimateRequest.moveType,
-            createdAt: offer.createdAt,
-            fromAddressMinimal: {
-              sido: offer.estimateRequest.fromAddress?.sido,
-              sigungu: offer.estimateRequest.fromAddress?.sigungu,
-            },
-            toAddressMinimal: {
-              sido: offer.estimateRequest.toAddress?.sido,
-              sigungu: offer.estimateRequest.toAddress?.sigungu,
-            },
-            confirmedCount: confirmedCount,
-            mover: {
-              nickname: mover.nickname,
-              imageUrl: mover.imageUrl,
-              experience: mover.experience,
-              serviceType: mover.serviceType,
-              intro: mover.intro,
-              rating: Number.isFinite(rating) ? Number(rating.toFixed(1)) : 0,
-              reviewCount: reviews.length,
-              likeCount: mover.likedCustomers?.length || 0,
-              isLiked,
-            },
-          },
-          { excludeExtraneousValues: true },
-        );
-      }),
-    );
+      return EstimateOfferListResponseDto.from(offer, isLiked ?? false, {
+        confirmedCount: view?.[OrderField.CONFIRMED_ESTIMATE_COUNT] ?? 0,
+        averageRating: view?.[OrderField.AVERAGE_RATING] ?? 0,
+        reviewCount: view?.[OrderField.REVIEW_COUNT] ?? 0,
+        likeCount: view?.like_count ?? 0,
+        includeAddress: true,
+      });
+    });
   }
 
   /**
@@ -153,13 +108,12 @@ export class EstimateOfferService {
     requestId: string,
     moverId: string,
     userId?: string,
-  ): Promise<EstimateOfferResponseDto> {
+  ): Promise<EstimateOfferDetailResponseDto> {
     const offer = await this.offerRepository.findOne({
       where: { estimateRequestId: requestId, moverId },
       relations: [
         'mover',
         'mover.likedCustomers',
-        'mover.reviews',
         'estimateRequest',
         'estimateRequest.customer',
         'estimateRequest.customer.user',
@@ -174,66 +128,27 @@ export class EstimateOfferService {
       throw new ForbiddenException('접근 권한이 없습니다.');
     }
 
-    const mover = offer.mover;
-    const reviews = mover.reviews || [];
+    const view = await this.dataSource.getRepository(MoverProfileView).findOne({
+      where: { id: moverId },
+      select: [
+        'id',
+        OrderField.CONFIRMED_ESTIMATE_COUNT,
+        OrderField.REVIEW_COUNT,
+        OrderField.AVERAGE_RATING,
+        'like_count',
+      ],
+    });
 
-    const rating =
-      reviews.length > 0
-        ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-        : 0;
-
-    const isLiked = userId
-      ? mover.likedCustomers?.some((like) => like.customer.id === userId)
-      : false;
-
-    const confirmedCount = await this.getConfirmedCountByMover(mover.id);
-
-    return plainToInstance(
-      EstimateOfferResponseDto,
-      {
-        estimateRequestId: offer.estimateRequestId,
-        moverId: offer.moverId,
-        price: offer.price,
-        status: offer.status,
-        requestStatus: offer.estimateRequest.status,
-        isTargeted: offer.isTargeted,
-        isConfirmed: offer.isConfirmed,
-        confirmedAt: offer.confirmedAt,
-        moveDate: offer.estimateRequest.moveDate,
-        moveType: offer.estimateRequest.moveType,
-        createdAt: offer.createdAt,
-        fromAddressFull: {
-          fullAddress: offer.estimateRequest.fromAddress?.fullAddress,
-        },
-        toAddressFull: {
-          fullAddress: offer.estimateRequest.toAddress?.fullAddress,
-        },
-        confirmedCount: confirmedCount,
-        mover: {
-          nickname: mover.nickname,
-          imageUrl: mover.imageUrl,
-          experience: mover.experience,
-          serviceType: mover.serviceType,
-          intro: mover.intro,
-          rating: Number.isFinite(rating) ? Number(rating.toFixed(1)) : 0,
-          reviewCount: reviews.length,
-          likeCount: mover.likedCustomers?.length || 0,
-          isLiked,
-        },
-      },
-      { excludeExtraneousValues: true },
+    const isLiked = offer.mover.likedCustomers?.some(
+      (like) => like.customer.id === userId,
     );
-  }
 
-  create(createEstimateOfferDto: CreateEstimateOfferDto) {
-    return 'This action adds a new estimateOffer';
-  }
-
-  update(id: number, updateEstimateOfferDto: UpdateEstimateOfferDto) {
-    return `This action updates a #${id} estimateOffer`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} estimateOffer`;
+    return EstimateOfferDetailResponseDto.from(offer, isLiked ?? false, {
+      confirmedCount: view?.[OrderField.CONFIRMED_ESTIMATE_COUNT] ?? 0,
+      averageRating: view?.[OrderField.AVERAGE_RATING] ?? 0,
+      reviewCount: view?.[OrderField.REVIEW_COUNT] ?? 0,
+      likeCount: view?.like_count ?? 0,
+      includeAddress: true,
+    });
   }
 }
