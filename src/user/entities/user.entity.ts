@@ -6,6 +6,7 @@ import { Notification } from 'src/notification/entities/notification.entity';
 import {
   Column,
   Entity,
+  Index,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -24,6 +25,7 @@ export enum Provider {
 }
 
 @Entity()
+@Index('IDX_UQ_USER_PROVIDER_EMAIL', ['provider', 'email'], { unique: true }) // provider와 email 조합이 유니크하도록 인덱스 설정
 export class User extends BaseTable {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -34,21 +36,21 @@ export class User extends BaseTable {
   @Column()
   name: string;
 
-  @Column({ unique: true })
-  phone: string;
-
-  @Column({ unique: true })
+  @Column()
   email: string;
+
+  @Column({ nullable: true })
+  phone?: string;
 
   @Exclude()
   @Column({ nullable: true })
   password?: string;
 
-  @Column({ type: 'enum', enum: Provider, default: Provider.LOCAL })
+  @Column({ type: 'enum', enum: Provider })
   provider: Provider;
 
   @Column({ nullable: true })
-  snsId?: string;
+  providerId?: string;
 
   @Column({ type: 'text', nullable: true })
   refreshToken?: string;

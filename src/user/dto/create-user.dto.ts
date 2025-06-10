@@ -6,7 +6,7 @@ import {
   Length,
   Matches,
 } from 'class-validator';
-import { Role } from '../entities/user.entity';
+import { Provider, Role } from '../entities/user.entity';
 
 export class CreateUserDto {
   @IsEnum(Role)
@@ -20,11 +20,12 @@ export class CreateUserDto {
   })
   name: string;
 
+  @IsOptional()
   @IsString()
   @Matches(/^010\d{8}$/, {
     message: '휴대폰 번호는 010으로 시작하는 11자리 숫자여야 합니다.',
   })
-  phone: string;
+  phone?: string;
 
   @IsEmail({}, { message: '유효한 이메일 주소를 입력해주세요.' })
   email: string;
@@ -40,4 +41,11 @@ export class CreateUserDto {
     },
   )
   password?: string;
+
+  @IsEnum(Provider)
+  provider: Provider; // 로그인 제공자 (예: 'local', 'naver', 'kakao', 'google' 등)
+
+  @IsString()
+  @IsOptional()
+  providerId?: string; // 소셜 로그인 제공자의 고유 ID (예: 네이버의 경우 사용자 ID)
 }
