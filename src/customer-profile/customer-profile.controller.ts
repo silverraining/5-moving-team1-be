@@ -5,6 +5,11 @@ import { UpdateCustomerProfileDto } from './dto/update-customer-profile.dto';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
 import { RBAC } from '@/auth/decorator/rbac.decorator';
 import { Role } from '@/user/entities/user.entity';
+import {
+  ApiCreateCustomerProfile,
+  ApiGetMyCustomerProfile,
+  ApiUpdateMyCustomerProfile,
+} from './docs/swagger';
 
 @Controller('customer')
 @RBAC(Role.CUSTOMER)
@@ -14,6 +19,7 @@ export class CustomerProfileController {
   ) {}
 
   @Post()
+  @ApiCreateCustomerProfile()
   create(
     @Body() createCustomerProfileDto: CreateCustomerProfileDto,
     @UserInfo() userInfo: UserInfo,
@@ -25,14 +31,16 @@ export class CustomerProfileController {
   }
 
   @Get('me')
+  @ApiGetMyCustomerProfile()
   findOne(@UserInfo() userInfo: UserInfo) {
     return this.customerProfileService.findOne(userInfo.sub);
   }
 
   @Patch('me')
+  @ApiUpdateMyCustomerProfile()
   update(
-    @Body() updateCustomerProfileDto: UpdateCustomerProfileDto,
     @UserInfo() userInfo: UserInfo,
+    @Body() updateCustomerProfileDto: UpdateCustomerProfileDto,
   ) {
     return this.customerProfileService.update(
       userInfo.sub,

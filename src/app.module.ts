@@ -26,10 +26,19 @@ import { DatabaseModule } from './database/database.module';
 import { databaseValidationSchema } from './database/database.config';
 
 const appValidationSchema = Joi.object({
+  // 애플리케이션 실행 환경 설정 ('dev' 또는 'prod'만 허용)
   ENV: Joi.string().valid('dev', 'prod').required(),
+
+  // bcrypt 관련 환경 변수
   HASH_ROUNDS: Joi.number().required(),
+
+  // 토큰 관련 환경 변수
   ACCESS_TOKEN_SECRET: Joi.string().required(),
   REFRESH_TOKEN_SECRET: Joi.string().required(),
+
+  // 소셜 로그인 관련 환경 변수
+  NAVER_CLIENT_ID: Joi.string().required(),
+  NAVER_CLIENT_SECRET: Joi.string().required(),
 }).concat(databaseValidationSchema);
 
 @Module({
@@ -83,8 +92,10 @@ export class AppModule implements NestModule {
     consumer
       .apply(BearerTokenMiddleware)
       .exclude(
-        { path: 'auth/login/local', method: RequestMethod.POST }, /// 로그인 제외
         { path: 'auth/register', method: RequestMethod.POST }, /// 회원가입 제외
+        { path: 'auth/login/local', method: RequestMethod.POST }, /// 로컬 로그인 제외
+        { path: 'auth/login/:social', method: RequestMethod.GET }, /// 모든 소셜 로그인 (:social 매개변수 사용) 제외
+        { path: 'auth/callback/:social', method: RequestMethod.GET }, /// 모든 소셜 콜백 (:social 매개변수 사용) 제외
       )
       .forRoutes('*'); /// 모든 라우트에 미들웨어 적용
   }

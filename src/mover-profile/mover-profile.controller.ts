@@ -9,6 +9,7 @@ import { Public } from 'src/auth/decorator/public.decorator';
 import { GetMoverProfilesDto } from './dto/get-mover-profiles.dto';
 import {
   ApiCreateMoverProfile,
+  ApiGetMoverProfileById,
   ApiGetMoverProfiles,
   ApiGetMyMoverProfile,
   ApiUpdateMyMoverProfile,
@@ -50,6 +51,7 @@ export class MoverProfileController {
 
   @Get(':id')
   @Public()
+  @ApiGetMoverProfileById()
   findOne(@Param('id') id: string) {
     return this.moverProfileService.findOne(id);
   }

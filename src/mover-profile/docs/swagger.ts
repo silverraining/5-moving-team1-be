@@ -4,6 +4,7 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiParam,
 } from '@nestjs/swagger';
 import { CreateMoverProfileDto } from '../dto/create-mover-profile.dto';
 import { UpdateMoverProfileDto } from '../dto/update-mover-profile.dto';
@@ -17,6 +18,7 @@ import {
 } from '@/common/docs/response.swagger';
 import {
   MessageSchema,
+  MoverProfileDetailSchema,
   MoverProfileListSchema,
   MoverProfileSchema,
 } from '@/common/docs/schema.swagger';
@@ -170,7 +172,7 @@ export function ApiGetMyMoverProfile() {
     ApiResponse(
       CODE_200_SUCCESS({
         description: '본인의 [mover] 프로필 조회 성공한 경우',
-        schema: MoverProfileSchema,
+        schema: MoverProfileDetailSchema,
       }),
     ),
     ApiResponse(CODE_401_RESPONSES),
@@ -178,6 +180,36 @@ export function ApiGetMyMoverProfile() {
       CODE_404_NOT_FOUND({
         description: '본인의 [mover] 프로필이 존재하지 않는 경우',
         message: '[mover] 프로필을 찾을 수 없습니다.',
+      }),
+    ),
+  );
+}
+
+export function ApiGetMoverProfileById() {
+  return applyDecorators(
+    ApiOperation({
+      summary: '[mover] 특정 프로필 조회',
+      description: `
+- 특정 기사님의 [mover] 프로필 상세 정보를 조회합니다.
+- 리뷰 정보, 통계 데이터 (리뷰 수, 평점, 확정된 견적 수, 좋아요 수)와 함께 반환됩니다.`,
+    }),
+    ApiParam({
+      name: 'id',
+      required: true,
+      description: '조회할 [mover]의 프로필 ID',
+      example: '8a12f8b9-1e4b-49f2-8302-4c5c8cbcb488',
+    }),
+    ApiResponse(
+      CODE_200_SUCCESS({
+        description: '[mover] 프로필 조회 성공',
+        schema: MoverProfileDetailSchema,
+      }),
+    ),
+    ApiResponse(CODE_401_RESPONSES),
+    ApiResponse(
+      CODE_404_NOT_FOUND({
+        description: '[mover] 프로필을 찾을 수 없는 경우',
+        message: '기사님의 프로필을 찾을 수 없습니다.',
       }),
     ),
   );

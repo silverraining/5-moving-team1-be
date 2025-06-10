@@ -1,11 +1,12 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/user/entities/user.entity';
+import { Provider, Role, User } from 'src/user/entities/user.entity';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
@@ -13,7 +14,6 @@ import { JwtService } from '@nestjs/jwt';
 import { envVariableKeys } from 'src/common/const/env.const';
 import { JwtPayload } from 'src/common/types/payload.type';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
-import { UpdateUserDto } from '@/user/dto/update-user.dto';
 import {
   invalidRefreshTokenException,
   noRefreshTokenException,
@@ -47,64 +47,126 @@ export class AuthService {
 
   /**
    * 회원가입
-   * @param createUserDto - 유저 정보 (이메일, 비밀번호, 이름 등)
+   * @param createUserDto - 유저 정보 (역할, 이메일, 비밀번호, 이름 등)
    * @returns 생성된 사용자 엔티티
    * @throws BadRequestException - 비밀번호 누락 또는 중복 이메일
    */
   async register(createUserDto: CreateUserDto) {
-    const { email, password, ...userData } = createUserDto;
+    const { email, password, provider, ...userData } = createUserDto;
 
-    if (!password) {
-      throw new BadRequestException('잘못된 회원가입 요청입니다!');
-    }
-
-    const user = await this.userRepository.findOneBy({ email });
+    const user = await this.userRepository.findOne({
+      where: { email, provider },
+    });
 
     if (user) {
       throw new BadRequestException('이미 가입한 이메일 입니다!');
     }
 
     const HASH_ROUNDS = this.configService.get<number>('HASH_ROUNDS') ?? 10;
-    const hashedPassword = await bcrypt.hash(password, HASH_ROUNDS);
+    const hashedPassword = password
+      ? await bcrypt.hash(password, HASH_ROUNDS)
+      : null;
 
-    const newUser = await this.userRepository.save({
+    await this.userRepository.save({
       email,
       password: hashedPassword,
+      provider,
       ...userData,
     });
 
-    return newUser;
+    const newUser = await this.userRepository.findOneBy({ email, provider });
+
+    const { password: _, ...newUserData } = newUser; // password 제외한 사용자 정보
+
+    return newUserData;
   }
+
   /**
    * 로그인 처리 및 토큰 발급
    *
-   * @param user - JWT payload (로그인된 사용자 정보)
+   * @param payload - JWT payload (로그인된 사용자 정보)
    * @returns accessToken, refreshToken
    */
-  async login(user: JwtPayload) {
-    const refreshToken = await this.issueToken(user, true);
-    const accessToken = await this.issueToken(user, false);
-    await this.saveRefreshToken(user.sub, refreshToken);
+  async login(payload: JwtPayload) {
+    // 사용자 조회
+    const user = await this.userRepository.findOne({
+      where: { id: payload.sub },
+      relations: ['customerProfile', 'moverProfile'],
+    });
 
-    return { refreshToken, accessToken };
+    const { email, name, phone, role, provider } = user; // relations 제외한 사용자 정보
+
+    // 프로필 이미지 URL만 가져오기
+    const profile = user.moverProfile ||
+      user.customerProfile || { imageUrl: null }; // MoverProfile 또는 CustomerProfile이 없을 경우 빈 객체로 초기화
+    const imageUrl = profile.imageUrl;
+
+    try {
+      // 토큰 발급
+      const refreshToken = await this.issueToken(payload, true);
+      const accessToken = await this.issueToken(payload, false);
+
+      // 리프레쉬 토큰 저장
+      await this.saveRefreshToken(payload.sub, refreshToken);
+
+      // 로그인 성공 시 토큰과 사용자 정보 반환
+      return {
+        refreshToken,
+        accessToken,
+        user: { email, name, phone, role, imageUrl, provider },
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `로그인 처리 중 오류가 발생했습니다: ${error.message}`,
+      );
+    }
   }
 
   /**
-   * 로컬 로그인 시 사용자 인증 처리
+   * 로그인 시 사용자 인증 처리
+   * @param role - 요청된 사용자 역할 (Role.MOVER 또는 Role.CUSTOMER)
+   * @param provider - 소셜 로그인 제공자 (Provider.LOCAL, Provider.GOOGLE 등)
    * @param email - 사용자 이메일
    * @param password - 사용자 비밀번호
    * @returns 사용자 엔티티
    * @throws BadRequestException - 유저가 없거나 비밀번호 불일치
    */
-  async authenticate(email: string, password: string) {
-    const user = await this.userRepository.findOneBy({ email });
+  async authenticate(
+    role: Role,
+    provider: Provider,
+    email: string,
+    password?: string,
+  ) {
+    // 사용자 조회
+    const user = await this.userRepository.findOne({
+      where: { email, provider },
+    });
 
-    if (!user || !user.password) {
+    if (!user) {
       throw new BadRequestException('잘못된 로그인 정보 입니다!');
     }
 
-    const passOK = await bcrypt.compare(password, user.password);
+    // 역할 검증
+    const isMover = role === Role.MOVER;
+    if (user.role !== role) {
+      const roleLabel = isMover ? '기사님' : '고객님';
+      throw new BadRequestException(`${email}은 ${roleLabel} 계정입니다!`);
+    }
 
+    // 소셜 로그인
+    if (!password) {
+      return user; // 비밀번호 확인 없이 반환
+    }
+
+    // 로컬 로그인: 소셜 로그인으로 가입된 경우 예외 처리
+    if (!user.password) {
+      throw new BadRequestException(
+        `${user.provider}로 가입된 계정입니다. 소셜 로그인을 이용해주세요.`,
+      );
+    }
+
+    // 로컬 로그인: 비밀번호 확인
+    const passOK = await bcrypt.compare(password, user.password);
     if (!passOK) {
       throw new BadRequestException('잘못된 로그인 정보 입니다!');
     }
@@ -183,10 +245,11 @@ export class AuthService {
       }
 
       return user;
-    } catch (err) {
+    } catch (_error) {
       throw tokenVerificationFailedException;
     }
   }
+
   /**
    * 리프레시 토큰을 사용해 accessToken 재발급
    *
@@ -233,34 +296,5 @@ export class AuthService {
       message: '로그아웃 되었습니다.',
       action: 'removeTokens', // 프론트에서 토큰 삭제 필요
     };
-  }
-
-  /**
-   *  사용자의 기본 정보(이름, 전화번호, 비밀번호)수정
-   *
-   * @param userId - 수정할 사용자 본인의 ID
-   * @param dto - update-user DTO (이름, 전화번호, 비밀번호)
-   *
-   * @returns 수정 완료 메시지 객체
-   *
-   * @throws  NotFoundException - 사용자를 찾을 수 없는 경우
-   */
-
-  async updateMyInfo(userId: string, dto: UpdateUserDto) {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
-    if (!user) {
-      throw new NotFoundException('사용자를 찾을 수 없습니다.');
-    }
-
-    if (dto.password) {
-      const salt = await bcrypt.genSalt();
-      user.password = await bcrypt.hash(dto.password, salt);
-    }
-
-    if (dto.name) user.name = dto.name;
-    if (dto.phone) user.phone = dto.phone;
-
-    await this.userRepository.save(user);
-    return { message: '회원정보가 성공적으로 수정되었습니다.' };
   }
 }

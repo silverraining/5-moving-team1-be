@@ -100,3 +100,25 @@ export const CODE_404_NOT_FOUND = ({ description, message }: CODE_404_TYPE) => {
     },
   };
 };
+
+// 500
+type CODE_500_TYPE = {
+  description?: string;
+  message?: string;
+};
+export const CODE_500_INTERNAL_SERVER_ERROR = ({
+  description,
+  message,
+}: CODE_500_TYPE) => {
+  return {
+    status: 500,
+    description: description || '서버 내부 오류',
+    schema: {
+      example: {
+        statusCode: 500,
+        message: message || '서버 내부 오류가 발생했습니다.',
+        error: 'Internal Server Error',
+      },
+    },
+  };
+};
