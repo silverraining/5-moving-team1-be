@@ -84,6 +84,13 @@ export function ApiGetMyEstimateHistory() {
       type: EstimateRequestResponseDto,
       isArray: true,
     }),
-    ApiResponse(CODE_401_RESPONSES),
+    ApiResponse({
+      status: 401,
+      description: '인증되지 않은 사용자',
+    }),
+    ApiResponse({
+      status: 403,
+      description: '고객 권한이 없는 사용자',
+    }),
   );
 }
