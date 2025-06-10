@@ -22,6 +22,7 @@ export type Address = {
 export enum RequestStatus {
   PENDING = 'PENDING', // 견적 제안 대기 중
   CONFIRMED = 'CONFIRMED', // 고객이 기사님 1명 확정
+  REJECTED = 'REJECTED', // 기사님이 반려함
   COMPLETED = 'COMPLETED', // 이사 완료
   CANCELED = 'CANCELED', // 고객이 요청 취소
   EXPIRED = 'EXPIRED', // 이사일 지나도록 확정 없음

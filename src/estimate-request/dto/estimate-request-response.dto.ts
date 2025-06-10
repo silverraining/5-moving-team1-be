@@ -1,59 +1,57 @@
-import { ServiceRegionMap, ServiceTypeMap } from '@/common/const/service.const';
 import { Expose, Type } from 'class-transformer';
-import { Address } from 'src/estimate-request/entities/estimate-request.entity';
+import { ServiceType } from '@/common/const/service.const';
+import { EstimateOfferDetailResponseDto } from '@/estimate-offer/dto/estimate-offer-detail.dto';
+import { EstimateRequest } from '../entities/estimate-request.entity';
 
-export class UserSummaryDto {
-  @Expose()
-  id: string;
-
-  @Expose()
-  name: string;
-}
-
-export class CustomerSummaryDto {
-  @Expose()
-  id: string;
-
-  @Expose()
-  imageUrl: string | null;
-
-  @Expose()
-  serviceType: ServiceTypeMap;
-
-  @Expose()
-  serviceRegion: ServiceRegionMap;
-
-  @Type(() => UserSummaryDto)
-  @Expose()
-  user: UserSummaryDto;
-}
+type FullAddress = {
+  fullAddress: string;
+};
 
 export class EstimateRequestResponseDto {
   @Expose()
   id: string;
 
   @Expose()
-  moveType: string;
+  createdAt: Date;
 
   @Expose()
-  status: string;
+  moveType: ServiceType;
 
   @Expose()
   moveDate: Date;
 
   @Expose()
-  fromAddress: Address;
+  fromAddressFull: FullAddress;
 
   @Expose()
-  toAddress: Address;
+  toAddressFull: FullAddress;
 
   @Expose()
-  targetMoverIds: string[] | null;
+  @Type(() => EstimateOfferDetailResponseDto)
+  estimateOffers: EstimateOfferDetailResponseDto[];
 
-  @Expose()
-  confirmedOfferId: string | null;
-
-  @Type(() => CustomerSummaryDto)
-  @Expose()
-  customer: CustomerSummaryDto;
+  /**
+   * 정적 팩토리 메서드
+   * @param request EstimateRequest 엔티티
+   * @param offers 해당 요청에 연결된 오퍼 응답 DTO 배열
+   * @returns EstimateRequestResponseDto
+   */
+  static from(
+    request: EstimateRequest,
+    offers: EstimateOfferDetailResponseDto[],
+  ): EstimateRequestResponseDto {
+    return Object.assign(new EstimateRequestResponseDto(), {
+      id: request.id,
+      createdAt: request.createdAt,
+      moveType: request.moveType,
+      moveDate: request.moveDate,
+      fromAddressFull: {
+        fullAddress: request.fromAddress.fullAddress,
+      },
+      toAddressFull: {
+        fullAddress: request.toAddress.fullAddress,
+      },
+      estimateOffers: offers,
+    });
+  }
 }
