@@ -6,7 +6,6 @@ import { User } from 'src/user/entities/user.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { LocalStrategy } from './strategy/local.strategy';
 import { PassportModule } from '@nestjs/passport';
-import { NaverStrategy } from './strategy/naver.strategy';
 import { UserModule } from '@/user/user.module';
 
 @Module({
@@ -17,7 +16,7 @@ import { UserModule } from '@/user/user.module';
     JwtModule.register({}),
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, NaverStrategy],
+  providers: [AuthService, LocalStrategy],
   exports: [AuthService, PassportModule, JwtModule],
 })
 export class AuthModule {}
