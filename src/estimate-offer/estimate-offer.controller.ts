@@ -6,28 +6,38 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { EstimateOfferService } from './estimate-offer.service';
 import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
 import { UpdateEstimateOfferDto } from './dto/update-estimate-offer.dto';
-
+import { UserInfo } from '@/user/decorator/user-info.decorator';
+import { ApiGetEstimateOffers } from './docs/swagger';
+import { ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 @Controller('estimate-offer')
 export class EstimateOfferController {
   constructor(private readonly estimateOfferService: EstimateOfferService) {}
 
+  @Get(':requestId')
+  @ApiBearerAuth()
+  @ApiParam({
+    name: 'requestId',
+    description: '견적 요청 ID (UUID)',
+    type: String,
+  })
+  @ApiGetEstimateOffers()
+  async getOffersByEstimateRequestId(
+    @Param('requestId') requestId: string,
+    @UserInfo() userInfo: UserInfo,
+  ) {
+    return this.estimateOfferService.findByEstimateRequestId(
+      requestId,
+      userInfo.sub,
+    );
+  }
   @Post()
   create(@Body() createEstimateOfferDto: CreateEstimateOfferDto) {
     return this.estimateOfferService.create(createEstimateOfferDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.estimateOfferService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.estimateOfferService.findOne(+id);
   }
 
   @Patch(':id')

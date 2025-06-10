@@ -6,6 +6,10 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.enableCors({
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3000', // 프론트엔드 주소
+    credentials: true, // 쿠키, 인증 헤더 포함 허용
+  });
   //모든 라우트에 /api prefix 적용
   app.setGlobalPrefix('api');
 
