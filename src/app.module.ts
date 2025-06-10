@@ -21,14 +21,17 @@ import { ForbiddenExceptionFilter } from './common/filter/forbidden.filter';
 import { RbacGuard } from './auth/guard/rbac.guard';
 import { QueryFailedExceptionFilter } from './common/filter/query-failed.filter';
 import { ResponseTimeInterceptor } from './common/interceptor/response-time.interceptor';
+import { S3Module } from './s3/s3.module';
 import { DatabaseModule } from './database/database.module';
 import { databaseValidationSchema } from './database/database.config';
+
 const appValidationSchema = Joi.object({
   ENV: Joi.string().valid('dev', 'prod').required(),
   HASH_ROUNDS: Joi.number().required(),
   ACCESS_TOKEN_SECRET: Joi.string().required(),
   REFRESH_TOKEN_SECRET: Joi.string().required(),
 }).concat(databaseValidationSchema);
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -49,6 +52,8 @@ const appValidationSchema = Joi.object({
     EstimateRequestModule,
     EstimateOfferModule,
     ReviewModule,
+    AuthModule,
+    S3Module,
   ],
   providers: [
     {
