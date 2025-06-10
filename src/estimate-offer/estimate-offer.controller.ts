@@ -1,15 +1,7 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { EstimateOfferService } from './estimate-offer.service';
-import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
-import { UpdateEstimateOfferDto } from './dto/update-estimate-offer.dto';
+// import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
+// import { UpdateEstimateOfferDto } from './dto/update-estimate-offer.dto';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
 import {
   ApiGetEstimateOfferDetail,
@@ -55,21 +47,21 @@ export class EstimateOfferController {
     );
   }
 
-  @Post()
-  create(@Body() createEstimateOfferDto: CreateEstimateOfferDto) {
-    return this.estimateOfferService.create(createEstimateOfferDto);
-  }
+  // @Post()
+  // create(@Body() createEstimateOfferDto: CreateEstimateOfferDto) {
+  //   return this.estimateOfferService.create(createEstimateOfferDto);
+  // }
 
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateEstimateOfferDto: UpdateEstimateOfferDto,
-  ) {
-    return this.estimateOfferService.update(+id, updateEstimateOfferDto);
-  }
+  // @Patch(':id')
+  // update(
+  //   @Param('id') id: string,
+  //   @Body() updateEstimateOfferDto: UpdateEstimateOfferDto,
+  // ) {
+  //   return this.estimateOfferService.update(+id, updateEstimateOfferDto);
+  // }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.estimateOfferService.remove(+id);
-  }
+  // @Delete(':id')
+  // remove(@Param('id') id: string) {
+  //   return this.estimateOfferService.remove(+id);
+  // }
 }
