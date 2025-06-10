@@ -47,8 +47,7 @@ export class AuthService {
 
   /**
    * 회원가입
-   * @param role - 사용자 역할 (Role.MOVER 또는 Role.CUSTOMER)
-   * @param createUserDto - 유저 정보 (이메일, 비밀번호, 이름 등)
+   * @param createUserDto - 유저 정보 (역할, 이메일, 비밀번호, 이름 등)
    * @returns 생성된 사용자 엔티티
    * @throws BadRequestException - 비밀번호 누락 또는 중복 이메일
    */
