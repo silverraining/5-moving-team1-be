@@ -6,15 +6,14 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { EstimateOffer } from './entities/estimate-offer.entity';
 import { In, Repository } from 'typeorm';
-import { EstimateOfferListResponseDto } from './dto/estimate-offer-list.response.dto';
 import { DataSource } from 'typeorm';
 import {
   EstimateRequest,
   RequestStatus,
 } from '@/estimate-request/entities/estimate-request.entity';
 import { MoverProfileView } from '@/mover-profile/view/mover-profile.view';
-import { EstimateOfferDetailResponseDto } from './dto/estimate-offer-detail.dto';
 import { OrderField } from '@/common/dto/cursor-pagination.dto';
+import { EstimateOfferResponseDto } from './dto/estimate-offer-response.dto';
 @Injectable()
 export class EstimateOfferService {
   constructor(
@@ -31,7 +30,7 @@ export class EstimateOfferService {
   async getPendingOffersByRequestId(
     estimateRequestId: string,
     userId?: string,
-  ): Promise<EstimateOfferListResponseDto[]> {
+  ): Promise<EstimateOfferResponseDto[]> {
     if (!estimateRequestId) {
       throw new BadRequestException('견적 요청 ID 파라미터가 필요합니다.');
     }
@@ -91,13 +90,19 @@ export class EstimateOfferService {
       );
       const view = moverViewMap.get(offer.moverId);
 
-      return EstimateOfferListResponseDto.from(offer, isLiked ?? false, {
+      const dto = EstimateOfferResponseDto.from(offer, isLiked ?? false, {
         confirmedCount: view?.[OrderField.CONFIRMED_ESTIMATE_COUNT] ?? 0,
         averageRating: view?.[OrderField.AVERAGE_RATING] ?? 0,
         reviewCount: view?.[OrderField.REVIEW_COUNT] ?? 0,
         likeCount: view?.like_count ?? 0,
-        includeAddress: true,
+        includeFullAddress: false,
+        includeMinimalAddress: true,
       });
+
+      return {
+        ...dto,
+        fromAddressMinimal: dto.fromAddressMinimal ?? '',
+      } as EstimateOfferResponseDto;
     });
   }
 
@@ -108,7 +113,7 @@ export class EstimateOfferService {
     requestId: string,
     moverId: string,
     userId?: string,
-  ): Promise<EstimateOfferDetailResponseDto> {
+  ): Promise<EstimateOfferResponseDto> {
     const offer = await this.offerRepository.findOne({
       where: { estimateRequestId: requestId, moverId },
       relations: [
@@ -143,12 +148,18 @@ export class EstimateOfferService {
       (like) => like.customer.id === userId,
     );
 
-    return EstimateOfferDetailResponseDto.from(offer, isLiked ?? false, {
+    const dto = EstimateOfferResponseDto.from(offer, isLiked ?? false, {
       confirmedCount: view?.[OrderField.CONFIRMED_ESTIMATE_COUNT] ?? 0,
       averageRating: view?.[OrderField.AVERAGE_RATING] ?? 0,
       reviewCount: view?.[OrderField.REVIEW_COUNT] ?? 0,
       likeCount: view?.like_count ?? 0,
-      includeAddress: true,
+      includeFullAddress: true,
+      includeMinimalAddress: true,
     });
+
+    return {
+      ...dto,
+      fromAddressMinimal: dto.fromAddressMinimal ?? '',
+    } as EstimateOfferResponseDto;
   }
 }

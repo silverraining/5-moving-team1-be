@@ -1,6 +1,6 @@
 import { Expose, Type } from 'class-transformer';
 import { ServiceType } from '@/common/const/service.const';
-import { EstimateOfferDetailResponseDto } from '@/estimate-offer/dto/estimate-offer-detail.dto';
+import { EstimateOfferResponseDto } from '@/estimate-offer/dto/estimate-offer-response.dto';
 import { EstimateRequest } from '../entities/estimate-request.entity';
 
 type FullAddress = {
@@ -27,8 +27,8 @@ export class EstimateRequestResponseDto {
   toAddressFull: FullAddress;
 
   @Expose()
-  @Type(() => EstimateOfferDetailResponseDto)
-  estimateOffers: EstimateOfferDetailResponseDto[];
+  @Type(() => EstimateOfferResponseDto)
+  estimateOffers: EstimateOfferResponseDto[];
 
   /**
    * 정적 팩토리 메서드
@@ -38,7 +38,7 @@ export class EstimateRequestResponseDto {
    */
   static from(
     request: EstimateRequest,
-    offers: EstimateOfferDetailResponseDto[],
+    offers: EstimateOfferResponseDto[],
   ): EstimateRequestResponseDto {
     return Object.assign(new EstimateRequestResponseDto(), {
       id: request.id,

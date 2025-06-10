@@ -5,12 +5,11 @@ import {
   ApiParam,
   ApiResponse,
 } from '@nestjs/swagger';
-import { EstimateOfferListResponseDto } from '@/estimate-offer/dto/estimate-offer-list.response.dto';
 import {
   CODE_400_BAD_REQUEST,
   CODE_401_RESPONSES,
 } from '@/common/docs/response.swagger';
-import { EstimateOfferDetailResponseDto } from '../dto/estimate-offer-detail.dto';
+import { EstimateOfferResponseDto } from '../dto/estimate-offer-response.dto';
 
 export function ApiGetPendingEstimateOffers() {
   return applyDecorators(
@@ -30,7 +29,7 @@ export function ApiGetPendingEstimateOffers() {
     ApiResponse({
       status: 200,
       description: '대기 중인 견적 목록 조회 성공',
-      type: EstimateOfferListResponseDto,
+      type: EstimateOfferResponseDto,
       isArray: true,
     }),
     ApiResponse({
@@ -66,7 +65,7 @@ export function ApiGetEstimateOfferDetail() {
     ApiResponse({
       status: 200,
       description: '견적 상세 조회 성공',
-      type: EstimateOfferDetailResponseDto,
+      type: EstimateOfferResponseDto,
     }),
     ApiResponse(CODE_400_BAD_REQUEST([])),
     ApiResponse(CODE_401_RESPONSES),
