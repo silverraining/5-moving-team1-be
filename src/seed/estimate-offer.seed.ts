@@ -37,7 +37,7 @@ export const seedEstimateOffers = async (dataSource: DataSource) => {
         mover: mover,
         price: price,
         comment: `${mover.nickname}의 견적 제안입니다.`,
-        status: OfferStatus.SUBMITTED,
+        status: OfferStatus.PENDING,
         isTargeted: false,
         isConfirmed: false,
         confirmedAt: new Date(),
