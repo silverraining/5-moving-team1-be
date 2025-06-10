@@ -25,8 +25,9 @@ export class EstimateOfferService {
   ) {}
 
   /**
-   * 견적 요청 ID에 대한 오퍼 목록 조회
+   * 대기중인 견적 요청 ID에 대한 오퍼 목록 조회
    */
+  //TODO: 무한스크롤 페이지네이션 구현
   async getPendingOffersByRequestId(
     estimateRequestId: string,
     userId?: string,
@@ -154,7 +155,7 @@ export class EstimateOfferService {
       reviewCount: view?.[OrderField.REVIEW_COUNT] ?? 0,
       likeCount: view?.like_count ?? 0,
       includeFullAddress: true,
-      includeMinimalAddress: true,
+      includeMinimalAddress: false,
     });
 
     return {
