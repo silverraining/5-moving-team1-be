@@ -12,13 +12,12 @@ import {
 } from 'typeorm';
 
 export enum OfferStatus {
-  REQUESTED = 'REQUESTED', // 고객이 견적 요청 보냄 (기사 입장에선 대기 중)
-  SUBMITTED = 'SUBMITTED', // 기사님이 견적서 보냄
-  REJECTED = 'REJECTED', // 기사님이 반려함 -> TODO: 이거 estimate-request 상태인것 같아요
+  // SUBMITTED = 'SUBMITTED', // 기사님이 견적서 보냄 //TODO: 이거 주석처리했더니 이미 DB에 SUBMITTED 로 저장된 상태가 있어서 에러 발생해서 우선 살려둠
+  //중간테이블 만드는 부분 내일 논의 후에 확정되면 마이그레이션 진행 해야할거같아요.
+  PENDING = 'PENDING', // 고객이 견적 요청 보냄 (기사 입장에선 대기 중)
   CONFIRMED = 'CONFIRMED', // 고객이 확정함
   CANCELED = 'CANCELED', // 고객이 다른 기사 선택 → 자동 취소
   COMPLETED = 'COMPLETED',
-  PENDING = 'PENDING', // 이사 완료
 }
 
 @Entity()
@@ -65,6 +64,7 @@ export class EstimateOffer extends BaseTable {
   @ManyToOne(() => MoverProfile, (m) => m.estimateOffers)
   @JoinColumn({ name: 'moverId' })
   mover: MoverProfile;
+  id: string;
 }
 
 /**
