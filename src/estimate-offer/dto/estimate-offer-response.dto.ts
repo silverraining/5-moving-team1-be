@@ -1,7 +1,7 @@
+import { AddressDto } from '@/common/dto/address.dto';
 import { EstimateOffer } from '../entities/estimate-offer.entity';
 
-// 견적 목록 조회 시 사용
-export class EstimateOfferListResponseDto {
+export class EstimateOfferResponseDto {
   estimateRequestId: string;
   moverId: string;
   price: number;
@@ -14,16 +14,15 @@ export class EstimateOfferListResponseDto {
   moveType: string;
   createdAt: Date;
 
-  fromAddressMinimal: { sido: string; sigungu: string };
-  toAddressMinimal: { sido: string; sigungu: string };
-  fromAddressFull?: { fullAddress: string };
-  toAddressFull?: { fullAddress: string };
+  fromAddress?: AddressDto;
+  toAddress?: AddressDto;
+  fromAddressMinimal?: { sido: string; sigungu: string };
+  toAddressMinimal?: { sido: string; sigungu: string };
 
   mover: {
     nickname: string;
     imageUrl?: string;
     experience: number;
-
     intro: string;
     rating: number;
     reviewCount: number;
@@ -40,10 +39,11 @@ export class EstimateOfferListResponseDto {
       averageRating: number;
       reviewCount: number;
       likeCount: number;
-      includeAddress?: boolean;
+      includeFullAddress?: boolean;
+      includeMinimalAddress?: boolean;
     },
-  ): EstimateOfferListResponseDto {
-    const dto = new EstimateOfferListResponseDto();
+  ): EstimateOfferResponseDto {
+    const dto = new EstimateOfferResponseDto();
 
     dto.estimateRequestId = offer.estimateRequestId;
     dto.moverId = offer.moverId;
@@ -59,12 +59,19 @@ export class EstimateOfferListResponseDto {
     dto.moveType = offer.estimateRequest.moveType;
     dto.createdAt = offer.createdAt;
 
-    if (options.includeAddress) {
-      dto.fromAddressFull = {
-        fullAddress: offer.estimateRequest.fromAddress.fullAddress,
+    if (options.includeFullAddress) {
+      dto.fromAddress = AddressDto.from(offer.estimateRequest.fromAddress);
+      dto.toAddress = AddressDto.from(offer.estimateRequest.toAddress);
+    }
+
+    if (options.includeMinimalAddress) {
+      dto.fromAddressMinimal = {
+        sido: offer.estimateRequest.fromAddress.sido,
+        sigungu: offer.estimateRequest.fromAddress.sigungu,
       };
-      dto.toAddressFull = {
-        fullAddress: offer.estimateRequest.toAddress.fullAddress,
+      dto.toAddressMinimal = {
+        sido: offer.estimateRequest.toAddress.sido,
+        sigungu: offer.estimateRequest.toAddress.sigungu,
       };
     }
 
@@ -72,7 +79,6 @@ export class EstimateOfferListResponseDto {
       nickname: offer.mover.nickname,
       imageUrl: offer.mover.imageUrl,
       experience: offer.mover.experience,
-
       intro: offer.mover.intro,
       rating: options.averageRating,
       reviewCount: options.reviewCount,

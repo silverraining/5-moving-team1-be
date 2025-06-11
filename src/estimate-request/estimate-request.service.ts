@@ -14,7 +14,7 @@ import { CustomerProfile } from '@/customer-profile/entities/customer-profile.en
 import { DataSource, In, Repository } from 'typeorm';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
 
-import { EstimateOfferDetailResponseDto } from '@/estimate-offer/dto/estimate-offer-detail.dto';
+import { EstimateOfferResponseDto } from '@/estimate-offer/dto/estimate-offer-response.dto';
 import { MoverProfileView } from '@/mover-profile/view/mover-profile.view';
 @Injectable()
 export class EstimateRequestService {
@@ -119,12 +119,12 @@ export class EstimateRequestService {
           );
           const moverView = moverViewMap.get(mover.id);
 
-          return EstimateOfferDetailResponseDto.from(offer, isLiked ?? false, {
+          return EstimateOfferResponseDto.from(offer, isLiked ?? false, {
             confirmedCount: moverView?.confirmed_estimate_count ?? 0,
             averageRating: moverView?.average_rating ?? 0,
             reviewCount: moverView?.review_count ?? 0,
             likeCount: moverView?.like_count ?? 0,
-            includeAddress: true,
+            includeFullAddress: true,
           });
         });
 
