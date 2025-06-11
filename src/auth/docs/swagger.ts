@@ -11,56 +11,42 @@ import {
   CODE_201_CREATED,
   CODE_400_BAD_REQUEST,
   CODE_401_RESPONSES,
+  CODE_500_INTERNAL_SERVER_ERROR,
 } from '@/common/docs/response.swagger';
 import {
+  emailValidationError,
   nameValidationError,
   passwordValidationError,
+  roleValidationError,
   unsupportedSocialLoginError,
 } from '@/common/docs/validation.swagger';
-import { userDataSchema } from '@/common/docs/schema.swagger';
+import { MessageSchema, userDataSchema } from '@/common/docs/schema.swagger';
+import { localRegisterExample } from '@/common/docs/body.swagger';
 
 export const ApiRegister = () => [
   ApiOperation({
     summary: '회원가입',
     description: `
-- 이름은 한글 또는 영어만 가능 (2~20자, 특수문자 및 공백 불가)
-- 휴대폰 번호는 010으로 시작하는 11자리 숫자
-- 비밀번호는 영문, 숫자, 특수문자를 포함한 8~20자 (공백 없음, 선택사항)
-- 이메일은 유효한 이메일 형식
+    - 이름은 한글 또는 영어만 가능 (2~20자, 특수문자 및 공백 불가)
+    - 휴대폰 번호는 010으로 시작하는 11자리 숫자
+    - 비밀번호는 영문, 숫자, 특수문자를 포함한 8~20자 (공백 없음, 선택사항)
+    - 이메일은 유효한 이메일 형식
+    - 역할은 'CUSTOMER' 또는 'MOVER' 중 하나
     `,
   }),
   ApiBody({
     type: CreateUserDto,
     description: '회원가입에 필요한 사용자 정보',
     examples: {
-      basic: {
-        summary: '기본 예시',
-        value: {
-          role: 'CUSTOMER',
-          name: '홍길동',
-          phone: '01012345678',
-          email: 'hong@example.com',
-          password: 'P@ssw0rd!',
-        },
-      },
+      basic: localRegisterExample,
     },
   }),
-  ApiResponse({
-    status: 201,
-    description: '회원가입 성공',
-    schema: {
-      example: {
-        id: '5cf532a2-c1de-4549-b0c7-61f0bdfd62de',
-        role: 'CUSTOMER',
-        name: '홍길동',
-        phone: '01012345678',
-        email: 'hong@example.com',
-        provider: 'LOCAL',
-        snsId: null,
-        refreshToken: null,
-      },
-    },
-  }),
+  ApiResponse(
+    CODE_201_CREATED({
+      description: '회원가입 성공',
+      schema: MessageSchema('회원가입에 성공했습니다!'),
+    }),
+  ),
   ApiResponse({
     status: 400,
     description: '유효성 검사 실패 또는 중복된 이메일로 인한 회원가입 실패',
@@ -90,13 +76,23 @@ export const ApiRegister = () => [
       },
     },
   }),
+  ApiResponse(
+    CODE_500_INTERNAL_SERVER_ERROR({
+      description: '서버 오류로 인한 회원가입 실패',
+      message: '회원가입에 실패했습니다!',
+    }),
+  ),
 ];
 
 export const ApiLogin = () => [
   ApiOperation({
     summary: '로컬 로그인 (아이디/비밀번호)',
-    description:
-      'Local strategy를 통해 로그인을 수행하고, 액세스/리프레시 토큰을 발급합니다.',
+    description: `
+    - Local strategy를 통해 로그인을 수행하고, 액세스/리프레시 토큰을 발급합니다.
+    - 로그인 시 이메일과 비밀번호를 입력받습니다.
+    - 역할(role)은 'CUSTOMER' 또는 'ADMIN' 중 하나로 지정해야 합니다.
+    - role은 로그인을 시도하는 사용자의 역할이다. 예를 들어 기사님 페이지에서 로그인 시도를 할 경우 role은 'MOVER'이다.
+    `,
   }),
   ApiBody({
     description: '로그인에 필요한 사용자 정보',
@@ -105,8 +101,13 @@ export const ApiLogin = () => [
       properties: {
         email: { type: 'string', example: 'hong@example.com' },
         password: { type: 'string', example: 'P@ssw0rd!' },
+        role: {
+          type: 'enum',
+          enum: ['CUSTOMER', 'ADMIN'],
+          example: 'CUSTOMER',
+        },
       },
-      required: ['email', 'password'],
+      required: ['email', 'password', 'role'],
     },
     examples: {
       basic: {
@@ -114,26 +115,24 @@ export const ApiLogin = () => [
         value: {
           email: 'customer@moving.com',
           password: 'moving123!',
+          role: 'CUSTOMER',
         },
       },
     },
   }),
-  ApiResponse({
-    status: 201,
-    description: '로그인 성공 및 토큰 발급',
-    schema: userDataSchema,
-  }),
-  ApiResponse({
-    status: 400,
-    description: '로그인 실패 (잘못된 이메일 또는 비밀번호)',
-    schema: {
-      example: {
-        statusCode: 400,
-        message: '잘못된 로그인 정보 입니다!',
-        error: 'Bad Request',
-      },
-    },
-  }),
+  ApiResponse(
+    CODE_201_CREATED({
+      description: '로그인 성공 및 토큰 발급',
+      schema: userDataSchema,
+    }),
+  ),
+  ApiResponse(
+    CODE_400_BAD_REQUEST([
+      emailValidationError,
+      passwordValidationError,
+      roleValidationError,
+    ]),
+  ),
 ];
 
 export const ApiSocialLogin = () =>

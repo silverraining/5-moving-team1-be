@@ -24,6 +24,26 @@ export const nameValidationError = {
   },
 };
 
+export const roleValidationError = {
+  key: 'roleValidationError',
+  summary: '역할 유효성 실패',
+  value: {
+    statusCode: 400,
+    message: ['역할(role) 값은 반드시 MOVER, CUSTOMER 중 하나여야 합니다.'],
+    error: 'Bad Request',
+  },
+};
+
+export const emailValidationError = {
+  key: 'emailValidationError',
+  summary: '이메일 유효성 실패',
+  value: {
+    statusCode: 400,
+    message: ['유효한 이메일 주소를 입력해주세요.'],
+    error: 'Bad Request',
+  },
+};
+
 export const passwordValidationError = {
   key: 'passwordValidationError',
   summary: '비밀번호 유효성 실패',

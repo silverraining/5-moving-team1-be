@@ -117,3 +117,27 @@ export const GetMoverProfilesNoFilterWithCursorExample = {
     },
   },
 };
+
+export const localRegisterExample = {
+  summary: 'local 회원가입 예시',
+  value: {
+    role: 'CUSTOMER',
+    name: '홍길동',
+    phone: '01012345678',
+    email: 'hong@example.com',
+    password: 'P@ssw0rd!',
+  },
+};
+
+export const snsRegisterExample = {
+  summary: 'sns 회원가입 예시',
+  value: {
+    role: 'MOVER',
+    name: '무빙이',
+    phone: '01098765432',
+    email: 'moving@example.com',
+    password: 'Moving@1234',
+    provider: 'NAVER',
+    providerId: 'naver-user-id-12345',
+  },
+};
