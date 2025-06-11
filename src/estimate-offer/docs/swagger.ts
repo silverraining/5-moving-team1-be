@@ -5,12 +5,11 @@ import {
   ApiParam,
   ApiResponse,
 } from '@nestjs/swagger';
-import { EstimateOfferListResponseDto } from '@/estimate-offer/dto/estimate-offer-list.response.dto';
 import {
   CODE_400_BAD_REQUEST,
   CODE_401_RESPONSES,
 } from '@/common/docs/response.swagger';
-import { EstimateOfferDetailResponseDto } from '../dto/estimate-offer-detail.dto';
+import { EstimateOfferResponseDto } from '../dto/estimate-offer-response.dto';
 
 export function ApiGetPendingEstimateOffers() {
   return applyDecorators(
@@ -24,13 +23,13 @@ export function ApiGetPendingEstimateOffers() {
       name: 'requestId',
       required: true,
       description: '견적 요청 ID (UUID)',
-      example: '12e19ae8-5ff6-4316-ad45-d13c814234cd',
+      example: '9ed4f4a0-0391-4a4f-af22-039aed8ccc9b',
       type: String,
     }),
     ApiResponse({
       status: 200,
       description: '대기 중인 견적 목록 조회 성공',
-      type: EstimateOfferListResponseDto,
+      type: EstimateOfferResponseDto,
       isArray: true,
     }),
     ApiResponse({
@@ -54,19 +53,19 @@ export function ApiGetEstimateOfferDetail() {
     ApiParam({
       name: 'requestId',
       description: '견적 요청 ID (UUID)',
-      example: '12e19ae8-5ff6-4316-ad45-d13c814234cd',
+      example: '9ed4f4a0-0391-4a4f-af22-039aed8ccc9b',
       type: String,
     }),
     ApiParam({
       name: 'moverId',
       description: '기사 ID (UUID)',
-      example: '9e633eb5-a794-4dfe-b246-02c572bb9952',
+      example: '9ec9e7ba-d922-48b4-a821-17842bc02944',
       type: String,
     }),
     ApiResponse({
       status: 200,
       description: '견적 상세 조회 성공',
-      type: EstimateOfferDetailResponseDto,
+      type: EstimateOfferResponseDto,
     }),
     ApiResponse(CODE_400_BAD_REQUEST([])),
     ApiResponse(CODE_401_RESPONSES),
