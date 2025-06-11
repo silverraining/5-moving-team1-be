@@ -43,7 +43,8 @@ export class CreateUserDto {
   password?: string;
 
   @IsEnum(Provider)
-  provider: Provider; // 로그인 제공자 (예: 'local', 'naver', 'kakao', 'google' 등)
+  @IsOptional()
+  provider?: Provider = Provider.LOCAL; // 로그인 제공자 (예: 'local', 'naver', 'kakao', 'google' 등)
 
   @IsString()
   @IsOptional()
