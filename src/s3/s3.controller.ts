@@ -9,12 +9,12 @@ export class S3Controller {
   @Post('presigned-url')
   async getPresignedUrl(
     @Body() dto: PresignedUrlDto,
-  ): Promise<{ presignedUrl: string }> {
-    const presignedUrl = await this.s3Service.createPresignedUrl(
+  ): Promise<{ presignedUrl: string; fileUrl: string }> {
+    const { presignedUrl, fileUrl } = await this.s3Service.createPresignedUrl(
       dto.fileName,
       dto.contentType,
     );
 
-    return { presignedUrl };
+    return { presignedUrl, fileUrl };
   }
 }
