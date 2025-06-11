@@ -171,9 +171,10 @@ export class CommonService {
         }
         return `${MOVER_PROFILE_VIEW_TABLE}.${field}`;
 
-      // experience는 mover스키마에서만 필요
       case OrderField.EXPERIENCE:
-        return `${MOVER_PROFILE_TABLE}.${field}`; // 실제 컬럼
+        return `${MOVER_PROFILE_TABLE}.${field}`; // experience는 mover스키마에서만 필요
+      case OrderField.CREATED_AT:
+        return `${qb.alias}.${field}`; // 기본 테이블의 created_at 컬럼
 
       default:
         throw new BadRequestException('올바른 정렬 필드를 선택해주세요.');
