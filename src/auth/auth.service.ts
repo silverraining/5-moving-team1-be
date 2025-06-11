@@ -75,8 +75,11 @@ export class AuthService {
     });
 
     const newUser = await this.userRepository.findOneBy({ email, provider });
-
     const { password: _, ...newUserData } = newUser; // password 제외한 사용자 정보
+
+    if (!newUser) {
+      throw new InternalServerErrorException('회원가입에 실패했습니다.');
+    }
 
     return newUserData;
   }

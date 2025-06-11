@@ -39,15 +39,7 @@ export class AuthController {
   @Post('register')
   @applyDecorators(...ApiRegister())
   registerLocal(@Body() createUserDto: CreateUserDto) {
-    const isSuccess = this.authService.register(createUserDto);
-    return {
-      statusCode: isSuccess
-        ? HttpStatus.CREATED
-        : HttpStatus.INTERNAL_SERVER_ERROR,
-      message: isSuccess
-        ? '회원가입에 성공했습니다!'
-        : '회원가입에 실패했습니다!',
-    };
+    return this.authService.register(createUserDto);
   }
 
   /*로컬 로그인 서비스*/
