@@ -53,7 +53,7 @@ export class AuthController {
   /*로컬 로그인 서비스*/
   @Public()
   @UseGuards(LocalAuthGuard)
-  @Post('login/local')
+  @Post('login')
   @applyDecorators(...ApiLogin())
   async loginLocal(@Request() req: { user: JwtPayload }) {
     return this.authService.login(req.user);
