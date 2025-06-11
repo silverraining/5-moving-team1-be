@@ -147,7 +147,7 @@ export class AuthService {
     }
 
     // 역할 검증
-    const isMover = role === Role.MOVER;
+    const isMover = user.role === Role.MOVER;
     if (user.role !== role) {
       const roleLabel = isMover ? '기사님' : '고객님';
       throw new BadRequestException(`${email}은 ${roleLabel} 계정입니다!`);
@@ -287,10 +287,15 @@ export class AuthService {
     const user = await this.userRepository.findOneBy({ id: userId });
 
     if (!user) {
-      throw new NotFoundException('유저를 찾을 수 없습니다.');
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
     }
 
-    await this.userRepository.update(user.id, { refreshToken: null });
+    const isSocialLogin = user.provider !== Provider.LOCAL;
+    if (isSocialLogin) {
+      await this.userRepository.update(user.id, { providerId: null }); // provider id null로 설정하여 무효화
+    }
+
+    await this.userRepository.update(user.id, { refreshToken: null }); // 리프레시 토큰을 null로 설정하여 무효화
 
     return {
       message: '로그아웃 되었습니다.',
