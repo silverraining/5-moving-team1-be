@@ -1,3 +1,5 @@
+import './sentry/instrument';
+import { AllExceptionsFilter } from './common/filter/all-exceptions.filter';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
@@ -24,6 +26,11 @@ async function bootstrap() {
       },
     }),
   );
+  //  Sentry 필터 등록
+  app.useGlobalFilters(new AllExceptionsFilter());
+
+  // ClassSerializer 적용 (응답 데이터에서 Exclude 필드 제거 등)
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
   //Swagger 세팅
   const config = new DocumentBuilder()
@@ -38,10 +45,6 @@ async function bootstrap() {
 
   // Swagger UI 경로 설정 (/api-docs 등)
   SwaggerModule.setup('api-docs', app, document);
-
-  // 응답에서 Exclude된 필드 안보이게 하기
-  // ex) BaseTable
-  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
