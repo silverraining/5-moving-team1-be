@@ -90,7 +90,7 @@ export const ApiLogin = () => [
     description: `
     - Local strategy를 통해 로그인을 수행하고, 액세스/리프레시 토큰을 발급합니다.
     - 로그인 시 이메일과 비밀번호를 입력받습니다.
-    - 역할(role)은 'CUSTOMER' 또는 'ADMIN' 중 하나로 지정해야 합니다.
+    - 역할(role)은 'CUSTOMER' 또는 'MOVER' 중 하나로 지정해야 합니다.
     - role은 로그인을 시도하는 사용자의 역할이다. 예를 들어 기사님 페이지에서 로그인 시도를 할 경우 role은 'MOVER'이다.
     `,
   }),
@@ -103,7 +103,7 @@ export const ApiLogin = () => [
         password: { type: 'string', example: 'P@ssw0rd!' },
         role: {
           type: 'enum',
-          enum: ['CUSTOMER', 'ADMIN'],
+          enum: ['CUSTOMER', 'MOVER'],
           example: 'CUSTOMER',
         },
       },
