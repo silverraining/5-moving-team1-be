@@ -1,57 +1,69 @@
-import { Expose, Type } from 'class-transformer';
+import { AddressDto } from '@/common/dto/address.dto';
 import { ServiceType } from '@/common/const/service.const';
 import { EstimateOfferResponseDto } from '@/estimate-offer/dto/estimate-offer-response.dto';
 import { EstimateRequest } from '../entities/estimate-request.entity';
 
-type FullAddress = {
-  fullAddress: string;
-};
-
 export class EstimateRequestResponseDto {
-  @Expose()
   id: string;
-
-  @Expose()
   createdAt: Date;
-
-  @Expose()
   moveType: ServiceType;
-
-  @Expose()
   moveDate: Date;
 
-  @Expose()
-  fromAddressFull: FullAddress;
+  fromAddress?: AddressDto;
+  toAddress?: AddressDto;
+  fromAddressMinimal?: { sido: string; sigungu: string };
+  toAddressMinimal?: { sido: string; sigungu: string };
 
-  @Expose()
-  toAddressFull: FullAddress;
+  isTargeted?: boolean;
+  customerName?: string;
 
-  @Expose()
-  @Type(() => EstimateOfferResponseDto)
   estimateOffers: EstimateOfferResponseDto[];
 
   /**
    * 정적 팩토리 메서드
    * @param request EstimateRequest 엔티티
-   * @param offers 해당 요청에 연결된 오퍼 응답 DTO 배열
-   * @returns EstimateRequestResponseDto
+   * @param offers 연결된 제안 목록 DTO들
+   * @param options 주소 포함 여부 및 기타 옵션
+   * @returns EstimateRequestResponseDto 인스턴스
    */
   static from(
     request: EstimateRequest,
     offers: EstimateOfferResponseDto[],
+    options?: {
+      includeAddress?: boolean;
+      includeMinimalAddress?: boolean;
+    },
   ): EstimateRequestResponseDto {
-    return Object.assign(new EstimateRequestResponseDto(), {
-      id: request.id,
-      createdAt: request.createdAt,
-      moveType: request.moveType,
-      moveDate: request.moveDate,
-      fromAddressFull: {
-        fullAddress: request.fromAddress.fullAddress,
-      },
-      toAddressFull: {
-        fullAddress: request.toAddress.fullAddress,
-      },
-      estimateOffers: offers,
-    });
+    const dto = new EstimateRequestResponseDto();
+
+    dto.id = request.id;
+    dto.createdAt = request.createdAt;
+    dto.moveType = request.moveType;
+    dto.moveDate = request.moveDate;
+    dto.estimateOffers = offers;
+
+    dto.isTargeted =
+      Array.isArray(request.targetMoverIds) &&
+      request.targetMoverIds.length > 0;
+
+    dto.customerName = request.customer?.user?.name ?? null;
+
+    if (options?.includeAddress) {
+      dto.fromAddress = AddressDto.from(request.fromAddress);
+      dto.toAddress = AddressDto.from(request.toAddress);
+    }
+
+    if (options?.includeMinimalAddress) {
+      dto.fromAddressMinimal = {
+        sido: request.fromAddress.sido,
+        sigungu: request.fromAddress.sigungu,
+      };
+      dto.toAddressMinimal = {
+        sido: request.toAddress.sido,
+        sigungu: request.toAddress.sigungu,
+      };
+    }
+
+    return dto;
   }
 }

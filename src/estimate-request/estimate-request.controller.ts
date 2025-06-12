@@ -3,20 +3,21 @@ import {
   Get,
   Post,
   Body,
+  Query,
   Patch,
   Param,
-  Delete,
 } from '@nestjs/common';
 import { EstimateRequestService } from './estimate-request.service';
 import { CreateEstimateRequestDto } from './dto/create-estimate-request.dto';
 
-import { UpdateEstimateRequestDto } from './dto/update-estimate-request.dto';
+// import { UpdateEstimateRequestDto } from './dto/update-estimate-request.dto';
 
 import { UserInfo } from '@/user/decorator/user-info.decorator';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { RBAC } from '@/auth/decorator/rbac.decorator';
 import { Role } from '@/user/entities/user.entity';
 import {
+  ApiAddTargetMover,
   ApiCreateEstimateRequest,
   ApiGetMyActiveEstimateRequest,
   ApiGetMyEstimateHistory,
@@ -53,14 +54,20 @@ export class EstimateRequestController {
     return this.estimateRequestService.findAllRequestHistory(user.sub);
   }
 
-  // @Patch(':id')
-  // update(
-  //   @Param('id') id: string,
-  //   @Body() updateEstimateRequestDto: UpdateEstimateRequestDto,
-  // ) {
-  //   return this.estimateRequestService.update(+id, updateEstimateRequestDto);
-  // }
-
+  @Patch(':requestId/targeted')
+  @RBAC(Role.CUSTOMER)
+  @ApiAddTargetMover()
+  async addTargetedMover(
+    @Param('requestId') estimateRequestId: string,
+    @Body() body: { moverId: string },
+    @UserInfo() user: UserInfo,
+  ) {
+    return this.estimateRequestService.addTargetMover(
+      estimateRequestId,
+      body.moverId,
+      user.sub,
+    );
+  }
   // @Delete(':id')
   // remove(@Param('id') id: string) {
   //   return this.estimateRequestService.remove(+id);
