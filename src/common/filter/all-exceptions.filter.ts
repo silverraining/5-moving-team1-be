@@ -53,7 +53,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
       Sentry.captureException(exception); //Sentry로 에러 전송
       await sendDiscordAlert(exception, `${method} ${url}`); //Discord Webhook으로 알림 전송
-      exception = new InternalServerErrorException(); // 숨김 처리
+      exception = new InternalServerErrorException(); //클라이언트에 노출 X
     }
 
     const responseBody =
