@@ -26,7 +26,32 @@ export class EstimateRequestService {
 
     private readonly dataSource: DataSource,
   ) {}
-
+  /**
+   * 고객의 진행중인(pending, confirmed) 견적 요청 ID 조회 - //TODO: 개발용이므로 추후 삭제 예정
+   * @param userId 고객 ID
+   * @returns { estimateRequestId: string }[]
+   */
+  async findActiveEstimateRequestIds(
+    userId: string,
+  ): Promise<{ estimateRequestId: string }[]> {
+    return this.estimateRequestRepository
+      .find({
+        where: {
+          customer: { user: { id: userId } },
+          status: In([RequestStatus.PENDING, RequestStatus.CONFIRMED]),
+        },
+        select: { id: true }, // `id`만 반환
+      })
+      .then((requests) =>
+        requests.map((req) => ({ estimateRequestId: req.id })),
+      );
+  }
+  /**
+   * 견적 요청 생성
+   * @param dto CreateEstimateRequestDto
+   * @param user UserInfo
+   * @returns { id: string, message: string }
+   */
   async create(dto: CreateEstimateRequestDto, user: UserInfo) {
     // 1. 로그인한 유저의 CustomerProfile 가져오기
     const customer = await this.customerProfileRepository.findOne({
