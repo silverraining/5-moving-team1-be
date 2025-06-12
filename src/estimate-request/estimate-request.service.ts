@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -11,11 +12,12 @@ import {
   RequestStatus,
 } from './entities/estimate-request.entity';
 import { CustomerProfile } from '@/customer-profile/entities/customer-profile.entity';
-import { DataSource, In, Repository } from 'typeorm';
+import { Brackets, DataSource, In, Repository } from 'typeorm';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
 
 import { EstimateOfferResponseDto } from '@/estimate-offer/dto/estimate-offer-response.dto';
 import { MoverProfileView } from '@/mover-profile/view/mover-profile.view';
+import { MoverProfile } from '@/mover-profile/entities/mover-profile.entity';
 @Injectable()
 export class EstimateRequestService {
   constructor(
@@ -23,9 +25,11 @@ export class EstimateRequestService {
     private readonly estimateRequestRepository: Repository<EstimateRequest>,
     @InjectRepository(CustomerProfile)
     private readonly customerProfileRepository: Repository<CustomerProfile>,
-
+    @InjectRepository(MoverProfile)
+    private readonly moverProfileRepository: Repository<MoverProfile>,
     private readonly dataSource: DataSource,
   ) {}
+
   /**
    * 고객의 진행중인(pending, confirmed) 견적 요청 ID 조회 - //TODO: 개발용이므로 추후 삭제 예정
    * @param userId 고객 ID
@@ -92,6 +96,7 @@ export class EstimateRequestService {
       message: '견적 요청 생성 성공',
     };
   }
+
   /**
    * 고객의 받았던 견적 내역 조회
    * @param userId 고객 ID
@@ -157,14 +162,54 @@ export class EstimateRequestService {
       }),
     );
   }
+  /**
+   * 고객이 특정 견적 요청에 대해 기사를 지정
+   * @param requestId 견적 요청 ID
+   * @param moverId 지정할 기사 ID
+   * @param userId 고객 ID
+   * @returns 성공 메시지
+   */
+  async addTargetMover(
+    requestId: string,
+    moverId: string, // MoverProfile.id
+    userId: string,
+  ): Promise<{ message: string }> {
+    const request = await this.estimateRequestRepository.findOne({
+      where: { id: requestId },
+      relations: ['customer', 'customer.user'],
+    });
 
-  // findAll() {
-  //   return `This action returns all estimateRequest`;
-  // }
+    if (!request) throw new NotFoundException('요청을 찾을 수 없습니다.');
+    if (request.customer.user.id !== userId)
+      throw new ForbiddenException('해당 요청에 접근할 수 없습니다.');
 
-  // update(id: number, updateEstimateRequestDto: UpdateEstimateRequestDto) {
-  //   return `This action updates a #${id} estimateRequest`;
-  // }
+    const currentIds = request.targetMoverIds || [];
+
+    if (currentIds.includes(moverId)) {
+      throw new BadRequestException('이미 지정 기사로 추가된 기사입니다.');
+    }
+
+    if (currentIds.length >= 3) {
+      throw new BadRequestException(
+        '지정 기사는 최대 3명까지 추가할 수 있습니다.',
+      );
+    }
+
+    const mover = await this.moverProfileRepository.findOne({
+      where: { id: moverId },
+    });
+
+    if (!mover) {
+      throw new NotFoundException('해당 기사님의 프로필을 찾을 수 없습니다.');
+    }
+
+    request.targetMoverIds = [...currentIds, moverId];
+    await this.estimateRequestRepository.save(request);
+
+    return {
+      message: `🧑‍🔧 ${mover.nickname} 기사님이 지정 견적 기사로 추가되었습니다.`,
+    };
+  }
 
   // remove(id: number) {
   //   return `This action removes a #${id} estimateRequest`;

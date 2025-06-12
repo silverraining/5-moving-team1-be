@@ -3,6 +3,9 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiBody,
+  ApiTags,
+  ApiQuery,
+  ApiParam,
 } from '@nestjs/swagger';
 import { applyDecorators } from '@nestjs/common';
 
@@ -113,5 +116,71 @@ export function ApiGetMyActiveEstimateRequest() {
         },
       },
     }),
+  );
+}
+export function ApiAddTargetMover() {
+  return applyDecorators(
+    ApiOperation({
+      summary: '지정 기사 추가',
+      description:
+        '특정 견적 요청 ID(requestId)에 지정 기사를 추가합니다. 최대 3명까지 추가할 수 있습니다.',
+    }),
+    ApiBearerAuth(),
+    ApiParam({
+      name: 'requestId',
+      required: true,
+      description: '지정 기사를 추가할 견적 요청 ID',
+      example: '52145515-6fd9-4ecd-9fd8-7106fbce9765',
+    }),
+    ApiBody({
+      schema: {
+        type: 'object',
+        properties: {
+          moverId: {
+            type: 'string',
+            format: 'uuid',
+            example: '9ec9e7ba-d922-48b4-a821-17842bc02944',
+            description: '추가할 기사님 ID (MoverId)',
+          },
+        },
+        required: ['moverId'],
+      },
+    }),
+    ApiResponse({
+      status: 200,
+      description: '지정 기사 추가 성공',
+      schema: {
+        type: 'object',
+        properties: {
+          message: {
+            type: 'string',
+            example: '🧑‍🔧 김기사님이 지정 견적 기사로 추가되었습니다.',
+          },
+        },
+      },
+    }),
+    ApiResponse(
+      CODE_400_BAD_REQUEST([
+        {
+          key: 'AlreadyTargetedMover',
+          summary: '이미 지정된 기사',
+          value: {
+            statusCode: 400,
+            message: '이미 지정 기사로 추가된 기사님입니다.',
+            error: 'Bad Request',
+          },
+        },
+        {
+          key: 'MaxTargetMoversReached',
+          summary: '지정 기사 수 초과',
+          value: {
+            statusCode: 400,
+            message: '지정 기사는 최대 3명까지 추가할 수 있습니다.',
+            error: 'Bad Request',
+          },
+        },
+      ]),
+    ),
+    ApiResponse(CODE_401_RESPONSES),
   );
 }
