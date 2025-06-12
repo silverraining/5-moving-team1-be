@@ -18,6 +18,7 @@ import { RBAC } from '@/auth/decorator/rbac.decorator';
 import { Role } from '@/user/entities/user.entity';
 import {
   ApiCreateEstimateRequest,
+  ApiGetMyActiveEstimateRequest,
   ApiGetMyEstimateHistory,
 } from './docs/swagger';
 
@@ -27,6 +28,13 @@ export class EstimateRequestController {
   constructor(
     private readonly estimateRequestService: EstimateRequestService,
   ) {}
+  //INFO: 개발용 해당 고객의 진행 중인 견적 요청 ID 조회 API
+  @Get('active')
+  @ApiGetMyActiveEstimateRequest()
+  @RBAC(Role.CUSTOMER)
+  async getMyActiveEstimateRequest(@UserInfo() user: UserInfo) {
+    return this.estimateRequestService.findActiveEstimateRequestIds(user.sub);
+  }
 
   @Post()
   @RBAC(Role.CUSTOMER)
