@@ -46,7 +46,7 @@ export class User extends BaseTable {
   @Column({ nullable: true })
   password?: string;
 
-  @Column({ type: 'enum', enum: Provider })
+  @Column({ type: 'enum', enum: Provider, default: Provider.LOCAL })
   provider: Provider;
 
   @Column({ nullable: true })
