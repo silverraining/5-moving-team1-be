@@ -17,7 +17,7 @@ export class EstimateOfferController {
   constructor(private readonly estimateOfferService: EstimateOfferService) {}
 
   // 견적 요청 ID로 대기 중인 견적 목록 조회
-  @Get(':requestId')
+  @Get(':requestId/pending')
   @RBAC(Role.CUSTOMER)
   @ApiGetPendingEstimateOffers()
   async getOffersByEstimateRequestId(
@@ -31,7 +31,7 @@ export class EstimateOfferController {
   }
 
   // 견적 요청 ID와 기사 ID로 견적 제안 상세 조회
-  @Get(':requestId/:moverId')
+  @Get(':requestId/:moverId/pending')
   @RBAC(Role.CUSTOMER)
   @ApiGetEstimateOfferDetail()
   async getOfferDetail(
