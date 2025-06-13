@@ -48,7 +48,7 @@ export class EstimateOffer extends BaseTable {
   @Column({ default: false })
   isConfirmed: boolean; // 고객이 확정했는지 여부
 
-  @Column()
+  @Column({ nullable: true })
   confirmedAt: Date; // 고객이 확정한 날짜
 
   // EstimateOffer : Review <-> 1:1 관계
