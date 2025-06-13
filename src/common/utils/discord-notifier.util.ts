@@ -1,11 +1,16 @@
 import axios from 'axios';
 
+const MAX_DISCORD_LENGTH = 1900;
+
+function truncate(text: string, max = MAX_DISCORD_LENGTH) {
+  return text.length > max ? text.slice(0, max) + '\n... (truncated)' : text;
+}
 /**
  * Discord Webhook 알림 전송 함수
  */
 export async function sendDiscordAlert(
   error: unknown,
-  context = 'Unknown context',
+  context: string, // ex: "GET /api/..."
 ): Promise<void> {
   const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
   if (!webhookUrl) {
@@ -13,15 +18,22 @@ export async function sendDiscordAlert(
     return;
   }
 
-  const safe = (val: unknown) => (val ? String(val) : '(unknown)');
-  const message = error instanceof Error ? error.message : safe(error);
-  const stack = error instanceof Error ? maskStackTrace(error.stack) : '';
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === 'object'
+        ? JSON.stringify(error, null, 2)
+        : String(error);
 
-  const content = `🚨 **Server Error Alert**
-**Context**: ${context}
-**Message**: \`\`\`${message}\`\`\`
-**Stack**: 
-\`\`\`${stack}\`\`\``;
+  const stack =
+    error instanceof Error ? maskStackTrace(error.stack) : undefined;
+
+  const content = [
+    `🚨 **Server Error Alert**`,
+    `**Context**: ${context}`,
+    `**Message**:\n\`\`\`\n${truncate(message)}\n\`\`\``,
+    stack ? `**Stack:**\n\`\`\`\n${truncate(stack)}\n\`\`\`` : '',
+  ].join('\n');
 
   try {
     await axios.post(webhookUrl, { content });
@@ -30,6 +42,7 @@ export async function sendDiscordAlert(
     console.error('❌ Discord Webhook 전송 실패:', err);
   }
 }
+
 /**
  * 스택트레이스를 최대 5줄까지 가져오고, 절대경로 마스킹 처리
  */

@@ -5,55 +5,52 @@ import {
   HttpException,
   Logger,
   InternalServerErrorException,
+  HttpStatus,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import * as Sentry from '@sentry/node';
 import { sendDiscordAlert } from '@/common/utils/discord-notifier.util';
 import { formatErrorLog } from '@/common/utils/format-error-log';
+import chalk from 'chalk';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
 
   async catch(exception: unknown, host: ArgumentsHost) {
-    const ctx = host.switchToHttp(); //현재 실행 중인 context(실행 환경)-  HTTP 요청을 처리
+    const ctx = host.switchToHttp();
     const req = ctx.getRequest<Request>();
     const res = ctx.getResponse<Response>();
 
-    const { method, url } = req;
+    const { method, originalUrl: url } = req;
 
-    let status = 500;
-    let message = 'Internal server error';
+    const status =
+      exception instanceof HttpException
+        ? exception.getStatus()
+        : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    if (exception instanceof HttpException) {
-      //HttpException - NestJS 내장 예외 (클라이언트 오류)
-      status = exception.getStatus();
-      const response = exception.getResponse();
-      message =
-        typeof response === 'string'
-          ? response
-          : (response as any)?.message || message;
-      //클라이언트가 잘못 보낸 요청이면 로그만 남기고 Sentry, Discord 전송 안 함.
-      const log = formatErrorLog(method, url, status, message);
-      this.logger.warn(log);
+    const message = this.extractMessage(exception);
+    const stack = this.getStackTrace(exception);
 
-      if (!isClientError(status)) {
-        Sentry.captureException(exception);
-        await sendDiscordAlert(exception, `${method} ${url}`);
-      }
-    } else {
-      // Unknown error
-      if (exception instanceof Error) {
-        //Error - 예기치 못한 일반 오류 (서버 오류)
-        message = exception.message;
-      }
+    const log = formatErrorLog({
+      method,
+      url,
+      status,
+      message,
+      stack: undefined,
+      userId: (req as any).user?.id,
+    });
 
-      const log = formatErrorLog(method, url, status, message);
-      this.logger.error(log);
+    this.logger.error(log);
+    if (stack) {
+      const trimmedStack = stack.split('\n').slice(1).join('\n'); // 첫 줄 중복 메시지 제거
+      console.error(chalk.gray(trimmedStack));
+    }
 
-      Sentry.captureException(exception); //Sentry로 에러 전송
-      await sendDiscordAlert(exception, `${method} ${url}`); //Discord Webhook으로 알림 전송
-      exception = new InternalServerErrorException(); //클라이언트에 노출 X
+    // 클라이언트 에러(4xx)는 Sentry/Discord 전송 생략
+    if (!isClientError(status)) {
+      Sentry.captureException(exception);
+      await sendDiscordAlert(exception, `${method} ${decodeURIComponent(url)}`);
     }
 
     const responseBody =
@@ -61,11 +58,26 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? exception.getResponse()
         : { statusCode: status, message };
 
-    res.status(status).json(responseBody); //클라이언트로 JSON 에러 응답
+    res.status(status).json(responseBody);
+  }
+
+  private extractMessage(exception: unknown): string {
+    if (exception instanceof HttpException) {
+      const response = exception.getResponse();
+      return typeof response === 'string'
+        ? response
+        : ((response as any)?.message ?? 'Internal server error');
+    }
+    if (exception instanceof Error) {
+      return exception.message;
+    }
+    return 'Unexpected error occurred';
+  }
+  private getStackTrace(exception: unknown): string | undefined {
+    return (exception as any)?.stack;
   }
 }
-
 // 4xx는 클라이언트 에러이므로 Sentry/Discord 제외
-function isClientError(status: number) {
+function isClientError(status: number): boolean {
   return status >= 400 && status < 500;
 }
