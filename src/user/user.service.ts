@@ -9,12 +9,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import * as bcrypt from 'bcrypt';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly configService: ConfigService,
   ) {}
 
   /**
@@ -48,10 +50,11 @@ export class UserService {
       throw new NotFoundException('사용자를 찾을 수 없습니다.');
     }
 
-    // 비밀번호 변경 요청이 있을 때만 기존 비밀번호 검증 및 해싱
-    let hashedPassword: string | undefined;
+    const updatedFields: Partial<User> = {};
 
+    // 비밀번호가 변경된 경우
     if (isChangePassword) {
+      // 기존 비밀번호가 일치하는지 확인
       const isPasswordValid = await bcrypt.compare(
         originalPassword,
         user.password,
@@ -61,25 +64,19 @@ export class UserService {
         throw new BadRequestException('기존 비밀번호가 일치하지 않습니다.');
       }
 
-      const salt = await bcrypt.genSalt();
-      hashedPassword = await bcrypt.hash(newPassword, salt);
+      const HASH_ROUNDS = this.configService.get<number>('HASH_ROUNDS');
+      updatedFields.password = await bcrypt.hash(newPassword, HASH_ROUNDS);
     }
 
     // 변경된 필드만 객체에 담기
-    const updatedFields: Partial<typeof user> = {};
     if (newName && newName !== user.name) updatedFields.name = newName;
     if (newPhone && newPhone !== user.phone) updatedFields.phone = newPhone;
-    if (hashedPassword) updatedFields.password = hashedPassword;
 
     if (Object.keys(updatedFields).length === 0) {
-      return false; // 변경사항 없음
+      return { message: '변경된 내용이 없습니다.' };
     }
 
-    // 기존 user 객체에 변경사항 덮어쓰기
-    Object.assign(user, updatedFields);
-
-    // DB에 변경된 데이터 저장
-    await this.userRepository.save(user);
+    await this.userRepository.update(userId, updatedFields);
 
     // 변경된 사용자 정보 반환
     const updatedUser = await this.userRepository.findOneBy({ id: userId });
@@ -90,7 +87,8 @@ export class UserService {
       );
     }
 
-    // 이 서비스가 auth뿐만 아니라 customer service에서도 사용되므로 성공 메시지 대신 true 반환
-    return true; // 변경 성공
+    return {
+      message: '사용자 정보가 성공적으로 업데이트되었습니다.',
+    };
   }
 }

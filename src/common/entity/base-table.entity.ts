@@ -13,7 +13,7 @@ export class BaseTable {
   @ApiHideProperty()
   updatedAt: Date;
 
-  @VersionColumn()
+  @VersionColumn({ default: 1 })
   @Exclude()
   @ApiHideProperty()
   version: number;

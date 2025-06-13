@@ -4,7 +4,6 @@ import {
   ArgumentsHost,
   HttpException,
   Logger,
-  InternalServerErrorException,
   HttpStatus,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
@@ -12,6 +11,7 @@ import * as Sentry from '@sentry/node';
 import { sendDiscordAlert } from '@/common/utils/discord-notifier.util';
 import { formatErrorLog } from '@/common/utils/format-error-log';
 import chalk from 'chalk';
+import { isString } from 'lodash';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -63,18 +63,25 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
   private extractMessage(exception: unknown): string {
     if (exception instanceof HttpException) {
-      const response = exception.getResponse();
-      return typeof response === 'string'
-        ? response
-        : ((response as any)?.message ?? 'Internal server error');
+      const response = exception.getResponse() as string | HttpException;
+
+      if (isString(response)) {
+        return response;
+      } else {
+        return response?.message ?? 'Internal Server Error';
+      }
     }
     if (exception instanceof Error) {
       return exception.message;
     }
     return 'Unexpected error occurred';
   }
+
   private getStackTrace(exception: unknown): string | undefined {
-    return (exception as any)?.stack;
+    if (exception instanceof Error) {
+      return exception.stack;
+    }
+    return undefined;
   }
 }
 // 4xx는 클라이언트 에러이므로 Sentry/Discord 제외
