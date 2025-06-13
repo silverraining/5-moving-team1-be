@@ -11,6 +11,7 @@
     ),
  */
 
+// 400
 // [user] 유효성 검사 관련 에러 메시지들
 export const nameValidationError = {
   key: 'nameValidationError',
@@ -217,5 +218,46 @@ export const unsupportedSocialLoginError = {
     statusCode: 400,
     message: '지원하지 않는 소셜 로그인입니다!',
     error: 'Bad Request',
+  },
+};
+
+//404
+export const moverNotFoundError = {
+  key: 'moverNotFoundError',
+  summary: '기사님을 찾을 수 없는 경우',
+  value: {
+    statusCode: 404,
+    message: '기사님을 찾을 수 없습니다.',
+    error: 'Not Found',
+  },
+};
+
+export const customerProfileNotFoundError = {
+  key: 'customerProfileNotFoundError',
+  summary: '고객님의 프로필을 찾을 수 없는 경우',
+  value: {
+    statusCode: 404,
+    message: '고객님의 프로필을 찾을 수 없습니다, 프로필을 생성해주세요!',
+    error: 'Not Found',
+  },
+};
+
+export const userNotFoundError = {
+  key: 'userNotFoundError',
+  summary: '사용자를 찾을 수 없는 경우',
+  value: {
+    statusCode: 404,
+    message: '사용자를 찾을 수 없습니다.',
+    error: 'Not Found',
+  },
+};
+
+export const moverProfileNotFoundError = {
+  key: 'moverProfileNotFoundError',
+  summary: '본인의 [mover] 프로필이 존재하지 않는 경우',
+  value: {
+    statusCode: 404,
+    message: '[mover] 프로필을 찾을 수 없습니다.',
+    error: 'Not Found',
   },
 };

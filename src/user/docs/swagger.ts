@@ -12,6 +12,7 @@ import {
   passwordMismatchError,
   passwordValidationError,
   phoneValidationError,
+  userNotFoundError,
 } from '@/common/docs/validation.swagger';
 import { applyDecorators } from '@nestjs/common';
 import {
@@ -89,12 +90,7 @@ export function ApiUpdateMe() {
       ]),
     ),
     ApiResponse(CODE_401_RESPONSES),
-    ApiResponse(
-      CODE_404_NOT_FOUND({
-        description: '사용자를 찾을 수 없는 경우',
-        message: '사용자를 찾을 수 없습니다.',
-      }),
-    ),
+    ApiResponse(CODE_404_NOT_FOUND([userNotFoundError])),
     ApiResponse({
       status: 204,
       description: '변경된 내용 없는 경우',

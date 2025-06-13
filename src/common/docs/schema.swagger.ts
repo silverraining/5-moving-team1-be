@@ -113,6 +113,33 @@ export const userDataSchema = {
   },
 };
 
+export const likedMoverListSchema = {
+  example: [
+    {
+      id: 'uuid-1234-abcd',
+      nickname: '홍길동',
+      imageUrl: 'https://example.com/image.jpg',
+      experience: 5,
+      serviceType: '배송',
+      reviewCount: 120,
+      averageRating: 4.7,
+      confirmedEstimateCount: 75,
+      likeCount: 300,
+    },
+    {
+      id: 'uuid-5678-efgh',
+      nickname: '김철수',
+      imageUrl: 'https://example.com/image2.jpg',
+      experience: 3,
+      serviceType: '이사',
+      reviewCount: 60,
+      averageRating: 4.3,
+      confirmedEstimateCount: 30,
+      likeCount: 150,
+    },
+  ],
+};
+
 export const MessageSchema = (message: string) => ({
   example: {
     message: message || '요청이 성공적으로 처리되었습니다.',
