@@ -60,7 +60,6 @@ export class EstimateRequestService {
     // 1. 로그인한 유저의 CustomerProfile 가져오기
     const customer = await this.customerProfileRepository.findOne({
       where: { user: { id: user.sub } },
-      relations: ['user'],
     });
 
     if (!customer) {
@@ -145,7 +144,7 @@ export class EstimateRequestService {
         const offers = request.estimateOffers.map((offer) => {
           const mover = offer.mover;
           const isLiked = mover.likedCustomers?.some(
-            (like) => like.customer.user.id === userId,
+            (like) => like?.customer?.user?.id === userId,
           );
           const moverView = moverViewMap.get(mover.id);
 
