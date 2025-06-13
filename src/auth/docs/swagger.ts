@@ -9,20 +9,16 @@ import { applyDecorators } from '@nestjs/common';
 import {
   CODE_201_CREATED,
   CODE_400_BAD_REQUEST,
-  CODE_401_RESPONSES,
   CODE_500_INTERNAL_SERVER_ERROR,
 } from '@/common/docs/response.swagger';
 import {
   emailValidationError,
-  nameValidationError,
   passwordValidationError,
   roleValidationError,
-  unsupportedSocialLoginError,
 } from '@/common/docs/validation.swagger';
 import { MessageSchema, userDataSchema } from '@/common/docs/schema.swagger';
 import { localRegisterExample } from '@/common/docs/body.swagger';
 import { unsupportedSocialLoginError } from '@/common/docs/validation.swagger';
-import { userDataSchema } from '@/common/docs/schema.swagger';
 
 export const ApiRegister = () => [
   ApiOperation({
