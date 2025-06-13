@@ -49,6 +49,10 @@ export class LikeService {
       (likeData) => likeData.mover,
     );
 
+    if (!likedMoverIds.length) {
+      return [];
+    }
+
     const qb = this.moverProfileRepository
       .createQueryBuilder(MOVER_PROFILE_TABLE)
       .select(LIKED_MOVER_LIST_SELECT) // entity select
