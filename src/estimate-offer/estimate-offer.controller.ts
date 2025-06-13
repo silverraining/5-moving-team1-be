@@ -1,11 +1,12 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, HttpCode } from '@nestjs/common';
 import { EstimateOfferService } from './estimate-offer.service';
-// import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
+import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
 // import { UpdateEstimateOfferDto } from './dto/update-estimate-offer.dto';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
 import {
   ApiGetEstimateOfferDetail,
   ApiGetPendingEstimateOffers,
+  ApiCreateEstimateOffer,
 } from './docs/swagger';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { RBAC } from '@/auth/decorator/rbac.decorator';
@@ -45,6 +46,28 @@ export class EstimateOfferController {
       moverId,
       userInfo.sub,
     );
+  }
+
+  // 견적 제안 생성
+  @Post(':requestId')
+  @RBAC(Role.MOVER)
+  @ApiCreateEstimateOffer()
+  @HttpCode(201)
+  async createEstimateOffer(
+    @Param('requestId') requestId: string,
+    @Body() createEstimateOfferDto: CreateEstimateOfferDto,
+    @UserInfo() userInfo: UserInfo,
+  ) {
+    await this.estimateOfferService.create(
+      requestId,
+      createEstimateOfferDto,
+      userInfo.sub,
+    );
+
+    return {
+      statusCode: 201,
+      message: '견적 제안이 성공적으로 생성되었습니다.',
+    };
   }
 
   // @Post()

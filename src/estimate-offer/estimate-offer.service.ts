@@ -4,7 +4,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EstimateOffer } from './entities/estimate-offer.entity';
+import { EstimateOffer, OfferStatus } from './entities/estimate-offer.entity';
 import { In, Repository } from 'typeorm';
 import { DataSource } from 'typeorm';
 import {
@@ -14,6 +14,9 @@ import {
 import { MoverProfileView } from '@/mover-profile/view/mover-profile.view';
 import { OrderField } from '@/common/dto/cursor-pagination.dto';
 import { EstimateOfferResponseDto } from './dto/estimate-offer-response.dto';
+import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
+import { MoverProfile } from '@/mover-profile/entities/mover-profile.entity';
+
 @Injectable()
 export class EstimateOfferService {
   constructor(
@@ -21,8 +24,67 @@ export class EstimateOfferService {
     private readonly offerRepository: Repository<EstimateOffer>,
     @InjectRepository(EstimateRequest)
     private readonly requestRepository: Repository<EstimateRequest>,
+    @InjectRepository(MoverProfile)
+    private readonly moverRepository: Repository<MoverProfile>,
     private readonly dataSource: DataSource,
   ) {}
+
+  /**
+   * 견적 제안 생성
+   */
+  async create(
+    estimateRequestId: string,
+    createEstimateOfferDto: CreateEstimateOfferDto,
+    userId: string,
+  ): Promise<void> {
+    // 1. 견적 요청 존재 여부 및 상태 확인
+    const estimateRequest = await this.requestRepository.findOne({
+      where: { id: estimateRequestId },
+      select: ['id', 'status'],
+    });
+
+    if (!estimateRequest) {
+      throw new BadRequestException('존재하지 않는 견적 요청입니다.');
+    }
+
+    if (estimateRequest.status !== RequestStatus.PENDING) {
+      throw new BadRequestException('견적 제안을 받을 수 없는 상태입니다.');
+    }
+
+    // 2. 기사 프로필 조회
+    const mover = await this.moverRepository.findOne({
+      where: { user: { id: userId } },
+    });
+
+    if (!mover) {
+      throw new BadRequestException('기사 프로필을 찾을 수 없습니다.');
+    }
+
+    // 3. 중복 제안 확인
+    const existingOffer = await this.offerRepository.findOne({
+      where: {
+        estimateRequestId: estimateRequestId,
+        moverId: mover.id,
+      },
+    });
+
+    if (existingOffer) {
+      throw new BadRequestException('이미 해당 견적 요청에 제안을 하셨습니다.');
+    }
+
+    // 4. 견적 제안 생성
+    const estimateOffer = this.offerRepository.create({
+      estimateRequestId: estimateRequestId,
+      moverId: mover.id,
+      price: createEstimateOfferDto.price,
+      comment: createEstimateOfferDto.comment,
+      status: OfferStatus.PENDING,
+      isTargeted: false,
+      isConfirmed: false,
+    });
+
+    await this.offerRepository.save(estimateOffer);
+  }
 
   /**
    * 대기중인 견적 요청 ID에 대한 오퍼 목록 조회

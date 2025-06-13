@@ -1,6 +1,7 @@
 import { applyDecorators } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiOperation,
   ApiParam,
   ApiResponse,
@@ -10,6 +11,7 @@ import {
   CODE_401_RESPONSES,
 } from '@/common/docs/response.swagger';
 import { EstimateOfferResponseDto } from '../dto/estimate-offer-response.dto';
+import { CreateEstimateOfferDto } from '../dto/create-estimate-offer.dto';
 
 export function ApiGetPendingEstimateOffers() {
   return applyDecorators(
@@ -73,5 +75,53 @@ export function ApiGetEstimateOfferDetail() {
       status: 403,
       description: '권한 없음. 본인의 요청이 아닐 경우',
     }),
+  );
+}
+
+export function ApiCreateEstimateOffer() {
+  return applyDecorators(
+    ApiOperation({
+      summary: '견적 제안 생성',
+      description:
+        '기사가 고객의 견적 요청에 대해 견적을 제안합니다. 한 기사는 동일한 견적 요청에 대해 한 번만 제안할 수 있습니다.',
+    }),
+    ApiBearerAuth(),
+    ApiParam({
+      name: 'requestId',
+      required: true,
+      description: '견적 요청 ID (UUID)',
+      example: '9ed4f4a0-0391-4a4f-af22-039aed8ccc9b',
+      type: String,
+    }),
+    ApiBody({
+      type: CreateEstimateOfferDto,
+      description: '견적 제안 정보',
+    }),
+    ApiResponse({
+      status: 201,
+      description: '견적 제안 생성 성공',
+      schema: {
+        type: 'object',
+        properties: {
+          statusCode: {
+            type: 'number',
+            example: 201,
+          },
+          message: {
+            type: 'string',
+            example: '견적 제안이 성공적으로 생성되었습니다.',
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 400,
+      description: '잘못된 요청 (중복 제안, 존재하지 않는 요청 등)',
+    }),
+    ApiResponse({
+      status: 403,
+      description: '권한 없음',
+    }),
+    ApiResponse(CODE_401_RESPONSES),
   );
 }
