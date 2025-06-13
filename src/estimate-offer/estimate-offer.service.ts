@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EstimateOffer, OfferStatus } from './entities/estimate-offer.entity';
@@ -15,6 +16,7 @@ import { MoverProfileView } from '@/mover-profile/view/mover-profile.view';
 import { OrderField } from '@/common/dto/cursor-pagination.dto';
 import { EstimateOfferResponseDto } from './dto/estimate-offer-response.dto';
 import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
+import { UpdateEstimateOfferDto } from './dto/update-estimate-offer.dto';
 import { MoverProfile } from '@/mover-profile/entities/mover-profile.entity';
 
 @Injectable()
@@ -80,6 +82,60 @@ export class EstimateOfferService {
       comment: createEstimateOfferDto.comment,
       status: OfferStatus.PENDING,
       isTargeted: false,
+      isConfirmed: false,
+    });
+
+    await this.offerRepository.save(estimateOffer);
+  }
+
+  /**
+   * 견적 요청 반려
+   */
+  async reject(
+    requestId: string,
+    updateEstimateOfferDto: UpdateEstimateOfferDto,
+    userId: string,
+  ): Promise<void> {
+    // 1. 견적 요청 조회
+    const request = await this.requestRepository.findOne({
+      where: { id: requestId },
+    });
+
+    if (!request) {
+      throw new NotFoundException('견적 요청을 찾을 수 없습니다.');
+    }
+
+    // 2. Mover 프로필 조회
+    const mover = await this.moverRepository.findOne({
+      where: { user: { id: userId } },
+    });
+
+    if (!mover) {
+      throw new BadRequestException('기사 프로필을 찾을 수 없습니다.');
+    }
+
+    // 3. 요청된 Mover인지 확인
+    if (!request.targetMoverIds?.includes(mover.id)) {
+      throw new ForbiddenException('해당 견적 요청에 대한 권한이 없습니다.');
+    }
+
+    // 4. 요청 상태 확인
+    if (request.status !== RequestStatus.PENDING) {
+      throw new BadRequestException('이미 처리된 견적 요청입니다.');
+    }
+
+    // 5. 요청 상태 업데이트
+    request.status = RequestStatus.REJECTED;
+
+    await this.requestRepository.save(request);
+
+    // 6. 견적 제안 생성 (거절 사유 포함)
+    const estimateOffer = this.offerRepository.create({
+      estimateRequestId: requestId,
+      moverId: mover.id,
+      status: OfferStatus.REJECTED,
+      comment: updateEstimateOfferDto.comment,
+      isTargeted: true,
       isConfirmed: false,
     });
 

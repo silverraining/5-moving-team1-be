@@ -1,12 +1,22 @@
-import { Controller, Get, Post, Body, Param, HttpCode } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  HttpCode,
+  Patch,
+  HttpStatus,
+} from '@nestjs/common';
 import { EstimateOfferService } from './estimate-offer.service';
 import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
-// import { UpdateEstimateOfferDto } from './dto/update-estimate-offer.dto';
+import { UpdateEstimateOfferDto } from './dto/update-estimate-offer.dto';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
 import {
   ApiGetEstimateOfferDetail,
   ApiGetPendingEstimateOffers,
   ApiCreateEstimateOffer,
+  ApiRejectEstimateOffer,
 } from './docs/swagger';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { RBAC } from '@/auth/decorator/rbac.decorator';
@@ -70,18 +80,26 @@ export class EstimateOfferController {
     };
   }
 
-  // @Post()
-  // create(@Body() createEstimateOfferDto: CreateEstimateOfferDto) {
-  //   return this.estimateOfferService.create(createEstimateOfferDto);
-  // }
+  @Patch(':requestId/rejected')
+  @RBAC(Role.MOVER)
+  @HttpCode(HttpStatus.OK)
+  @ApiRejectEstimateOffer()
+  async updateOfferStatus(
+    @Param('requestId') requestId: string,
+    @Body() updateEstimateOfferDto: UpdateEstimateOfferDto,
+    @UserInfo() userInfo: UserInfo,
+  ) {
+    await this.estimateOfferService.reject(
+      requestId,
+      updateEstimateOfferDto,
+      userInfo.sub,
+    );
 
-  // @Patch(':id')
-  // update(
-  //   @Param('id') id: string,
-  //   @Body() updateEstimateOfferDto: UpdateEstimateOfferDto,
-  // ) {
-  //   return this.estimateOfferService.update(+id, updateEstimateOfferDto);
-  // }
+    return {
+      id: requestId,
+      message: '견적 요청이 성공적으로 반려되었습니다.',
+    };
+  }
 
   // @Delete(':id')
   // remove(@Param('id') id: string) {
