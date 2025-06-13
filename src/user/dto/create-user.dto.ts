@@ -14,7 +14,7 @@ export class CreateUserDto {
 
   @IsString()
   @Length(2, 20, { message: '이름은 2자 이상 20자 이하이어야 합니다.' })
-  @Matches(/^[가-힣a-zA-Z]/, {
+  @Matches(/^[가-힣a-zA-Z]+$/, {
     message:
       '이름은 한글 또는 영어만 가능하며, 공백과 특수문자는 사용할 수 없습니다.',
   })

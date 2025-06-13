@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -7,14 +8,17 @@ import {
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from './entities/user.entity';
+import { Provider, User } from './entities/user.entity';
 import * as bcrypt from 'bcrypt';
+import * as _ from 'lodash';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly configService: ConfigService,
   ) {}
 
   /**
@@ -34,11 +38,7 @@ export class UserService {
       newPassword,
       name: newName,
       phone: newPhone,
-    } = dto;
-
-    // 비밀번호 변경을 시도했는지 확인
-    const isChangePassword =
-      originalPassword && newPassword && originalPassword !== newPassword;
+    } = dto; // DTO에서 필요한 필드 추출
 
     // 변경할 사용자 조회
     const user = await this.userRepository.findOneBy({ id: userId });
@@ -48,49 +48,57 @@ export class UserService {
       throw new NotFoundException('사용자를 찾을 수 없습니다.');
     }
 
-    // 비밀번호 변경 요청이 있을 때만 기존 비밀번호 검증 및 해싱
-    let hashedPassword: string | undefined;
+    // 로컬 계정인지 확인
+    const isLocalUser = user.provider === Provider.LOCAL;
 
-    if (isChangePassword) {
+    // 업데이트할 부분
+    const updatedFields: Partial<User> = {};
+
+    // local 계정의 경우 비밀번호 관련 로직 처리
+    if (isLocalUser && originalPassword) {
+      // 기존 비밀번호가 일치하는지 확인
       const isPasswordValid = await bcrypt.compare(
         originalPassword,
         user.password,
       );
 
+      // 기존 비밀번호가 일치하지 않는 경우
       if (!isPasswordValid) {
         throw new BadRequestException('기존 비밀번호가 일치하지 않습니다.');
       }
 
-      const salt = await bcrypt.genSalt();
-      hashedPassword = await bcrypt.hash(newPassword, salt);
+      if (!newPassword) {
+        throw new BadRequestException('새 비밀번호가 누락되었습니다!');
+      }
+
+      // 비밀번호 변경을 시도했는지 확인
+      const isChangePassword = originalPassword !== newPassword;
+
+      // 비밀번호가 변경된 경우
+      if (isChangePassword) {
+        const HASH_ROUNDS = this.configService.get<number>('HASH_ROUNDS');
+        updatedFields.password = await bcrypt.hash(newPassword, HASH_ROUNDS);
+      }
     }
 
     // 변경된 필드만 객체에 담기
-    const updatedFields: Partial<typeof user> = {};
     if (newName && newName !== user.name) updatedFields.name = newName;
     if (newPhone && newPhone !== user.phone) updatedFields.phone = newPhone;
-    if (hashedPassword) updatedFields.password = hashedPassword;
 
-    if (Object.keys(updatedFields).length === 0) {
-      return false; // 변경사항 없음
+    // 변경된 필드가 없는 경우
+    if (_.isEmpty(updatedFields)) {
+      throw new HttpException('', 204);
     }
 
-    // 기존 user 객체에 변경사항 덮어쓰기
-    Object.assign(user, updatedFields);
+    const result = await this.userRepository.update(userId, updatedFields);
 
-    // DB에 변경된 데이터 저장
-    await this.userRepository.save(user);
-
-    // 변경된 사용자 정보 반환
-    const updatedUser = await this.userRepository.findOneBy({ id: userId });
-
-    if (!updatedUser) {
-      throw new InternalServerErrorException(
-        '사용자 정보 업데이트에 실패했습니다.',
-      );
+    if (result.affected === 0) {
+      throw new InternalServerErrorException('회원정보 수정에 실패했습니다.');
     }
 
-    // 이 서비스가 auth뿐만 아니라 customer service에서도 사용되므로 성공 메시지 대신 true 반환
-    return true; // 변경 성공
+    throw new HttpException(
+      { message: '회원정보가 성공적으로 수정되었습니다.' },
+      200,
+    );
   }
 }
