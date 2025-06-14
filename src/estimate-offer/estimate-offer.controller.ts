@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  HttpCode,
-  Patch,
-  HttpStatus,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 import { EstimateOfferService } from './estimate-offer.service';
 import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
 import { UpdateEstimateOfferDto } from './dto/update-estimate-offer.dto';
@@ -62,7 +53,6 @@ export class EstimateOfferController {
   @Post(':requestId')
   @RBAC(Role.MOVER)
   @ApiCreateEstimateOffer()
-  @HttpCode(201)
   async createEstimateOffer(
     @Param('requestId') requestId: string,
     @Body() createEstimateOfferDto: CreateEstimateOfferDto,
@@ -75,14 +65,15 @@ export class EstimateOfferController {
     );
 
     return {
-      statusCode: 201,
       message: '견적 제안이 성공적으로 생성되었습니다.',
     };
   }
 
-  @Patch(':requestId/rejected')
+  // 견적 요청 반려
+  // TODO: 견적 요청 반려는 사실 update 가 아니라 create의 또 다른 형태이다.
+  // 따라서 추후 함수명, dto 이름 변경 필요
+  @Post(':requestId/rejected')
   @RBAC(Role.MOVER)
-  @HttpCode(HttpStatus.OK)
   @ApiRejectEstimateOffer()
   async updateOfferStatus(
     @Param('requestId') requestId: string,
@@ -96,7 +87,6 @@ export class EstimateOfferController {
     );
 
     return {
-      id: requestId,
       message: '견적 요청이 성공적으로 반려되었습니다.',
     };
   }

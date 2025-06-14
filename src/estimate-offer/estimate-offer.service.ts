@@ -92,20 +92,20 @@ export class EstimateOfferService {
    * 견적 요청 반려
    */
   async reject(
-    requestId: string,
+    estimateRequestId: string,
     updateEstimateOfferDto: UpdateEstimateOfferDto,
     userId: string,
   ): Promise<void> {
     // 1. 견적 요청 조회
     const request = await this.requestRepository.findOne({
-      where: { id: requestId },
+      where: { id: estimateRequestId },
     });
 
     if (!request) {
       throw new NotFoundException('견적 요청을 찾을 수 없습니다.');
     }
 
-    // 2. Mover 프로필 조회
+    // 2. 기사 프로필 조회
     const mover = await this.moverRepository.findOne({
       where: { user: { id: userId } },
     });
@@ -114,8 +114,8 @@ export class EstimateOfferService {
       throw new BadRequestException('기사 프로필을 찾을 수 없습니다.');
     }
 
-    // 3. 요청된 Mover인지 확인
-    if (!request.targetMoverIds?.includes(mover.id)) {
+    // 3. 지정된 기사인지 확인
+    if (!request.targetMoverIds?.includes(userId)) {
       throw new ForbiddenException('해당 견적 요청에 대한 권한이 없습니다.');
     }
 
@@ -131,7 +131,7 @@ export class EstimateOfferService {
 
     // 6. 견적 제안 생성 (거절 사유 포함)
     const estimateOffer = this.offerRepository.create({
-      estimateRequestId: requestId,
+      estimateRequestId: estimateRequestId,
       moverId: mover.id,
       status: OfferStatus.REJECTED,
       comment: updateEstimateOfferDto.comment,
