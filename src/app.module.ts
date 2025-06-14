@@ -25,6 +25,7 @@ import { S3Module } from './s3/s3.module';
 import { DatabaseModule } from './database/database.module';
 import { databaseValidationSchema } from './database/database.config';
 import { TestErrorController } from './common/utils/test-error.controller';
+import { AppController } from './app.controller';
 
 const appValidationSchema = Joi.object({
   // 애플리케이션 실행 환경 설정 ('dev' 또는 'prod'만 허용)
@@ -64,7 +65,7 @@ const appValidationSchema = Joi.object({
     AuthModule,
     S3Module,
   ],
-  controllers: [TestErrorController],
+  controllers: [AppController, TestErrorController],
   providers: [
     {
       provide: 'APP_GUARD',
