@@ -166,3 +166,105 @@ export function ApiRejectEstimateOffer() {
     ApiResponse(CODE_401_RESPONSES),
   );
 }
+
+export function ApiGetMoverEstimateOffers() {
+  return applyDecorators(
+    ApiOperation({
+      summary: '기사가 보낸 견적 목록 조회',
+      description:
+        '로그인한 기사가 여러 고객의 요청에 대해 보낸 견적의 목록을 조회합니다.',
+    }),
+    ApiBearerAuth(),
+    ApiResponse({
+      status: 200,
+      description: '기사 견적 목록 조회 성공',
+      schema: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            isConfirmed: {
+              type: 'boolean',
+              description: '견적이 확정되었는지 여부',
+              example: false,
+            },
+            moveType: {
+              type: 'string',
+              description: '이사 유형',
+              example: 'SMALL',
+            },
+            moveDate: {
+              type: 'string',
+              format: 'date-time',
+              description: '이사 예정일',
+              example: '2024-01-15T00:00:00.000Z',
+            },
+            isTargeted: {
+              type: 'boolean',
+              description: '지명 견적 여부 (고객이 기사를 직접 지정했는지)',
+              example: false,
+            },
+            customerName: {
+              type: 'string',
+              description: '고객 이름',
+              example: '김고객',
+            },
+            fromAddressMinimal: {
+              type: 'object',
+              description: '출발지 간단 주소 (시도, 시군구)',
+              properties: {
+                sido: {
+                  type: 'string',
+                  example: '서울특별시',
+                },
+                sigungu: {
+                  type: 'string',
+                  example: '강남구',
+                },
+              },
+            },
+            toAddressMinimal: {
+              type: 'object',
+              description: '도착지 간단 주소 (시도, 시군구)',
+              properties: {
+                sido: {
+                  type: 'string',
+                  example: '서울특별시',
+                },
+                sigungu: {
+                  type: 'string',
+                  example: '서초구',
+                },
+              },
+            },
+            price: {
+              type: 'number',
+              description: '견적 가격 (원)',
+              example: 120000,
+            },
+            estimateRequestId: {
+              type: 'string',
+              description: '견적 요청 ID',
+              example: '9ed4f4a0-0391-4a4f-af22-039aed8ccc9b',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+              description: '견적 제안 생성일시',
+              example: '2024-01-10T10:30:00.000Z',
+            },
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 400,
+      description: '잘못된 요청 (기사 프로필을 찾을 수 없는 경우)',
+    }),
+    ApiResponse(CODE_401_RESPONSES),
+    ApiResponse({
+      status: 403,
+      description: '권한 없음 (기사가 아닌 경우)',
+    }),
+  );
+}

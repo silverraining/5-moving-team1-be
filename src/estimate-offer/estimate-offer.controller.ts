@@ -2,12 +2,14 @@ import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 import { EstimateOfferService } from './estimate-offer.service';
 import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
 import { UpdateEstimateOfferDto } from './dto/update-estimate-offer.dto';
+import { GetEstimateOffersResponseDto } from './dto/estimate-offer-response.dto';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
 import {
   ApiGetEstimateOfferDetail,
   ApiGetPendingEstimateOffers,
   ApiCreateEstimateOffer,
   ApiRejectEstimateOffer,
+  ApiGetMoverEstimateOffers,
 } from './docs/swagger';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { RBAC } from '@/auth/decorator/rbac.decorator';
@@ -89,6 +91,16 @@ export class EstimateOfferController {
     return {
       message: '견적 요청이 성공적으로 반려되었습니다.',
     };
+  }
+
+  // 기사가 보낸 견적 목록 조회
+  @Get('offers')
+  @RBAC(Role.MOVER)
+  @ApiGetMoverEstimateOffers()
+  async getMoverEstimateOffers(
+    @UserInfo() userInfo: UserInfo,
+  ): Promise<GetEstimateOffersResponseDto[]> {
+    return this.estimateOfferService.getMoverEstimateOffers(userInfo.sub);
   }
 
   // @Delete(':id')
