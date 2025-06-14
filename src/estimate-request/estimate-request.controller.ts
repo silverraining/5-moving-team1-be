@@ -68,6 +68,14 @@ export class EstimateRequestController {
       user.sub,
     );
   }
+
+  //Mover가 견적 요청 목록 조회
+  @Get('/')
+  @RBAC(Role.MOVER)
+  async getRequestListForMover(@UserInfo() user: UserInfo) {
+    return this.estimateRequestService.findRequestListForMover(user.sub);
+  }
+
   // @Delete(':id')
   // remove(@Param('id') id: string) {
   //   return this.estimateRequestService.remove(+id);

@@ -210,6 +210,39 @@ export class EstimateRequestService {
     };
   }
 
+  /**
+   * 기사가 진행 중인 견적 요청 목록 조회 - tartgetedMoverIds에 본인 ID가 포함된 경우, isTargeted=true 리턴
+   * @param userId 기사 ID
+   * @returns EstimateRequestResponseDto[]
+   */
+  //TODO:무한스크롤 페이지네이션
+  async findRequestListForMover(userId: string) {
+    const mover = await this.moverProfileRepository.findOne({
+      where: { user: { id: userId } },
+    });
+
+    if (!mover) {
+      throw new NotFoundException('기사 프로필을 찾을 수 없습니다.');
+    }
+
+    const requests = await this.estimateRequestRepository.find({
+      where: { status: RequestStatus.PENDING },
+      relations: ['customer', 'customer.user'],
+      order: { createdAt: 'DESC' },
+    });
+
+    return requests.map((request) => {
+      const isTargeted = request.targetMoverIds?.includes(mover.id) ?? false;
+
+      return EstimateRequestResponseDto.from(
+        request,
+        undefined,
+        { includeMinimalAddress: true },
+        isTargeted,
+      );
+    });
+  }
+
   // remove(id: number) {
   //   return `This action removes a #${id} estimateRequest`;
   // }
