@@ -16,6 +16,7 @@ export enum OfferStatus {
   CONFIRMED = 'CONFIRMED', // 고객이 확정함
   CANCELED = 'CANCELED', // 고객이 다른 기사 선택 → 자동 취소
   COMPLETED = 'COMPLETED',
+  REJECTED = 'REJECTED',
 }
 
 @Entity()
@@ -33,7 +34,7 @@ export class EstimateOffer extends BaseTable {
   @PrimaryColumn({ type: 'uuid' })
   moverId: string;
 
-  @Column()
+  @Column({ nullable: true })
   price: number; // 견적 가격
 
   @Column({ nullable: true })
@@ -48,7 +49,7 @@ export class EstimateOffer extends BaseTable {
   @Column({ default: false })
   isConfirmed: boolean; // 고객이 확정했는지 여부
 
-  @Column()
+  @Column({ nullable: true })
   confirmedAt: Date; // 고객이 확정한 날짜
 
   // EstimateOffer : Review <-> 1:1 관계

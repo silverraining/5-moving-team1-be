@@ -1,11 +1,13 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 import { EstimateOfferService } from './estimate-offer.service';
-// import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
-// import { UpdateEstimateOfferDto } from './dto/update-estimate-offer.dto';
+import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
+import { UpdateEstimateOfferDto } from './dto/update-estimate-offer.dto';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
 import {
   ApiGetEstimateOfferDetail,
   ApiGetPendingEstimateOffers,
+  ApiCreateEstimateOffer,
+  ApiRejectEstimateOffer,
 } from './docs/swagger';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { RBAC } from '@/auth/decorator/rbac.decorator';
@@ -47,18 +49,47 @@ export class EstimateOfferController {
     );
   }
 
-  // @Post()
-  // create(@Body() createEstimateOfferDto: CreateEstimateOfferDto) {
-  //   return this.estimateOfferService.create(createEstimateOfferDto);
-  // }
+  // 견적 제안 생성
+  @Post(':requestId')
+  @RBAC(Role.MOVER)
+  @ApiCreateEstimateOffer()
+  async createEstimateOffer(
+    @Param('requestId') requestId: string,
+    @Body() createEstimateOfferDto: CreateEstimateOfferDto,
+    @UserInfo() userInfo: UserInfo,
+  ) {
+    await this.estimateOfferService.create(
+      requestId,
+      createEstimateOfferDto,
+      userInfo.sub,
+    );
 
-  // @Patch(':id')
-  // update(
-  //   @Param('id') id: string,
-  //   @Body() updateEstimateOfferDto: UpdateEstimateOfferDto,
-  // ) {
-  //   return this.estimateOfferService.update(+id, updateEstimateOfferDto);
-  // }
+    return {
+      message: '견적 제안이 성공적으로 생성되었습니다.',
+    };
+  }
+
+  // 견적 요청 반려
+  // TODO: 견적 요청 반려는 사실 update 가 아니라 create의 또 다른 형태이다.
+  // 따라서 추후 함수명, dto 이름 변경 필요
+  @Post(':requestId/rejected')
+  @RBAC(Role.MOVER)
+  @ApiRejectEstimateOffer()
+  async updateOfferStatus(
+    @Param('requestId') requestId: string,
+    @Body() updateEstimateOfferDto: UpdateEstimateOfferDto,
+    @UserInfo() userInfo: UserInfo,
+  ) {
+    await this.estimateOfferService.reject(
+      requestId,
+      updateEstimateOfferDto,
+      userInfo.sub,
+    );
+
+    return {
+      message: '견적 요청이 성공적으로 반려되었습니다.',
+    };
+  }
 
   // @Delete(':id')
   // remove(@Param('id') id: string) {
