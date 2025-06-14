@@ -12,8 +12,11 @@ async function bootstrap() {
     origin: process.env.CORS_ORIGIN || 'http://localhost:3000', // 프론트엔드 주소
     credentials: true, // 쿠키, 인증 헤더 포함 허용
   });
-  //모든 라우트에 /api prefix 적용
-  app.setGlobalPrefix('api');
+
+  // API 라우트에만 prefix 적용
+  app.setGlobalPrefix('api', {
+    exclude: ['/'], // 루트 경로는 prefix에서 제외
+  });
 
   //유효성 파이프 전역 설정
   app.useGlobalPipes(
@@ -26,6 +29,7 @@ async function bootstrap() {
       },
     }),
   );
+
   //  Sentry 필터 등록
   app.useGlobalFilters(new AllExceptionsFilter());
 

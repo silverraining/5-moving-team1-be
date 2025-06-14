@@ -9,6 +9,8 @@ export class AppController {
     return {
       status: 'ok',
       message: 'Moving API Server is running',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
     };
   }
 }
