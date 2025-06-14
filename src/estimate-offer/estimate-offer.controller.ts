@@ -10,6 +10,7 @@ import {
   ApiCreateEstimateOffer,
   ApiRejectEstimateOffer,
   ApiGetMoverEstimateOffers,
+  ApiGetRejectedEstimateOffers,
 } from './docs/swagger';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { RBAC } from '@/auth/decorator/rbac.decorator';
@@ -101,6 +102,16 @@ export class EstimateOfferController {
     @UserInfo() userInfo: UserInfo,
   ): Promise<GetEstimateOffersResponseDto[]> {
     return this.estimateOfferService.getMoverEstimateOffers(userInfo.sub);
+  }
+
+  // 기사가 반려한 견적 목록 조회
+  @Get('rejected-offers')
+  @RBAC(Role.MOVER)
+  @ApiGetRejectedEstimateOffers()
+  async getRejectedEstimateOffers(
+    @UserInfo() userInfo: UserInfo,
+  ): Promise<GetEstimateOffersResponseDto[]> {
+    return this.estimateOfferService.getRejectedEstimateOffers(userInfo.sub);
   }
 
   // @Delete(':id')

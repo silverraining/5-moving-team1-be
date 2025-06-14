@@ -93,6 +93,7 @@ export class EstimateOfferResponseDto {
 
 // 기사가 보낸 견적 목록 조회 응답 DTO
 export class GetEstimateOffersResponseDto {
+  status: string;
   isConfirmed: boolean;
   moveType: string;
   moveDate: Date;
@@ -100,7 +101,7 @@ export class GetEstimateOffersResponseDto {
   customerName: string;
   fromAddressMinimal: { sido: string; sigungu: string };
   toAddressMinimal: { sido: string; sigungu: string };
-  price: number;
+  price?: number;
   estimateRequestId: string;
   createdAt: Date;
 }

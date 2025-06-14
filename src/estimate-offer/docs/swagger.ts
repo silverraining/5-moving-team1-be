@@ -5,6 +5,10 @@ import {
   ApiOperation,
   ApiParam,
   ApiResponse,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
+  ApiInternalServerErrorResponse,
+  ApiBadRequestResponse,
 } from '@nestjs/swagger';
 import {
   CODE_400_BAD_REQUEST,
@@ -13,6 +17,7 @@ import {
 import { EstimateOfferResponseDto } from '../dto/estimate-offer-response.dto';
 import { CreateEstimateOfferDto } from '../dto/create-estimate-offer.dto';
 import { UpdateEstimateOfferDto } from '../dto/update-estimate-offer.dto';
+import { GetEstimateOffersResponseDto } from '../dto/estimate-offer-response.dto';
 
 export function ApiGetPendingEstimateOffers() {
   return applyDecorators(
@@ -177,7 +182,7 @@ export function ApiGetMoverEstimateOffers() {
     ApiBearerAuth(),
     ApiResponse({
       status: 200,
-      description: '기사 견적 목록 조회 성공',
+      description: '견적 목록 조회 성공',
       schema: {
         type: 'array',
         items: {
@@ -265,6 +270,60 @@ export function ApiGetMoverEstimateOffers() {
     ApiResponse({
       status: 403,
       description: '권한 없음 (기사가 아닌 경우)',
+    }),
+  );
+}
+
+export function ApiGetRejectedEstimateOffers() {
+  return applyDecorators(
+    ApiOperation({
+      summary: '기사가 반려한 견적 목록 조회',
+      description: '기사가 고객의 요청에 대해 반려한 견적의 목록을 조회합니다.',
+    }),
+
+    ApiBearerAuth(),
+    ApiResponse({
+      status: 200,
+      description: '반려된 견적 목록 조회 성공',
+      type: GetEstimateOffersResponseDto,
+      isArray: true,
+      schema: {
+        example: [
+          {
+            isConfirmed: false,
+            moveType: 'HOME',
+            moveDate: '2024-03-20',
+            isTargeted: true,
+            customerName: '홍길동',
+            fromAddressMinimal: {
+              sido: '서울특별시',
+              sigungu: '강남구',
+            },
+            toAddressMinimal: {
+              sido: '경기도',
+              sigungu: '성남시',
+            },
+            estimateRequestId: 'uuid-string',
+            createdAt: '2024-03-15T09:00:00.000Z',
+          },
+        ],
+      },
+    }),
+    ApiUnauthorizedResponse({
+      description: '인증되지 않은 사용자',
+    }),
+    ApiForbiddenResponse({
+      description: '기사 권한이 없는 사용자',
+    }),
+    ApiBadRequestResponse({
+      description: '기사 프로필을 찾을 수 없는 경우',
+      schema: {
+        example: {
+          message: '기사 프로필을 찾을 수 없습니다.',
+          statusCode: 400,
+          error: 'Bad Request',
+        },
+      },
     }),
   );
 }
