@@ -9,9 +9,6 @@ import {
 } from '@nestjs/common';
 import { EstimateRequestService } from './estimate-request.service';
 import { CreateEstimateRequestDto } from './dto/create-estimate-request.dto';
-
-// import { UpdateEstimateRequestDto } from './dto/update-estimate-request.dto';
-
 import { UserInfo } from '@/user/decorator/user-info.decorator';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { RBAC } from '@/auth/decorator/rbac.decorator';
@@ -22,6 +19,8 @@ import {
   ApiGetMyActiveEstimateRequest,
   ApiGetMyEstimateHistory,
 } from './docs/swagger';
+import { ApiGetRequestListForMover } from './docs/swagger';
+import { EstimateRequestPaginationDto } from './dto/estimate-request-pagination.dto';
 
 @ApiBearerAuth()
 @Controller('estimate-request')
@@ -72,8 +71,15 @@ export class EstimateRequestController {
   //Mover가 견적 요청 목록 조회
   @Get('/')
   @RBAC(Role.MOVER)
-  async getRequestListForMover(@UserInfo() user: UserInfo) {
-    return this.estimateRequestService.findRequestListForMover(user.sub);
+  @ApiGetRequestListForMover()
+  async getRequestListForMover(
+    @UserInfo() user: UserInfo,
+    @Query() pagination: EstimateRequestPaginationDto,
+  ) {
+    return this.estimateRequestService.findRequestListForMover(
+      user.sub,
+      pagination,
+    );
   }
 
   // @Delete(':id')

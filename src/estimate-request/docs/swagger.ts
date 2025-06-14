@@ -6,6 +6,9 @@ import {
   ApiTags,
   ApiQuery,
   ApiParam,
+  ApiExtraModels,
+  ApiOkResponse,
+  getSchemaPath,
 } from '@nestjs/swagger';
 import { applyDecorators } from '@nestjs/common';
 
@@ -16,6 +19,8 @@ import {
   CODE_401_RESPONSES,
 } from '@/common/docs/response.swagger';
 import { CreateEstimateRequestResponseDto } from '../dto/create-estimate-request.response.dto';
+import { OrderDirection, OrderField } from '@/common/dto/cursor-pagination.dto';
+import { GenericPaginatedDto } from '@/common/dto/paginated-response.dto';
 
 export function ApiCreateEstimateRequest() {
   return applyDecorators(
@@ -182,5 +187,68 @@ export function ApiAddTargetMover() {
       ]),
     ),
     ApiResponse(CODE_401_RESPONSES),
+  );
+}
+
+export function ApiGetRequestListForMover() {
+  return applyDecorators(
+    ApiOperation({
+      summary: '기사가 진행 중인 견적 요청 목록 조회',
+      description:
+        '견적 요청 상태가 PENDING인 요청들 중, targetMoverIds에 본인의 ID가 포함된 경우 `isTargeted: true`로 반환됩니다.\n\n커서 기반 페이지네이션과 정렬 필드를 쿼리로 지정할 수 있습니다.',
+    }),
+    ApiBearerAuth(),
+
+    ApiQuery({
+      name: 'orderField',
+      enum: [OrderField.MOVE_DATE, OrderField.CREATED_AT],
+      required: false,
+      description: '정렬 기준 필드 (예: 이사일 빠른 순 || 요청일 빠른 순)',
+    }),
+    // ApiQuery({
+    //   name: 'orderDirection',
+    //   required: false,
+    //   enum: ['ASC'],
+    //   description: '정렬 방향 ASC 날짜 빠른 순',
+    //   example: 'ASC',
+    //   deprecated: true,
+    // }),
+    ApiQuery({
+      name: 'cursor',
+      required: false,
+      description:
+        '커서 기준 값. 응답의 `nextCursor` 값을 복사해 다음 요청에 사용하세요.',
+      example: '2025-06-15T12:00:00.000Z',
+    }),
+    ApiQuery({
+      name: 'take',
+      required: false,
+      description: '가져올 데이터 수 (기본값: 5)',
+      example: 5,
+    }),
+
+    // 추가된 부분
+    ApiExtraModels(GenericPaginatedDto, EstimateRequestResponseDto),
+    ApiOkResponse({
+      description: '견적 요청 목록 조회 성공',
+      schema: {
+        allOf: [
+          {
+            $ref: getSchemaPath(GenericPaginatedDto),
+          },
+          {
+            properties: {
+              items: {
+                type: 'array',
+                items: { $ref: getSchemaPath(EstimateRequestResponseDto) },
+              },
+            },
+          },
+        ],
+      },
+    }),
+
+    ApiResponse({ status: 401, description: '인증되지 않은 사용자' }),
+    ApiResponse({ status: 403, description: '기사 권한이 없는 사용자' }),
   );
 }
