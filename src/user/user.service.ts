@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -87,7 +86,7 @@ export class UserService {
 
     // 변경된 필드가 없는 경우
     if (_.isEmpty(updatedFields)) {
-      throw new HttpException('', 204);
+      return; // 변경된 내용이 없으므로 응답 없이 종료 (204 No Content)
     }
 
     const result = await this.userRepository.update(userId, updatedFields);
@@ -96,9 +95,6 @@ export class UserService {
       throw new InternalServerErrorException('회원정보 수정에 실패했습니다.');
     }
 
-    throw new HttpException(
-      { message: '회원정보가 성공적으로 수정되었습니다.' },
-      200,
-    );
+    return { message: '회원정보가 성공적으로 수정되었습니다.' }; // 성공 메시지 반환 (200 OK)
   }
 }
