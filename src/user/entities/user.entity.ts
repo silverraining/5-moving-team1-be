@@ -15,6 +15,7 @@ import {
 export enum Role {
   CUSTOMER = 'CUSTOMER',
   MOVER = 'MOVER',
+  GUEST = 'GUEST',
 }
 
 export enum Provider {
