@@ -83,19 +83,21 @@ export const CODE_401_RESPONSES = {
 };
 
 // 404
-type CODE_404_TYPE = {
-  description?: string;
-  message?: string;
-};
-export const CODE_404_NOT_FOUND = ({ description, message }: CODE_404_TYPE) => {
+export const CODE_404_NOT_FOUND = (errorExamples: ErrorExample[]) => {
   return {
     status: 404,
-    description: description || '리소스가 존재하지 않는 경우',
-    schema: {
-      example: {
-        statusCode: 404,
-        message: message || '리소스를 찾을 수 없습니다.',
-        error: 'Not Found',
+    description: '리소스가 존재하지 않는 경우',
+    content: {
+      'application/json': {
+        examples: Object.fromEntries(
+          errorExamples.map((example) => [
+            example.key,
+            {
+              summary: example.summary,
+              value: example.value,
+            },
+          ]),
+        ),
       },
     },
   };

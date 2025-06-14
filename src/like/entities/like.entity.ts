@@ -5,20 +5,18 @@ import { MoverProfile } from 'src/mover-profile/entities/mover-profile.entity';
 
 @Entity()
 export class Like extends BaseTable {
+  @PrimaryColumn('uuid')
+  moverId: string;
+
+  @PrimaryColumn('uuid')
+  customerId: string;
+
   // MoverProfile : Like <-> 1:N 관계
-  @PrimaryColumn({
-    name: 'moverId',
-    type: 'uuid',
-  }) // PK 설정
   @JoinColumn({ name: 'moverId' }) // FK 설정
   @ManyToOne(() => MoverProfile, (mover) => mover.likedCustomers)
   mover: MoverProfile;
 
   // CustomerProfile : Like <-> 1:N 관계
-  @PrimaryColumn({
-    name: 'customerId',
-    type: 'uuid',
-  }) // PK 설정
   @JoinColumn({ name: 'customerId' }) // FK 설정
   @ManyToOne(() => CustomerProfile, (customer) => customer.likedMovers)
   customer: CustomerProfile;

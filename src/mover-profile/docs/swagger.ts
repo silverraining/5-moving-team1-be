@@ -36,6 +36,7 @@ import {
   experienceValidationError,
   imageUrlValidationError,
   introValidationError,
+  moverProfileNotFoundError,
   nicknameValidationError,
   orderValidationError,
   serviceRegionValidationError,
@@ -176,12 +177,7 @@ export function ApiGetMyMoverProfile() {
       }),
     ),
     ApiResponse(CODE_401_RESPONSES),
-    ApiResponse(
-      CODE_404_NOT_FOUND({
-        description: '본인의 [mover] 프로필이 존재하지 않는 경우',
-        message: '[mover] 프로필을 찾을 수 없습니다.',
-      }),
-    ),
+    ApiResponse(CODE_404_NOT_FOUND([moverProfileNotFoundError])),
   );
 }
 
@@ -206,11 +202,6 @@ export function ApiGetMoverProfileById() {
       }),
     ),
     ApiResponse(CODE_401_RESPONSES),
-    ApiResponse(
-      CODE_404_NOT_FOUND({
-        description: '[mover] 프로필을 찾을 수 없는 경우',
-        message: '기사님의 프로필을 찾을 수 없습니다.',
-      }),
-    ),
+    ApiResponse(CODE_404_NOT_FOUND([moverProfileNotFoundError])),
   );
 }

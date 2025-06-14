@@ -29,6 +29,7 @@ import {
   descriptionValidationError,
   serviceTypeValidationError,
   serviceRegionValidationError,
+  customerProfileNotFoundError,
 } from '@/common/docs/validation.swagger';
 import { CreateCustomerProfileDto } from '../dto/create-customer-profile.dto';
 import { UpdateCustomerProfileDto } from '../dto/update-customer-profile.dto';
@@ -83,12 +84,7 @@ export function ApiGetMyCustomerProfile() {
       }),
     ),
     ApiResponse(CODE_401_RESPONSES),
-    ApiResponse(
-      CODE_404_NOT_FOUND({
-        description: '본인의 [customer] 프로필이 존재하지 않는 경우',
-        message: '고객님의 프로필을 찾을 수 없습니다!',
-      }),
-    ),
+    ApiResponse(CODE_404_NOT_FOUND([customerProfileNotFoundError])),
   );
 }
 
