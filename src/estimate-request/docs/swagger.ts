@@ -83,16 +83,10 @@ export function ApiGetMyEstimateHistory() {
     ApiOperation({
       summary: '받았던 견적 목록 조회',
       description:
-        '고객이 생성한 견적 요청 중 완료(COMPLETED), 취소(CANCELED), 만료(EXPIRED)된 요청 목록에 대해 받았던 견적서 목록을 커서 기반 페이지네이션 방식으로 조회합니다.\n정렬 기준은 생성일 최신 순`createdAt DESC`으로 고정되어있습니다.',
+        '고객이 생성한 견적 요청 중 완료(COMPLETED), 취소(CANCELED), 만료(EXPIRED)된 요청 목록에 대해 받았던 견적서 목록을 커서 기반 페이지네이션 방식으로 조회합니다.\n정렬 기준은 생성일 최신 순(`createdAt DESC`)으로 고정되어 있습니다.',
     }),
     ApiBearerAuth(),
-    ApiQuery({
-      name: 'orderField',
-      required: false,
-      enum: ['createdAt'],
-      description: '정렬 기준 필드. createdAt',
-      example: 'createdAt',
-    }),
+
     ApiQuery({
       name: 'cursor',
       required: false,
@@ -126,11 +120,11 @@ export function ApiGetMyEstimateHistory() {
         ],
       },
     }),
-
     ApiResponse({ status: 401, description: '인증되지 않은 사용자' }),
     ApiResponse({ status: 403, description: '고객 권한이 없는 사용자' }),
   );
 }
+
 export function ApiGetMyActiveEstimateRequest() {
   return applyDecorators(
     ApiOperation({
@@ -234,21 +228,13 @@ export function ApiGetRequestListForMover() {
       required: false,
       description: '정렬 기준 필드 (예: 이사일 빠른 순 || 요청일 빠른 순)',
     }),
-    // ApiQuery({
-    //   name: 'orderDirection',
-    //   required: false,
-    //   enum: ['ASC'],
-    //   description: '정렬 방향 ASC 날짜 빠른 순',
-    //   example: 'ASC',
-    //   deprecated: true,
-    // }),
     ApiQuery({
       name: 'cursor',
       required: false,
       description:
-        '커서 기준 값. 응답의 `nextCursor` 값을 복사해 다음 요청에 사용하세요.',
-      example: '2025-06-15T12:00:00.000Z',
+        '이후 응답에서 받은 `nextCursor` 값을 사용해 다음 페이지를 조회하세요.',
     }),
+
     ApiQuery({
       name: 'take',
       required: false,

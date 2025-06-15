@@ -23,6 +23,7 @@ import { ApiGetRequestListForMover } from './docs/swagger';
 import { EstimateRequestPaginationDto } from './dto/estimate-request-pagination.dto';
 import { EstimateRequestResponseDto } from './dto/estimate-request-response.dto';
 import { GenericPaginatedDto } from '@/common/dto/paginated-response.dto';
+import { CreatedAtCursorPaginationDto } from '@/common/created-at-pagination.dto';
 
 @ApiBearerAuth()
 @Controller('estimate-request')
@@ -53,7 +54,7 @@ export class EstimateRequestController {
   @ApiGetMyEstimateHistory()
   async getHistory(
     @UserInfo() user: UserInfo,
-    @Query() pagination: EstimateRequestPaginationDto,
+    @Query() pagination: CreatedAtCursorPaginationDto,
   ): Promise<GenericPaginatedDto<EstimateRequestResponseDto>> {
     return this.estimateRequestService.findAllRequestHistoryWithPagination(
       user.sub,

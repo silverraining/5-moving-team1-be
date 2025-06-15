@@ -22,6 +22,7 @@ import { MoverProfile } from '@/mover-profile/entities/mover-profile.entity';
 import { EstimateRequestPaginationDto } from './dto/estimate-request-pagination.dto';
 import { GenericPaginatedDto } from '@/common/dto/paginated-response.dto';
 import { EstimateOffer } from '@/estimate-offer/entities/estimate-offer.entity';
+import { CreatedAtCursorPaginationDto } from '@/common/created-at-pagination.dto';
 @Injectable()
 export class EstimateRequestService {
   commonService: any;
@@ -111,7 +112,7 @@ export class EstimateRequestService {
 
   async findAllRequestHistoryWithPagination(
     userId: string,
-    { cursor, take = 5 }: EstimateRequestPaginationDto,
+    { cursor, take = 5 }: CreatedAtCursorPaginationDto,
   ): Promise<GenericPaginatedDto<EstimateRequestResponseDto>> {
     //기본 쿼리 빌더 구성: 고객이 생성한 견적 요청 + 관련 정보 join
     const qb = this.estimateRequestRepository
@@ -165,15 +166,7 @@ export class EstimateRequestService {
           (like) => like?.customer?.user?.id === userId,
         );
         const stats = viewMap.get(mover.id);
-        // 보장되지 않은 관계 확인
-        if (!offer.estimateRequest) {
-          throw new Error(
-            'EstimateOffer에서 estimateRequest가 로드되지 않았습니다.',
-          );
-        }
-        if (!offer.mover) {
-          throw new Error('EstimateOffer에서 mover가 로드되지 않았습니다.');
-        }
+
         return EstimateOfferResponseDto.from(offer, isLiked ?? false, {
           confirmedCount: stats?.confirmed_estimate_count ?? 0,
           averageRating: stats?.average_rating ?? 0,
@@ -183,21 +176,12 @@ export class EstimateRequestService {
         });
       });
     };
-    // 전체 응답 변환
-    const items = sliced.map((request, idx) => {
-      try {
-        const offers = mapOffers(request.estimateOffers, moverViewMap);
-        return EstimateRequestResponseDto.from(request, offers);
-      } catch (err) {
-        console.error(
-          '[ERROR] Failed on item index:',
-          idx,
-          'request:',
-          request,
-        );
-        throw err;
-      }
+
+    const items = sliced.map((request) => {
+      const offers = mapOffers(request.estimateOffers, moverViewMap);
+      return EstimateRequestResponseDto.from(request, offers);
     });
+
     //  커서 생성
     const nextCursor = hasNext
       ? sliced[sliced.length - 1].createdAt.toISOString()
