@@ -23,6 +23,7 @@ export class EstimateRequestPaginationDto {
     const map = {
       move_date: OrderField.MOVE_DATE,
       created_at: OrderField.CREATED_AT,
+      createdAt: OrderField.CREATED_AT, //createdAt/craeted_at 혼용 대응
     };
     return map[value] || value;
   })
