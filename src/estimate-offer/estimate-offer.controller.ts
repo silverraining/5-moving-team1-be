@@ -16,6 +16,7 @@ import {
   ApiGetPendingEstimateOffers,
   ApiCreateEstimateOffer,
   ApiRejectEstimateOffer,
+  ApiConfirmEstimateOffer,
 } from './docs/swagger';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { RBAC } from '@/auth/decorator/rbac.decorator';
@@ -107,6 +108,7 @@ export class EstimateOfferController {
   @Patch(':requestId/:moverId/confirmed')
   @RBAC(Role.CUSTOMER)
   @UseInterceptors(TransactionInterceptor)
+  @ApiConfirmEstimateOffer()
   async confirmOffer(
     @Param('requestId') requestId: string,
     @Param('moverId') moverId: string,
