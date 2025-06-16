@@ -1,8 +1,4 @@
-import {
-  ServiceRegionMap,
-  ServiceTypeMap,
-} from 'src/common/const/service.const';
-import { BaseTable } from 'src/common/entity/base-table.entity';
+import { ServiceTable } from '@/common/entity/service-table.entity';
 import { EstimateRequest } from 'src/estimate-request/entities/estimate-request.entity';
 import { Like } from 'src/like/entities/like.entity';
 import { Review } from 'src/review/entities/review.entity';
@@ -18,18 +14,12 @@ import {
 } from 'typeorm';
 
 @Entity()
-export class CustomerProfile extends BaseTable {
+export class CustomerProfile extends ServiceTable {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column({ nullable: true })
   imageUrl?: string;
-
-  @Column({ type: 'json' })
-  serviceType: ServiceTypeMap;
-
-  @Column({ type: 'json' })
-  serviceRegion: ServiceRegionMap;
 
   // User : CustomerProfile <-> 1:1 관계
   @OneToOne(() => User, (user) => user.customerProfile)

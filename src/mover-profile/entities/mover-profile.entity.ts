@@ -1,8 +1,3 @@
-import {
-  ServiceRegionMap,
-  ServiceTypeMap,
-} from 'src/common/const/service.const';
-import { BaseTable } from 'src/common/entity/base-table.entity';
 import { User } from 'src/user/entities/user.entity';
 import {
   Column,
@@ -17,9 +12,10 @@ import { Like } from 'src/like/entities/like.entity';
 import { EstimateOffer } from 'src/estimate-offer/entities/estimate-offer.entity';
 import { Review } from 'src/review/entities/review.entity';
 import { MOVER_PROFILE_TABLE } from '@/common/const/query-builder.const';
+import { ServiceTable } from '@/common/entity/service-table.entity';
 
 @Entity(MOVER_PROFILE_TABLE)
-export class MoverProfile extends BaseTable {
+export class MoverProfile extends ServiceTable {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -30,19 +26,13 @@ export class MoverProfile extends BaseTable {
   imageUrl?: string;
 
   @Column()
-  experience: number;
+  experience: number; /// 경력 (년 단위)
 
   @Column()
   intro: string; /// 한 줄 소개
 
   @Column()
   description: string; /// 상세 설명
-
-  @Column({ type: 'json' })
-  serviceType: ServiceTypeMap; /// 서비스 종류
-
-  @Column({ type: 'json' })
-  serviceRegion: ServiceRegionMap; /// 서비스 지역
 
   /// User : MoverProfile <-> 1:1 관계
   @OneToOne(() => User, (user) => user.moverProfile)
