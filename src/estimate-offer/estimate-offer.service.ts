@@ -302,7 +302,15 @@ export class EstimateOfferService {
 
     // 2. 기사가 보낸 견적 목록 조회
     const offers = await this.offerRepository.find({
-      where: { moverId: mover.id },
+      where: {
+        moverId: mover.id,
+        status: In([
+          OfferStatus.PENDING,
+          OfferStatus.CONFIRMED,
+          OfferStatus.CANCELED,
+          OfferStatus.COMPLETED,
+        ]),
+      },
       relations: [
         'estimateRequest',
         'estimateRequest.customer',
