@@ -1,16 +1,17 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { SelectQueryBuilder } from 'typeorm';
-import {
-  CursorPaginationDto,
-  OrderDirection,
-  OrderField,
-  OrderItemMap,
-} from './dto/cursor-pagination.dto';
+import { CursorPaginationDto } from './dto/cursor-pagination.dto';
 import * as _ from 'lodash';
 import {
   MOVER_PROFILE_TABLE,
   MOVER_PROFILE_VIEW_TABLE,
 } from './const/query-builder.const';
+import { parseOrderString, parseFilterString } from './utils/parse-string';
+import {
+  OrderDirection,
+  OrderField,
+  OrderString,
+} from './validator/order.validator';
 
 export enum Service {
   ServiceType = 'serviceType',
@@ -32,13 +33,13 @@ export class CommonService {
       const decodedCursor = Buffer.from(cursor, 'base64').toString('utf-8');
       const cursorObj = JSON.parse(decodedCursor) as {
         values: Record<string, any>;
-        order: OrderItemMap;
+        order: OrderString;
       };
 
       const { values } = cursorObj;
       order = cursorObj.order; // cursorObj에서 order 추출
 
-      const { field, direction } = order;
+      const { field, direction } = parseOrderString(order);
       const orderAlias = this.getOrderFieldAlias(qb, field);
       const cursorId = values.id;
       const cursorValue = values[field];
@@ -55,7 +56,7 @@ export class CommonService {
       );
     }
 
-    const { field, direction } = order;
+    const { field, direction } = parseOrderString(order);
 
     if (direction !== OrderDirection.ASC && direction !== OrderDirection.DESC) {
       throw new BadRequestException('정렬 방향은 ASC 또는 DESC 여야 합니다.');
@@ -85,7 +86,7 @@ export class CommonService {
 
   private generateNextCursor<T>(
     results: T[],
-    order: OrderItemMap,
+    order: OrderString,
   ): string | null {
     if (results.length === 0) return null;
 
@@ -104,7 +105,7 @@ export class CommonService {
      */
 
     const lastItem = results.at(-1);
-    const { field } = order;
+    const { field } = parseOrderString(order);
     const value = lastItem[field];
 
     const cursorObj = {
@@ -124,18 +125,15 @@ export class CommonService {
 
   applyServiceFilterToQb<T>(
     qb: SelectQueryBuilder<T>,
-    map: Record<string, boolean>,
+    filterString: string,
     service: Service,
     table: string,
   ) {
-    if (!map) return;
+    if (!filterString) return;
 
-    const activeKeys = _(map)
-      .pickBy(Boolean) // true 값만 추출
-      .keys() // 키만 추출
-      .value(); // lodash 체이닝 결과 반환
+    const activeKeys = parseFilterString(filterString);
 
-    if (_.isEmpty(activeKeys)) return; // 활성화된 키가 없으면 필터링하지 않음
+    if (activeKeys.length === 0) return; // 활성화된 키가 없으면 필터링하지 않음
 
     // 조건문 배열 생성 (json 컬럼 내부 키가 'true'인지 확인)
     const conditions = activeKeys.map(
@@ -160,7 +158,7 @@ export class CommonService {
     const isViewJoined = joinNames.includes(MOVER_PROFILE_VIEW_TABLE);
 
     switch (field) {
-      // MoverProfile 기준 정렬 필드
+      // MoverProfileView 기준 정렬 필드
       case OrderField.REVIEW_COUNT:
       case OrderField.AVERAGE_RATING:
       case OrderField.CONFIRMED_ESTIMATE_COUNT:
