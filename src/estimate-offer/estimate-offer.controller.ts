@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   UseInterceptors,
+  Query,
 } from '@nestjs/common';
 import { EstimateOfferService } from './estimate-offer.service';
 import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
