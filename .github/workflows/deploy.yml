@@ -18,10 +18,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
-      - name: pnpm 설치
-        run: npm install -g pnpm
+      - name: pnpm 설치 및 설정
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
 
       - name: 의존성 설치
         run: pnpm install --frozen-lockfile
