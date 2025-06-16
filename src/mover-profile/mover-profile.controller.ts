@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Query,
+} from '@nestjs/common';
 import { MoverProfileService } from './mover-profile.service';
 import { CreateMoverProfileDto } from './dto/create-mover-profile.dto';
 import { UpdateMoverProfileDto } from './dto/update-mover-profile.dto';
@@ -29,17 +37,10 @@ export class MoverProfileController {
     return this.moverProfileService.create(userInfo.sub, createMoverProfileDto);
   }
 
-  /**
-   * filter 조건 중 'serviceRegion'의 조건이 많아서
-   * Param으로 받을 경우 URI가 길어지는 것을 방지하기 위해 Body로 받음
-   * Body값과의 호환성을 위해 Get요청이 아닌 Post요청으로 구현
-   * Post 요청으로 바꿈으로서 조회는 GET /mover가 아닌 POST /mover/search로 변경
-   */
-
-  @Post('search')
+  @Get()
   @Public()
   @ApiGetMoverProfiles()
-  findAll(@UserInfo() userInfo: UserInfo, @Body() dto: GetMoverProfilesDto) {
+  findAll(@UserInfo() userInfo: UserInfo, @Query() dto: GetMoverProfilesDto) {
     return this.moverProfileService.findAll(userInfo, dto);
   }
 
