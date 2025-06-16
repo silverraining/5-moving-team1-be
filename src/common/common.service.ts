@@ -78,8 +78,9 @@ export class CommonService {
 
     const results = await qb.getMany();
     const nextCursor = this.generateNextCursor(results, order);
+    const hasNext = !!nextCursor; // nextCursor가 없으면 더 불러올 데이터 없음
 
-    return { qb, nextCursor };
+    return { qb, nextCursor, hasNext };
   }
 
   private generateNextCursor<T>(
