@@ -11,6 +11,7 @@ export enum OrderField {
   EXPERIENCE = 'experience', // 경력
   CONFIRMED_ESTIMATE_COUNT = 'confirmed_estimate_count', // 확정 견적 수
   CREATED_AT = 'created_at', // 생성일 DESC 최신순
+  MOVE_DATE = 'move_date', // 이사 날짜
 }
 
 export enum OrderDirection {

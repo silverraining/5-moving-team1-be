@@ -3,7 +3,6 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiBody,
-  ApiTags,
   ApiQuery,
   ApiParam,
   ApiExtraModels,
@@ -19,8 +18,8 @@ import {
   CODE_401_RESPONSES,
 } from '@/common/docs/response.swagger';
 import { CreateEstimateRequestResponseDto } from '../dto/create-estimate-request.response.dto';
-import { OrderDirection, OrderField } from '@/common/dto/cursor-pagination.dto';
 import { GenericPaginatedDto } from '@/common/dto/paginated-response.dto';
+import { OrderField } from '@/common/validator/order.validator';
 
 export function ApiCreateEstimateRequest() {
   return applyDecorators(
