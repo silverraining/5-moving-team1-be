@@ -16,7 +16,6 @@ import {
   RequestStatus,
 } from '@/estimate-request/entities/estimate-request.entity';
 import { GetMoverProfilesDto } from './dto/get-mover-profiles.dto';
-import { OrderField } from '@/common/dto/cursor-pagination.dto';
 import { CommonService, Service } from 'src/common/common.service';
 import {
   MOVER_PROFILE_LIST_SELECT,
@@ -26,6 +25,7 @@ import {
 import { Role } from '@/user/entities/user.entity';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
 import { Review } from '@/review/entities/review.entity';
+import { OrderField } from '@/common/validator/order.validator';
 
 @Injectable()
 export class MoverProfileService {

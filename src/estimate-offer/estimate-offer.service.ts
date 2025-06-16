@@ -13,11 +13,11 @@ import {
   RequestStatus,
 } from '@/estimate-request/entities/estimate-request.entity';
 import { MoverProfileView } from '@/mover-profile/view/mover-profile.view';
-import { OrderField } from '@/common/dto/cursor-pagination.dto';
 import { EstimateOfferResponseDto } from './dto/estimate-offer-response.dto';
 import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
 import { UpdateEstimateOfferDto } from './dto/update-estimate-offer.dto';
 import { MoverProfile } from '@/mover-profile/entities/mover-profile.entity';
+import { OrderField } from '@/common/validator/order.validator';
 
 @Injectable()
 export class EstimateOfferService {
@@ -256,10 +256,10 @@ export class EstimateOfferService {
       where: { id: moverId },
       select: [
         'id',
-        OrderField.CONFIRMED_ESTIMATE_COUNT,
-        OrderField.REVIEW_COUNT,
-        OrderField.AVERAGE_RATING,
-        'like_count',
+        OrderField.CONFIRMED_ESTIMATE_COUNT as keyof MoverProfileView,
+        OrderField.REVIEW_COUNT as keyof MoverProfileView,
+        OrderField.AVERAGE_RATING as keyof MoverProfileView,
+        'like_count' as keyof MoverProfileView,
       ],
     });
 
