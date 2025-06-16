@@ -12,7 +12,7 @@ import {
   RequestStatus,
 } from './entities/estimate-request.entity';
 import { CustomerProfile } from '@/customer-profile/entities/customer-profile.entity';
-import { Brackets, DataSource, In, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
 
 import { EstimateOfferResponseDto } from '@/estimate-offer/dto/estimate-offer-response.dto';
@@ -21,7 +21,8 @@ import { MoverProfile } from '@/mover-profile/entities/mover-profile.entity';
 
 import { EstimateRequestPaginationDto } from './dto/estimate-request-pagination.dto';
 import { GenericPaginatedDto } from '@/common/dto/paginated-response.dto';
-import { OrderDirection } from '@/common/dto/cursor-pagination.dto';
+import { EstimateOffer } from '@/estimate-offer/entities/estimate-offer.entity';
+import { CreatedAtCursorPaginationDto } from '@/common/created-at-pagination.dto';
 @Injectable()
 export class EstimateRequestService {
   commonService: any;
@@ -109,63 +110,101 @@ export class EstimateRequestService {
   // COMPLETED, CANCELED, EXPIRED 상태만 조회 (대기, 진행 중인 요청 제외)
   validStatuses = ['CONFIRMED', 'COMPLETED', 'CANCELED', 'EXPIRED'];
 
-  async findAllRequestHistory(
+  async findAllRequestHistoryWithPagination(
     userId: string,
-  ): Promise<EstimateRequestResponseDto[]> {
-    const requests = await this.estimateRequestRepository.find({
-      where: {
-        status: In(this.validStatuses),
-      },
-      relations: [
-        'customer',
-        'customer.user',
-        'estimateOffers',
-        'estimateOffers.mover',
-        'estimateOffers.estimateRequest',
-        'estimateOffers.mover.reviews',
-        'estimateOffers.mover.likedCustomers',
-      ],
-      order: {
-        createdAt: 'DESC',
-      },
-    });
+    { cursor, take = 5 }: CreatedAtCursorPaginationDto,
+  ): Promise<GenericPaginatedDto<EstimateRequestResponseDto>> {
+    //기본 쿼리 빌더 구성: 고객이 생성한 견적 요청 + 관련 정보 join
+    const qb = this.estimateRequestRepository
+      .createQueryBuilder('request')
+      .addSelect('request.status') // dto에서 requestStatus 사용 시 명시적 select 필요
+      .leftJoinAndSelect('request.customer', 'customer')
+      .leftJoinAndSelect('customer.user', 'user')
+      .leftJoinAndSelect('request.estimateOffers', 'offer')
+      .leftJoinAndSelect('offer.mover', 'mover')
+      .leftJoinAndSelect('offer.estimateRequest', 'backRequest') // offer의 estimateRequest를 backRequest(alias임)로 조인
+      //TypeORM에서 양방향 관계일지라도, leftJoinAndSelect()를 통해 명시적으로 로드하지 않으면 undefined가 나올 수 있음
+      .leftJoinAndSelect('mover.reviews', 'reviews')
+      .leftJoinAndSelect('mover.likedCustomers', 'likedCustomers')
+      .where('user.id = :userId', { userId })
+      .andWhere('request.status IN (:...statuses)', {
+        statuses: this.validStatuses,
+      })
+      .orderBy('request.createdAt', 'DESC')
+      .take(take + 1); // hasNext 확인용 +1
+    // 커서 기반 페이지네이션 처리
+    // 클라이언트는 마지막 항목의 createdAt을 cursor로 전달함
+    // cursor 이전(createdAt < cursor)의 데이터만 조회하여 중복 없이 다음 페이지 구성
+    if (cursor) {
+      qb.andWhere('request.createdAt < :cursor', {
+        cursor: new Date(cursor),
+      });
+    }
+    // 데이터 조회 및 커서 페이징 처리
+    const requests = await qb.getMany();
+    const hasNext = requests.length > take;
+    const sliced = requests.slice(0, take);
 
-    const filtered = requests.filter(
-      (request) => request.customer.user.id === userId,
-    );
-
-    const allOfferMoverIds = filtered.flatMap((req) =>
+    const allMoverIds = sliced.flatMap((req) =>
       req.estimateOffers.map((o) => o.moverId),
     );
-
+    // offer에 대응하는 moverView 조회
     const moverViews = await this.dataSource
       .getRepository(MoverProfileView)
-      .findBy({ id: In(allOfferMoverIds) });
+      .findBy({ id: In(allMoverIds) });
 
     const moverViewMap = new Map(moverViews.map((v) => [v.id, v]));
 
-    return Promise.all(
-      filtered.map(async (request) => {
-        const offers = request.estimateOffers.map((offer) => {
-          const mover = offer.mover;
-          const isLiked = mover.likedCustomers?.some(
-            (like) => like?.customer?.user?.id === userId,
-          );
-          const moverView = moverViewMap.get(mover.id);
+    //  각 request에 포함된 offer 리스트 변환
+    const mapOffers = (
+      offers: EstimateOffer[],
+      viewMap: Map<string, MoverProfileView>,
+    ): EstimateOfferResponseDto[] => {
+      return offers.map((offer) => {
+        const mover = offer.mover;
+        const isLiked = mover.likedCustomers?.some(
+          (like) => like?.customer?.user?.id === userId,
+        );
+        const stats = viewMap.get(mover.id);
 
-          return EstimateOfferResponseDto.from(offer, isLiked ?? false, {
-            confirmedCount: moverView?.confirmed_estimate_count ?? 0,
-            averageRating: moverView?.average_rating ?? 0,
-            reviewCount: moverView?.review_count ?? 0,
-            likeCount: moverView?.like_count ?? 0,
-            includeFullAddress: true,
-          });
+        return EstimateOfferResponseDto.from(offer, isLiked ?? false, {
+          confirmedCount: stats?.confirmed_estimate_count ?? 0,
+          averageRating: stats?.average_rating ?? 0,
+          reviewCount: stats?.review_count ?? 0,
+          likeCount: stats?.like_count ?? 0,
+          includeFullAddress: true,
         });
+      });
+    };
 
-        return EstimateRequestResponseDto.from(request, offers);
-      }),
-    );
+    const items = sliced.map((request) => {
+      const offers = mapOffers(request.estimateOffers, moverViewMap);
+      return EstimateRequestResponseDto.from(request, offers);
+    });
+
+    //  커서 생성
+    const nextCursor = hasNext
+      ? sliced[sliced.length - 1].createdAt.toISOString()
+      : null;
+
+    const totalCount = await this.estimateRequestRepository
+      .createQueryBuilder('request')
+      .leftJoin('request.customer', 'customer')
+      .leftJoin('customer.user', 'user')
+      .where('user.id = :userId', { userId })
+      .andWhere('request.status IN (:...statuses)', {
+        statuses: this.validStatuses,
+      })
+      .getCount();
+
+    return {
+      items,
+      hasNext,
+      nextCursor,
+      totalCount,
+    };
   }
+
   /**
    * 고객이 특정 견적 요청에 대해 기사를 지정
    * @param requestId 견적 요청 ID

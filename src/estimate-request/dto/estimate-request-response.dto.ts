@@ -16,7 +16,7 @@ export class EstimateRequestResponseDto {
 
   isTargeted?: boolean;
   customerName?: string;
-
+  offerCount: number; //받은 offer 개수 (request랑 offer 응답에서 구분하기 쉽게 추가했는데 필요없으면 제거 가능)
   estimateOffers: EstimateOfferResponseDto[];
 
   /**
@@ -28,7 +28,7 @@ export class EstimateRequestResponseDto {
    */
   static from(
     request: EstimateRequest,
-    offers?: EstimateOfferResponseDto[],
+    offers: EstimateOfferResponseDto[] = [],
     options?: {
       includeAddress?: boolean;
       includeMinimalAddress?: boolean;
@@ -41,10 +41,10 @@ export class EstimateRequestResponseDto {
     dto.createdAt = request.createdAt;
     dto.moveType = request.moveType;
     dto.moveDate = request.moveDate;
-    dto.estimateOffers = offers ?? [];
+    dto.estimateOffers = offers;
+    dto.offerCount = offers.length;
 
     dto.isTargeted = isTargeted ?? false;
-
     dto.customerName = request.customer?.user?.name ?? null;
 
     if (options?.includeAddress) {
@@ -54,12 +54,12 @@ export class EstimateRequestResponseDto {
 
     if (options?.includeMinimalAddress) {
       dto.fromAddressMinimal = {
-        sido: request.fromAddress.sido,
-        sigungu: request.fromAddress.sigungu,
+        sido: request.fromAddress?.sido,
+        sigungu: request.fromAddress?.sigungu,
       };
       dto.toAddressMinimal = {
-        sido: request.toAddress.sido,
-        sigungu: request.toAddress.sigungu,
+        sido: request.toAddress?.sido,
+        sigungu: request.toAddress?.sigungu,
       };
     }
 
