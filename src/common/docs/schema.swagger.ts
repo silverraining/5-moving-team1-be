@@ -1,8 +1,3 @@
-import {
-  defaultServiceRegionMap,
-  defaultServiceTypeMap,
-} from '@/mover-profile/dto/get-mover-profiles.dto';
-
 /**
  * 200번대 응답 메시지 스키마에 사용
  * 요청이 성공적으로 처리되었음을 나타내는 메시지
@@ -19,6 +14,11 @@ import {
      ),
  */
 
+import {
+  defaultServiceRegion,
+  defaultServiceType,
+} from '../const/service.const';
+
 export const MoverProfileSchema = {
   example: {
     id: 'c9844fd7-d5f5-455c-8e11-f73ac3cfb9df',
@@ -27,8 +27,8 @@ export const MoverProfileSchema = {
     experience: 5,
     intro: '친절한 이사 전문가입니다.',
     description: '고객님의 이사를 정성껏 도와드립니다.',
-    serviceType: defaultServiceTypeMap,
-    serviceRegion: defaultServiceRegionMap,
+    serviceType: defaultServiceType,
+    serviceRegion: defaultServiceRegion,
     createdAt: '2025-05-29T12:00:00.000Z',
   },
 };
@@ -43,8 +43,8 @@ export const MoverProfileListSchema = {
         experience: 5,
         intro: '친절한 이사 전문가입니다.',
         description: '고객님의 이사를 정성껏 도와드립니다.',
-        serviceType: defaultServiceTypeMap,
-        serviceRegion: defaultServiceRegionMap,
+        serviceType: defaultServiceType,
+        serviceRegion: defaultServiceRegion,
       },
     ],
     count: 1,
@@ -82,8 +82,8 @@ export const CustomerProfileSchema = {
   example: {
     id: 'a1234567-b89c-1234-d567-890123456789',
     imageUrl: 'https://example.com/customer.jpg',
-    serviceType: defaultServiceTypeMap,
-    serviceRegion: defaultServiceRegionMap,
+    serviceType: defaultServiceType,
+    serviceRegion: defaultServiceRegion,
   },
 };
 
@@ -94,8 +94,8 @@ export const CustomerProfileDetailSchema = {
     phone: '010-1234-5678',
     id: 'a1234567-b89c-1234-d567-890123456789',
     imageUrl: 'https://example.com/customer.jpg',
-    serviceType: defaultServiceTypeMap,
-    serviceRegion: defaultServiceRegionMap,
+    serviceType: defaultServiceType,
+    serviceRegion: defaultServiceRegion,
   },
 };
 
