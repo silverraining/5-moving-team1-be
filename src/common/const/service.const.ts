@@ -24,10 +24,5 @@ export enum ServiceRegion {
   JEJU = 'Jeju-do',
 }
 
-export type ServiceTypeMap = {
-  [key in ServiceType]: boolean;
-};
-
-export type ServiceRegionMap = {
-  [key in ServiceRegion]: boolean;
-};
+export const defaultServiceType = Object.values(ServiceType).join(',');
+export const defaultServiceRegion = Object.values(ServiceRegion).join(',');

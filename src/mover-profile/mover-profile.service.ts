@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -15,7 +16,6 @@ import {
   RequestStatus,
 } from '@/estimate-request/entities/estimate-request.entity';
 import { GetMoverProfilesDto } from './dto/get-mover-profiles.dto';
-import { OrderField } from '@/common/dto/cursor-pagination.dto';
 import { CommonService, Service } from 'src/common/common.service';
 import {
   MOVER_PROFILE_LIST_SELECT,
@@ -25,6 +25,7 @@ import {
 import { Role } from '@/user/entities/user.entity';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
 import { Review } from '@/review/entities/review.entity';
+import { OrderField } from '@/common/validator/order.validator';
 
 @Injectable()
 export class MoverProfileService {
@@ -60,10 +61,16 @@ export class MoverProfileService {
   }
 
   async findAll(user: UserInfo, dto: GetMoverProfilesDto) {
-    const { serviceType, serviceRegion } = dto;
+    const { serviceType, serviceRegion, order } = dto;
     const { sub: userId, role } = user;
     const isCustomer = role === Role.CUSTOMER;
     let targetMoverIds: string[] = [];
+
+    if (!order) {
+      throw new BadRequestException(
+        "정렬 기준이 필요합니다. 'order' 필드를 포함해주세요.",
+      );
+    }
 
     // 집계 필드 정렬시: MoverProfile을 베이스로 하고 뷰와 조인
     const qb = this.moverProfileRepository
@@ -93,7 +100,7 @@ export class MoverProfileService {
     );
 
     // 커서 기반 페이징 적용
-    const { nextCursor } =
+    const { nextCursor, hasNext } =
       await this.commonService.applyCursorPaginationParamsToQb(qb, dto);
 
     const { entities, raw: aggregates } = await qb.getRawAndEntities();
@@ -123,7 +130,13 @@ export class MoverProfileService {
     }
 
     const count = await qb.getCount();
-    return { movers: moversWithAggregates, count, nextCursor, targetMoverIds };
+    return {
+      movers: moversWithAggregates,
+      count,
+      nextCursor,
+      hasNext,
+      targetMoverIds,
+    };
   }
 
   mergeEntityWithAggregates(

@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Patch,
+  UseInterceptors,
+  Query,
+} from '@nestjs/common';
 import { EstimateOfferService } from './estimate-offer.service';
 import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
 import { UpdateEstimateOfferDto } from './dto/update-estimate-offer.dto';
@@ -8,10 +17,15 @@ import {
   ApiGetPendingEstimateOffers,
   ApiCreateEstimateOffer,
   ApiRejectEstimateOffer,
+  ApiConfirmEstimateOffer,
 } from './docs/swagger';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { RBAC } from '@/auth/decorator/rbac.decorator';
 import { Role } from '@/user/entities/user.entity';
+import { TransactionInterceptor } from '@/common/interceptor/transaction.interceptor';
+import { handleError } from '@/common/utils/handle-error.util';
+import { QueryRunner } from '@/common/decorator/query-runner.decorator';
+import type { QueryRunner as QR } from 'typeorm';
 import { GenericPaginatedDto } from '@/common/dto/paginated-response.dto';
 import { EstimateOfferResponseDto } from './dto/estimate-offer-response.dto';
 import { CreatedAtCursorPaginationDto } from '../common/dto/created-at-pagination.dto';
@@ -96,8 +110,26 @@ export class EstimateOfferController {
     };
   }
 
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.estimateOfferService.remove(+id);
-  // }
+  // 고객이 기사의 제안 견적 확정
+  @Patch(':requestId/:moverId/confirmed')
+  @RBAC(Role.CUSTOMER)
+  @UseInterceptors(TransactionInterceptor)
+  @ApiConfirmEstimateOffer()
+  async confirmOffer(
+    @Param('requestId') requestId: string,
+    @Param('moverId') moverId: string,
+    @UserInfo() userInfo: UserInfo,
+    @QueryRunner() queryRunner: QR,
+  ) {
+    return handleError(
+      () =>
+        this.estimateOfferService.confirm(
+          requestId,
+          moverId,
+          userInfo.sub,
+          queryRunner,
+        ),
+      '견적 확정 처리 중 서버 오류가 발생했습니다.',
+    );
+  }
 }

@@ -1,4 +1,4 @@
-import { OrderField } from '@/common/dto/cursor-pagination.dto';
+import { OrderField } from '@/common/validator/order.validator';
 import { Transform } from 'class-transformer';
 import { IsEnum, IsInt, IsOptional, IsString } from 'class-validator';
 /**

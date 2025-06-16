@@ -6,21 +6,18 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EstimateOffer, OfferStatus } from './entities/estimate-offer.entity';
-import { In, Repository } from 'typeorm';
+import { In, QueryRunner, Repository } from 'typeorm';
 import { DataSource } from 'typeorm';
 import {
   EstimateRequest,
   RequestStatus,
 } from '@/estimate-request/entities/estimate-request.entity';
 import { MoverProfileView } from '@/mover-profile/view/mover-profile.view';
-import {
-  CursorPaginationDto,
-  OrderField,
-} from '@/common/dto/cursor-pagination.dto';
 import { EstimateOfferResponseDto } from './dto/estimate-offer-response.dto';
 import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
 import { UpdateEstimateOfferDto } from './dto/update-estimate-offer.dto';
 import { MoverProfile } from '@/mover-profile/entities/mover-profile.entity';
+import { OrderField } from '@/common/validator/order.validator';
 import { GenericPaginatedDto } from '@/common/dto/paginated-response.dto';
 import { CreatedAtCursorPaginationDto } from '../common/dto/created-at-pagination.dto';
 
@@ -270,10 +267,10 @@ export class EstimateOfferService {
       where: { id: moverId },
       select: [
         'id',
-        OrderField.CONFIRMED_ESTIMATE_COUNT,
-        OrderField.REVIEW_COUNT,
-        OrderField.AVERAGE_RATING,
-        'like_count',
+        OrderField.CONFIRMED_ESTIMATE_COUNT as keyof MoverProfileView,
+        OrderField.REVIEW_COUNT as keyof MoverProfileView,
+        OrderField.AVERAGE_RATING as keyof MoverProfileView,
+        'like_count' as keyof MoverProfileView,
       ],
     });
 
@@ -294,5 +291,70 @@ export class EstimateOfferService {
       ...dto,
       fromAddressMinimal: dto.fromAddressMinimal ?? '',
     } as EstimateOfferResponseDto;
+  }
+
+  /**
+   * 고객이 특정 기사님의 제안 견적을 수락
+   */
+
+  async confirm(
+    requestId: string,
+    moverId: string,
+    userId: string,
+    qr: QueryRunner,
+  ) {
+    const manager = qr.manager; // QueryRunner를 사용하여 트랜잭션을 관리
+
+    // 1. 견적 요청 조회
+    const request = await manager.findOne(EstimateRequest, {
+      where: { id: requestId },
+      relations: ['customer', 'customer.user'],
+    });
+
+    if (!request) {
+      throw new NotFoundException('견적 요청을 찾을 수 없습니다.');
+    }
+
+    // 2. 요청한 고객이 본인인지 확인
+    const isMyRequestEstimate = request.customer.user.id === userId;
+    if (!isMyRequestEstimate) {
+      throw new ForbiddenException('접근 권한이 없습니다.');
+    }
+
+    // 3. 요청 상태 확인
+    if (request.status !== RequestStatus.PENDING) {
+      throw new BadRequestException('이미 처리된 견적 요청입니다.');
+    }
+
+    // 4. 견적 제안 조회
+    const offer = await manager.findOneBy(EstimateOffer, {
+      estimateRequestId: requestId,
+      moverId,
+    });
+
+    if (!offer) {
+      throw new NotFoundException('해당 견적 제안을 찾을 수 없습니다.');
+    }
+
+    // 5. 제안 상태 확인
+    if (offer.status !== OfferStatus.PENDING) {
+      throw new BadRequestException('이미 처리된 견적 제안입니다.');
+    }
+
+    // 4. 제안 상태 업데이트
+    offer.status = OfferStatus.CONFIRMED;
+    offer.isConfirmed = true;
+    offer.confirmedAt = new Date();
+    await manager.save(offer);
+
+    // 5. 견적 요청 상태 업데이트
+    request.status = RequestStatus.CONFIRMED;
+    request.confirmedOfferId = offer.id;
+    await manager.save(request);
+
+    // 6. 성공 메시지
+    return {
+      message: '견적 제안이 성공적으로 확정되었습니다.',
+    };
   }
 }

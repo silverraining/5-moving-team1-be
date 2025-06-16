@@ -82,6 +82,27 @@ export const CODE_401_RESPONSES = {
   },
 };
 
+// 403
+export const CODE_403_FORBIDDEN = (errorExamples: ErrorExample[]) => {
+  return {
+    status: 403,
+    description: '권한 없음',
+    content: {
+      'application/json': {
+        examples: Object.fromEntries(
+          errorExamples.map((example) => [
+            example.key,
+            {
+              summary: example.summary,
+              value: example.value,
+            },
+          ]),
+        ),
+      },
+    },
+  };
+};
+
 // 404
 export const CODE_404_NOT_FOUND = (errorExamples: ErrorExample[]) => {
   return {

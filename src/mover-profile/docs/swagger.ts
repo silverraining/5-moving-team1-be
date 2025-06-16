@@ -5,10 +5,10 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { CreateMoverProfileDto } from '../dto/create-mover-profile.dto';
 import { UpdateMoverProfileDto } from '../dto/update-mover-profile.dto';
-import { GetMoverProfilesDto } from '../dto/get-mover-profiles.dto';
 import {
   CODE_200_SUCCESS,
   CODE_201_CREATED,
@@ -24,10 +24,6 @@ import {
 } from '@/common/docs/schema.swagger';
 import {
   CreateMoverProfileFullExample,
-  GetMoverProfileDefaultExample,
-  GetMoverProfilesFullExample,
-  GetMoverProfilesNoFilterExample,
-  GetMoverProfilesNoFilterWithCursorExample,
   UpdateMoverProfileFullExample,
 } from '@/common/docs/body.swagger';
 import {
@@ -43,6 +39,13 @@ import {
   serviceTypeValidationError,
   takeValidationError,
 } from '@/common/docs/validation.swagger';
+import {
+  cursorQuery,
+  orderQuery,
+  serviceRegionQuery,
+  serviceTypeQuery,
+  takeQuery,
+} from '@/common/docs/query.swagger';
 
 export const ApiCreateMoverProfile = () =>
   applyDecorators(
@@ -134,15 +137,11 @@ export const ApiGetMoverProfiles = () =>
 - serviceType 및 serviceRegion은 기본적으로 전체 true 값으로 요청할 수 있습니다.
       `,
     }),
-    ApiBody({
-      type: GetMoverProfilesDto,
-      examples: {
-        GetMoverProfileDefaultExample,
-        GetMoverProfilesFullExample,
-        GetMoverProfilesNoFilterExample,
-        GetMoverProfilesNoFilterWithCursorExample,
-      },
-    }),
+    ApiQuery(cursorQuery),
+    ApiQuery(orderQuery),
+    ApiQuery(takeQuery),
+    ApiQuery(serviceTypeQuery),
+    ApiQuery(serviceRegionQuery),
     ApiResponse(
       CODE_200_SUCCESS({
         description: '[mover] 프로필 목록 조회 성공',

@@ -1,6 +1,6 @@
+import { IsCommaSeparatedEnum } from '@/common/validator/service.validator';
 import {
   IsInt,
-  IsObject,
   IsOptional,
   IsString,
   Length,
@@ -9,10 +9,11 @@ import {
   Min,
 } from 'class-validator';
 import {
-  ServiceRegionMap,
-  ServiceTypeMap,
+  defaultServiceRegion,
+  defaultServiceType,
+  ServiceRegion,
+  ServiceType,
 } from 'src/common/const/service.const';
-import { HasAtLeastOneTrue } from 'src/common/validator/service.validator';
 
 export class CreateMoverProfileDto {
   @IsString()
@@ -43,15 +44,17 @@ export class CreateMoverProfileDto {
   @Length(10, 500, { message: '설명은 10자 이상 500자 이하 입니다.' })
   description: string;
 
-  @IsObject()
-  @HasAtLeastOneTrue({
-    message: '서비스 타입은 최소 하나 이상 선택되어야 합니다.',
+  @IsOptional()
+  @IsString()
+  @IsCommaSeparatedEnum(ServiceType, {
+    message: 'serviceType의 값이 유효하지 않습니다.',
   })
-  serviceType: ServiceTypeMap;
+  serviceType?: string = defaultServiceType;
 
-  @IsObject()
-  @HasAtLeastOneTrue({
-    message: '서비스 지역은 최소 하나 이상 선택되어야 합니다.',
+  @IsOptional()
+  @IsString()
+  @IsCommaSeparatedEnum(ServiceRegion, {
+    message: 'serviceRegion의 값이 유효하지 않습니다.',
   })
-  serviceRegion: ServiceRegionMap;
+  serviceRegion?: string = defaultServiceRegion;
 }

@@ -10,12 +10,24 @@ import {
   getSchemaPath,
 } from '@nestjs/swagger';
 import {
+  CODE_200_SUCCESS,
   CODE_400_BAD_REQUEST,
   CODE_401_RESPONSES,
+  CODE_403_FORBIDDEN,
+  CODE_404_NOT_FOUND,
+  CODE_500_INTERNAL_SERVER_ERROR,
 } from '@/common/docs/response.swagger';
 import { EstimateOfferResponseDto } from '../dto/estimate-offer-response.dto';
 import { CreateEstimateOfferDto } from '../dto/create-estimate-offer.dto';
 import { UpdateEstimateOfferDto } from '../dto/update-estimate-offer.dto';
+import { MessageSchema } from '@/common/docs/schema.swagger';
+import {
+  estimateOfferAlreadyProcessedError,
+  estimateOfferNotFoundError,
+  estimateRequestAlreadyProcessedError,
+  estimateRequestNotFoundError,
+  ForbiddenError,
+} from '@/common/docs/validation.swagger';
 import { GenericPaginatedDto } from '@/common/dto/paginated-response.dto';
 
 export function ApiGetPendingEstimateOffers() {
@@ -219,5 +231,55 @@ export function ApiRejectEstimateOffer() {
       description: '견적 요청을 찾을 수 없음 또는 권한 없음',
     }),
     ApiResponse(CODE_401_RESPONSES),
+  );
+}
+
+export function ApiConfirmEstimateOffer() {
+  return applyDecorators(
+    ApiOperation({
+      summary: '견적 요청 확정',
+      description: '고객이 기사에게 받은 견적을 확정합니다.',
+    }),
+    ApiBearerAuth(),
+    ApiParam({
+      name: 'requestId',
+      required: true,
+      description: '견적 요청 ID (UUID)',
+      example: '9ed4f4a0-0391-4a4f-af22-039aed8ccc9b',
+      type: String,
+    }),
+    ApiParam({
+      name: 'moverId',
+      required: true,
+      description: '기사 ID (UUID)',
+      example: '1a2b3c4d-5678-90ef-abcd-1234567890ab',
+      type: String,
+    }),
+    ApiResponse(
+      CODE_200_SUCCESS({
+        description: '견적 요청 확정 성공한 경우',
+        schema: MessageSchema('견적 제안이 성공적으로 확정되었습니다.'),
+      }),
+    ),
+    ApiResponse(
+      CODE_400_BAD_REQUEST([
+        estimateRequestAlreadyProcessedError,
+        estimateOfferAlreadyProcessedError,
+      ]),
+    ),
+    ApiResponse(CODE_403_FORBIDDEN([ForbiddenError])),
+    ApiResponse(CODE_401_RESPONSES),
+    ApiResponse(
+      CODE_404_NOT_FOUND([
+        estimateRequestNotFoundError,
+        estimateOfferNotFoundError,
+      ]),
+    ),
+    ApiResponse(
+      CODE_500_INTERNAL_SERVER_ERROR({
+        description: '견적 요청 확정 실패한 경우',
+        message: '견적 확정 처리 중 서버 오류가 발생했습니다.',
+      }),
+    ),
   );
 }
