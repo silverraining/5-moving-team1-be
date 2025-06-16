@@ -115,7 +115,7 @@ export class EstimateOfferController {
     @UserInfo() userInfo: UserInfo,
     @QueryRunner() queryRunner: QR,
   ) {
-    return await handleError(
+    return handleError(
       () =>
         this.estimateOfferService.confirm(
           requestId,
