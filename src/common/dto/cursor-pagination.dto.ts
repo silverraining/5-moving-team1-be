@@ -25,7 +25,8 @@ export class CursorPaginationDto {
   cursor?: string;
 
   @IsObject()
-  order: OrderItemMap;
+  @IsOptional()
+  order?: OrderItemMap;
 
   @IsInt()
   @IsOptional()
