@@ -6,7 +6,8 @@ export enum OrderField {
   AVERAGE_RATING = 'average_rating', // 평균 평점
   EXPERIENCE = 'experience', // 경력
   CONFIRMED_ESTIMATE_COUNT = 'confirmed_estimate_count', // 확정 견적 수
-  CREATED_AT = 'created_at', // 생성일 DESC 최신순
+  CREATED_AT = 'createdAt',
+  MOVE_DATE = 'moveDate', // 이사 날짜
 }
 
 export enum OrderDirection {

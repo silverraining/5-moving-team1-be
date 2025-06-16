@@ -28,11 +28,12 @@ export class EstimateRequestResponseDto {
    */
   static from(
     request: EstimateRequest,
-    offers: EstimateOfferResponseDto[],
+    offers?: EstimateOfferResponseDto[],
     options?: {
       includeAddress?: boolean;
       includeMinimalAddress?: boolean;
     },
+    isTargeted?: boolean,
   ): EstimateRequestResponseDto {
     const dto = new EstimateRequestResponseDto();
 
@@ -40,11 +41,9 @@ export class EstimateRequestResponseDto {
     dto.createdAt = request.createdAt;
     dto.moveType = request.moveType;
     dto.moveDate = request.moveDate;
-    dto.estimateOffers = offers;
+    dto.estimateOffers = offers ?? [];
 
-    dto.isTargeted =
-      Array.isArray(request.targetMoverIds) &&
-      request.targetMoverIds.length > 0;
+    dto.isTargeted = isTargeted ?? false;
 
     dto.customerName = request.customer?.user?.name ?? null;
 

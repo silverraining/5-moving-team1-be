@@ -18,8 +18,13 @@ import { UserInfo } from '@/user/decorator/user-info.decorator';
 import { EstimateOfferResponseDto } from '@/estimate-offer/dto/estimate-offer-response.dto';
 import { MoverProfileView } from '@/mover-profile/view/mover-profile.view';
 import { MoverProfile } from '@/mover-profile/entities/mover-profile.entity';
+
+import { EstimateRequestPaginationDto } from './dto/estimate-request-pagination.dto';
+import { GenericPaginatedDto } from '@/common/dto/paginated-response.dto';
+import { OrderDirection } from '@/common/dto/cursor-pagination.dto';
 @Injectable()
 export class EstimateRequestService {
+  commonService: any;
   constructor(
     @InjectRepository(EstimateRequest)
     private readonly estimateRequestRepository: Repository<EstimateRequest>,
@@ -207,6 +212,78 @@ export class EstimateRequestService {
 
     return {
       message: `🧑‍🔧 ${mover.nickname} 기사님이 지정 견적 기사로 추가되었습니다.`,
+    };
+  }
+
+  /**
+   * 기사가 진행 중인 견적 요청 목록 조회 - tartgetedMoverIds에 본인 ID가 포함된 경우, isTargeted=true 리턴
+   * @param userId 기사 ID
+   * @returns EstimateRequestResponseDto[]
+   */
+
+  async findRequestListForMover(
+    userId: string,
+    pagination: EstimateRequestPaginationDto,
+  ): Promise<GenericPaginatedDto<EstimateRequestResponseDto>> {
+    const { orderField, cursor, take = 5 } = pagination;
+
+    //  mover 프로필 조회
+    const mover = await this.moverProfileRepository.findOne({
+      where: { user: { id: userId } },
+    });
+    if (!mover) {
+      throw new NotFoundException('기사 프로필을 찾을 수 없습니다.');
+    }
+
+    // 견적 요청 쿼리 빌더
+    const qb = this.estimateRequestRepository
+      .createQueryBuilder('request')
+      .leftJoinAndSelect('request.customer', 'customer')
+      .leftJoinAndSelect('customer.user', 'user')
+      .where('request.status = :status', { status: RequestStatus.PENDING })
+      .orderBy(`request.${orderField}`, 'ASC')
+      .addOrderBy('request.createdAt', 'ASC') //이사일이 같으면 생성일로 정렬
+      .take(take + 1); // hasNext 판단용으로 실제데이터 take +1 가져옴
+
+    // 커서 페이징 조건 추가
+    if (cursor) {
+      const cursorValue =
+        ['move_date', 'created_at'].includes(orderField) &&
+        typeof cursor === 'string'
+          ? new Date(cursor) //cursor는 ISO 문자열로 들어오므로 Date 타입 변환
+          : cursor;
+      qb.andWhere(`request.${orderField} > :cursor`, { cursor: cursorValue });
+    }
+
+    // 데이터 조회
+    const requests = await qb.getMany();
+    const hasNext = requests.length > take; //hasNext 판단 후 슬라이스
+    const sliced = requests.slice(0, take);
+
+    // 응답 DTO 변환
+    const items = sliced.map((request) =>
+      EstimateRequestResponseDto.from(
+        request,
+        undefined,
+        { includeMinimalAddress: true },
+        request.targetMoverIds?.includes(mover.id) ?? false,
+      ),
+    );
+
+    // nextCursor를 마지막 요소의 정렬 기준 값으로 설정
+    const nextCursor = hasNext ? sliced[sliced.length - 1]?.[orderField] : null;
+
+    // totalCount (필터 없이)
+    const totalCount = await this.estimateRequestRepository
+      .createQueryBuilder('request')
+      .where('request.status = :status', { status: RequestStatus.PENDING })
+      .getCount();
+
+    return {
+      items,
+      nextCursor,
+      hasNext,
+      totalCount,
     };
   }
 
