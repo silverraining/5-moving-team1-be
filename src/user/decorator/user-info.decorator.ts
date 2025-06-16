@@ -12,17 +12,26 @@ export type UserInfo = {
 
 export const UserInfo = createParamDecorator(
   (_: unknown, context: ExecutionContext) => {
-    const req = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest();
+    const { user, isPublic } = request;
 
-    if (!req || !req.user || !req.user.sub) {
-      throw new UnauthorizedException('사용자 정보를 찾을 수 없습니다!');
+    // 1. 비회원 접근 허용 (예: @Public() 적용된 라우트)
+    if (isPublic && !user) {
+      return {
+        sub: 'anonymous',
+        role: Role.GUEST, // 비회원 사용자
+      };
     }
 
-    const userInfo: UserInfo = {
-      sub: req.user.sub, // 사용자 ID
-      role: req.user.role, // 사용자 역할
-    };
+    // 2. 토큰은 있지만 사용자 정보가 불완전한 경우: 예외 발생
+    if (!request || !user || !user.sub) {
+      throw new UnauthorizedException('사용자 정보가 없습니다.');
+    }
 
-    return userInfo;
+    // 3. 인증된 사용자 정보 반환
+    return {
+      sub: user.sub, // 사용자 ID
+      role: user.role, // 사용자 역할
+    };
   },
 );

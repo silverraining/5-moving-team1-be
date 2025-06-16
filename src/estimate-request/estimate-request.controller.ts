@@ -9,9 +9,6 @@ import {
 } from '@nestjs/common';
 import { EstimateRequestService } from './estimate-request.service';
 import { CreateEstimateRequestDto } from './dto/create-estimate-request.dto';
-
-// import { UpdateEstimateRequestDto } from './dto/update-estimate-request.dto';
-
 import { UserInfo } from '@/user/decorator/user-info.decorator';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { RBAC } from '@/auth/decorator/rbac.decorator';
@@ -21,7 +18,12 @@ import {
   ApiCreateEstimateRequest,
   ApiGetMyActiveEstimateRequest,
   ApiGetMyEstimateHistory,
+  ApiGetRequestListForMover,
 } from './docs/swagger';
+import { EstimateRequestPaginationDto } from './dto/estimate-request-pagination.dto';
+import { EstimateRequestResponseDto } from './dto/estimate-request-response.dto';
+import { CreatedAtCursorPaginationDto } from '@/common/dto/created-at-pagination.dto';
+import { GenericPaginatedDto } from '@/common/dto/paginated-response.dto';
 
 @ApiBearerAuth()
 @Controller('estimate-request')
@@ -47,11 +49,17 @@ export class EstimateRequestController {
     return this.estimateRequestService.create(dto, user);
   }
 
-  @Get('history')
+  @Get('/history')
   @RBAC(Role.CUSTOMER)
   @ApiGetMyEstimateHistory()
-  async findAllRequestHistory(@UserInfo() user: UserInfo) {
-    return this.estimateRequestService.findAllRequestHistory(user.sub);
+  async getHistory(
+    @UserInfo() user: UserInfo,
+    @Query() pagination: CreatedAtCursorPaginationDto,
+  ): Promise<GenericPaginatedDto<EstimateRequestResponseDto>> {
+    return this.estimateRequestService.findAllRequestHistoryWithPagination(
+      user.sub,
+      pagination,
+    );
   }
 
   @Patch(':requestId/targeted')
@@ -68,6 +76,21 @@ export class EstimateRequestController {
       user.sub,
     );
   }
+
+  //Mover가 견적 요청 목록 조회
+  @Get('/')
+  @RBAC(Role.MOVER)
+  @ApiGetRequestListForMover()
+  async getRequestListForMover(
+    @UserInfo() user: UserInfo,
+    @Query() pagination: EstimateRequestPaginationDto,
+  ) {
+    return this.estimateRequestService.findRequestListForMover(
+      user.sub,
+      pagination,
+    );
+  }
+
   // @Delete(':id')
   // remove(@Param('id') id: string) {
   //   return this.estimateRequestService.remove(+id);

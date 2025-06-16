@@ -25,6 +25,9 @@ import { TransactionInterceptor } from '@/common/interceptor/transaction.interce
 import { handleError } from '@/common/utils/handle-error.util';
 import { QueryRunner } from '@/common/decorator/query-runner.decorator';
 import type { QueryRunner as QR } from 'typeorm';
+import { GenericPaginatedDto } from '@/common/dto/paginated-response.dto';
+import { EstimateOfferResponseDto } from './dto/estimate-offer-response.dto';
+import { CreatedAtCursorPaginationDto } from '../common/dto/created-at-pagination.dto';
 
 @Controller('estimate-offer')
 @ApiBearerAuth()
@@ -38,10 +41,12 @@ export class EstimateOfferController {
   async getOffersByEstimateRequestId(
     @Param('requestId') requestId: string,
     @UserInfo() userInfo: UserInfo,
-  ) {
+    @Query() query: CreatedAtCursorPaginationDto,
+  ): Promise<GenericPaginatedDto<EstimateOfferResponseDto>> {
     return this.estimateOfferService.getPendingOffersByRequestId(
       requestId,
       userInfo.sub,
+      query,
     );
   }
 

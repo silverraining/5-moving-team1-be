@@ -2,9 +2,12 @@ import { applyDecorators } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiBody,
+  ApiExtraModels,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
+  getSchemaPath,
 } from '@nestjs/swagger';
 import {
   CODE_200_SUCCESS,
@@ -25,13 +28,14 @@ import {
   estimateRequestNotFoundError,
   ForbiddenError,
 } from '@/common/docs/validation.swagger';
+import { GenericPaginatedDto } from '@/common/dto/paginated-response.dto';
 
 export function ApiGetPendingEstimateOffers() {
   return applyDecorators(
     ApiOperation({
       summary: '대기 중인 견적 요청에 대한 오퍼 목록 조회',
       description:
-        '로그인한 고객 본인의 견적 요청중 현재 상태가 PENDING인 견적 요청 ID에 대해 기사님들이 보낸 견적 목록을 조회합니다.',
+        '로그인한 고객 본인의 견적 요청 중 상태가 PENDING인 요청에 대해 기사님들이 보낸 오퍼 목록을 커서 기반 페이지네이션 형식으로 조회합니다.',
     }),
     ApiBearerAuth(),
     ApiParam({
@@ -39,18 +43,69 @@ export function ApiGetPendingEstimateOffers() {
       required: true,
       description: '견적 요청 ID (UUID)',
       example: '9ed4f4a0-0391-4a4f-af22-039aed8ccc9b',
-      type: String,
     }),
+    ApiQuery({
+      name: 'cursor',
+      required: false,
+      type: String,
+      description:
+        '이전 응답의 nextCursor 값을 그대로 사용하세요. 이 값이 없으면 가장 최근 오퍼부터 조회합니다.',
+    }),
+    ApiQuery({
+      name: 'take',
+      required: false,
+      type: Number,
+      example: 5,
+      description: '가져올 개수 (기본값: 5)',
+    }),
+    ApiExtraModels(GenericPaginatedDto, EstimateOfferResponseDto),
     ApiResponse({
       status: 200,
       description: '대기 중인 견적 목록 조회 성공',
-      type: EstimateOfferResponseDto,
-      isArray: true,
+      schema: {
+        allOf: [
+          { $ref: getSchemaPath(GenericPaginatedDto) },
+          {
+            properties: {
+              items: {
+                type: 'array',
+                items: {
+                  allOf: [
+                    { $ref: getSchemaPath(EstimateOfferResponseDto) },
+                    {
+                      properties: {
+                        mover: {
+                          type: 'object',
+                          properties: {
+                            nickname: { type: 'string', example: '김기사' },
+                            imageUrl: {
+                              type: 'string',
+                              example: 'https://example.com/profile.jpg',
+                              nullable: true,
+                            },
+                            experience: { type: 'number', example: 3 },
+                            intro: {
+                              type: 'string',
+                              example: '친절한 기사입니다.',
+                            },
+                            rating: { type: 'number', example: 4.7 },
+                            reviewCount: { type: 'number', example: 12 },
+                            likeCount: { type: 'number', example: 23 },
+                            isLiked: { type: 'boolean', example: true },
+                            confirmedCount: { type: 'number', example: 5 },
+                          },
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        ],
+      },
     }),
-    ApiResponse({
-      status: 400,
-      description: '잘못된 요청',
-    }),
+    ApiResponse({ status: 400, description: '잘못된 요청' }),
     ApiResponse({
       status: 403,
       description: '권한 없음. 본인의 요청이 아닐 경우',
