@@ -22,7 +22,8 @@ import { MoverProfile } from '@/mover-profile/entities/mover-profile.entity';
 import { EstimateRequestPaginationDto } from './dto/estimate-request-pagination.dto';
 import { GenericPaginatedDto } from '@/common/dto/paginated-response.dto';
 import { EstimateOffer } from '@/estimate-offer/entities/estimate-offer.entity';
-import { CreatedAtCursorPaginationDto } from '@/common/created-at-pagination.dto';
+import { CreatedAtCursorPaginationDto } from '@/common/dto/created-at-pagination.dto';
+
 @Injectable()
 export class EstimateRequestService {
   commonService: any;
@@ -108,7 +109,7 @@ export class EstimateRequestService {
    * @returns EstimateRequestResponseDto[]
    */
   // COMPLETED, CANCELED, EXPIRED 상태만 조회 (대기, 진행 중인 요청 제외)
-  validStatuses = ['CONFIRMED', 'COMPLETED', 'CANCELED', 'EXPIRED'];
+  validStatuses = ['CONFIRMED', 'COMPLETED', 'EXPIRED'];
 
   async findAllRequestHistoryWithPagination(
     userId: string,
