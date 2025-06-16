@@ -1,0 +1,26 @@
+# Node modules
+node_modules/
+
+# Development files
+.git/
+.github/
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Test files
+test/
+coverage/
+
+# Environment files (will be set in EB environment)
+.env
+.env.local
+.env.*.local
+
+# Documentation
+README.md 
