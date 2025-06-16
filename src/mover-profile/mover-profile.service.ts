@@ -100,7 +100,7 @@ export class MoverProfileService {
     );
 
     // 커서 기반 페이징 적용
-    const { nextCursor } =
+    const { nextCursor, hasNext } =
       await this.commonService.applyCursorPaginationParamsToQb(qb, dto);
 
     const { entities, raw: aggregates } = await qb.getRawAndEntities();
@@ -130,7 +130,13 @@ export class MoverProfileService {
     }
 
     const count = await qb.getCount();
-    return { movers: moversWithAggregates, count, nextCursor, targetMoverIds };
+    return {
+      movers: moversWithAggregates,
+      count,
+      nextCursor,
+      hasNext,
+      targetMoverIds,
+    };
   }
 
   mergeEntityWithAggregates(
