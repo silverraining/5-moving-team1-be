@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
 import { EstimateOfferService } from './estimate-offer.service';
 import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
 import { UpdateEstimateOfferDto } from './dto/update-estimate-offer.dto';
@@ -12,6 +12,9 @@ import {
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { RBAC } from '@/auth/decorator/rbac.decorator';
 import { Role } from '@/user/entities/user.entity';
+import { GenericPaginatedDto } from '@/common/dto/paginated-response.dto';
+import { EstimateOfferResponseDto } from './dto/estimate-offer-response.dto';
+import { CreatedAtCursorPaginationDto } from '../common/dto/created-at-pagination.dto';
 
 @Controller('estimate-offer')
 @ApiBearerAuth()
@@ -25,10 +28,12 @@ export class EstimateOfferController {
   async getOffersByEstimateRequestId(
     @Param('requestId') requestId: string,
     @UserInfo() userInfo: UserInfo,
-  ) {
+    @Query() query: CreatedAtCursorPaginationDto,
+  ): Promise<GenericPaginatedDto<EstimateOfferResponseDto>> {
     return this.estimateOfferService.getPendingOffersByRequestId(
       requestId,
       userInfo.sub,
+      query,
     );
   }
 
