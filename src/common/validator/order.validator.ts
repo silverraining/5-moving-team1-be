@@ -22,7 +22,7 @@ export type OrderString = `${OrderField}_${OrderDirection}`;
 
 const validOrders = new Set(
   Object.values(OrderField).flatMap((field) =>
-    Object.values(OrderDirection).map((dir) => `${field}_${dir}`),
+    Object.values(OrderDirection).map((dir) => `${field} ${dir}`),
   ),
 );
 
@@ -37,7 +37,7 @@ export function IsValidOrder(validationOptions?: ValidationOptions) {
         validate(value: any, _: unknown) {
           if (typeof value !== 'string') return false;
 
-          const parts = value.split('_');
+          const parts = value.split(' ');
           if (parts.length !== 2) return false;
 
           return validOrders.has(value);
