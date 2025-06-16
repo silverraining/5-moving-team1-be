@@ -87,14 +87,6 @@ export class CustomerProfileService {
 
     // 프로필 정보 업데이트
     Object.assign(profile, updatedProfileData);
-    const updatedProfile = await this.customerProfileRepository.save(profile);
-
-    // 업데이트 실패 시 예외 처리
-    if (!updatedProfile) {
-      throw new InternalServerErrorException(
-        '고객님의 프로필 업데이트에 실패했습니다!',
-      );
-    }
 
     return {
       message: '고객님의 프로필이 성공적으로 업데이트되었습니다.',
