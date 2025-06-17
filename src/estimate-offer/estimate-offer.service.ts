@@ -17,7 +17,6 @@ import {
   EstimateOfferResponseDto,
   GetEstimateOffersResponseDto,
 } from './dto/estimate-offer-response.dto';
-import { EstimateOfferResponseDto } from './dto/estimate-offer-response.dto';
 import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
 import { UpdateEstimateOfferDto } from './dto/update-estimate-offer.dto';
 import { MoverProfile } from '@/mover-profile/entities/mover-profile.entity';
@@ -397,10 +396,11 @@ export class EstimateOfferService {
       estimateRequestId: offer.estimateRequestId,
       createdAt: offer.createdAt,
     }));
-      
+  }
+
+  /**
    * 고객이 특정 기사님의 제안 견적을 수락
    */
-
   async confirm(
     requestId: string,
     moverId: string,
