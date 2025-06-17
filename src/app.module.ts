@@ -26,6 +26,7 @@ import { DatabaseModule } from './database/database.module';
 import { databaseValidationSchema } from './database/database.config';
 import { TestErrorController } from './common/utils/test-error.controller';
 import { AppController } from './app.controller';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 const appValidationSchema = Joi.object({
   // 애플리케이션 실행 환경 설정 ('dev' 또는 'prod'만 허용)
@@ -48,7 +49,7 @@ const appValidationSchema = Joi.object({
       isGlobal: true,
       validationSchema: appValidationSchema,
     }),
-
+    EventEmitterModule.forRoot(),
     // 핵심 모듈
     DatabaseModule,
     AuthModule,
