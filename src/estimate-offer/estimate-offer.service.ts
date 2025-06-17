@@ -120,7 +120,7 @@ export class EstimateOfferService {
     }
 
     // 3. 지정된 기사인지 확인
-    if (!request.targetMoverIds?.includes(userId)) {
+    if (!request.targetMoverIds?.includes(mover.id)) {
       throw new ForbiddenException('해당 견적 요청에 대한 권한이 없습니다.');
     }
 
