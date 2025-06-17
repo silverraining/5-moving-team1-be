@@ -55,6 +55,7 @@ export class CommonService {
       order = cursorObj.order; // cursorObj에서 order 추출
 
       const { field, direction } = parseOrderString(order);
+
       const orderAlias = this.getOrderFieldAlias(qb, field);
       const cursorId = values.id;
       const cursorValue = values[field];
@@ -92,11 +93,11 @@ export class CommonService {
 
     qb.take(take);
 
-    const results = await qb.getMany();
+    const results = await qb.getRawMany();
     const nextCursor = this.generateNextCursor(results, order);
     const hasNext = !!nextCursor; // nextCursor가 없으면 더 불러올 데이터 없음
 
-    return { qb, nextCursor, hasNext };
+    return { results, nextCursor, hasNext };
   }
 
   private generateNextCursor<T>(
@@ -112,10 +113,7 @@ export class CommonService {
      *      id: 27,
      *      field: value, // 정렬 필드값
      *    }, ...],
-     *    order: {
-     *      field: MoverOrderField,
-     *      direction: OrderDirection,
-     *    }
+     *    order: `${MoverOrderField} ${OrderDirection}`
      * }
      */
 
@@ -141,8 +139,8 @@ export class CommonService {
   applyServiceFilterToQb<T>(
     qb: SelectQueryBuilder<T>,
     filterString: string,
-    service: Service,
-    table: string,
+    serviceColumnName: Service,
+    entityAlias: string,
   ) {
     if (!filterString) return;
 
@@ -150,13 +148,10 @@ export class CommonService {
 
     if (activeKeys.length === 0) return; // 활성화된 키가 없으면 필터링하지 않음
 
-    // 조건문 배열 생성 (json 컬럼 내부 키가 'true'인지 확인)
-    const conditions = activeKeys.map(
-      (key) => `(${table}.${service} ->> '${key}')::boolean = true`,
-    );
+    const condition = `${entityAlias}.${serviceColumnName} ?| ARRAY[:...${serviceColumnName}FilterKeys]::text[]::jsonb`; // array에서 바로 jsonb로 변환하여 사용 불가하여 text로 캐스팅 후 사용
+    const params = { [`${serviceColumnName}FilterKeys`]: activeKeys }; // 예: { serviceTypeFilterKeys: ['SMALL', 'HOME'] }
 
-    // 각 조건을 OR로 연결 (serviceType 중 하나라도 true인 것 필터링)
-    qb.andWhere(conditions.join(' OR'));
+    qb.andWhere(condition, params);
   }
 
   private getOrderFieldAlias<T>(
