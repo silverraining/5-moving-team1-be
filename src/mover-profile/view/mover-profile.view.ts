@@ -12,10 +12,10 @@ import { OrderField } from '@/common/validator/order.validator';
     dataSource
       .createQueryBuilder()
       .select('mover.id', 'id')
-      .addSelect('COUNT(DISTINCT review.moverId)', OrderField.REVIEW_COUNT)
+      .addSelect('COUNT(review.moverId)', OrderField.REVIEW_COUNT)
       .addSelect('AVG(review.rating)', OrderField.AVERAGE_RATING)
       .addSelect(
-        'COUNT(DISTINCT estimate_offer.moverId)',
+        `COUNT(DISTINCT CASE WHEN estimate_offer.status = 'CONFIRMED' THEN estimate_offer.id ELSE NULL END)`,
         OrderField.CONFIRMED_ESTIMATE_COUNT,
       )
       .addSelect('COUNT(DISTINCT like.moverId)', 'like_count')
