@@ -127,7 +127,7 @@ export function ApiGetEstimateOfferDetail() {
       type: String,
     }),
     ApiParam({
-      name: 'moverId',
+      name: 'moverProfileId',
       description: '기사 ID (UUID)',
       example: '9ec9e7ba-d922-48b4-a821-17842bc02944',
       type: String,
@@ -249,7 +249,7 @@ export function ApiConfirmEstimateOffer() {
       type: String,
     }),
     ApiParam({
-      name: 'moverId',
+      name: 'moverProfileId',
       required: true,
       description: '기사 ID (UUID)',
       example: '1a2b3c4d-5678-90ef-abcd-1234567890ab',
