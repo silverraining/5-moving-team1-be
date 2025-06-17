@@ -5,6 +5,7 @@ import { EstimateOffer } from 'src/estimate-offer/entities/estimate-offer.entity
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -36,6 +37,7 @@ export class EstimateRequest extends BaseTable {
   @Column({ type: 'enum', enum: ServiceType })
   moveType: ServiceType;
 
+  @Index('IDX_ESTIMATE_REQUEST_STATUS') // 인덱스 생성
   @Column({ type: 'enum', enum: RequestStatus, default: RequestStatus.PENDING })
   status: RequestStatus; // 견적 요청 상태
 
@@ -51,6 +53,7 @@ export class EstimateRequest extends BaseTable {
   @Column({ type: 'uuid', array: true, nullable: true })
   targetMoverIds?: string[]; // 지정 견적 요청을 보낸 기사 id 목록 (견적 요청 시점에 기사가 없을 수 있음 )
 
+  @Index('IDX_ESTIMATE_REQUEST_CONFIRMED_OFFER_ID') // 인덱스 생성
   @Column({ type: 'uuid', nullable: true })
   confirmedOfferId?: string; // 확정된 제안 견적 id
 
