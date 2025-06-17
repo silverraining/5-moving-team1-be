@@ -148,8 +148,13 @@ export class CommonService {
 
     if (activeKeys.length === 0) return; // 활성화된 키가 없으면 필터링하지 않음
 
-    const condition = `${entityAlias}.${serviceColumnName} ?| ARRAY[:...${serviceColumnName}FilterKeys]::text[]::jsonb`; // array에서 바로 jsonb로 변환하여 사용 불가하여 text로 캐스팅 후 사용
-    const params = { [`${serviceColumnName}FilterKeys`]: activeKeys }; // 예: { serviceTypeFilterKeys: ['SMALL', 'HOME'] }
+    const paramName = `${serviceColumnName}FilterKeys`; // 파라미터 이름 (예: 'serviceTypeFilterKeys')
+
+    const condition = `EXISTS(
+      SELECT 1 FROM jsonb_array_elements_text(${entityAlias}.${serviceColumnName}) AS elem_value
+      WHERE elem_value.value IN (:...${paramName})
+    )`;
+    const params = { [paramName]: activeKeys };
 
     qb.andWhere(condition, params);
   }
