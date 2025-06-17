@@ -15,7 +15,7 @@ import { UpdateUserDto } from '@/user/dto/update-user.dto';
 export class CustomerProfileService {
   constructor(
     @InjectRepository(CustomerProfile)
-    private readonly customerProfileRepository: Repository<CustomerProfile>,
+    private readonly customerRepository: Repository<CustomerProfile>,
     private readonly userService: UserService,
   ) {}
 
@@ -28,7 +28,7 @@ export class CustomerProfileService {
       ...createCustomerProfileDto,
     };
 
-    const newProfile = await this.customerProfileRepository.save(profileData);
+    const newProfile = await this.customerRepository.save(profileData);
 
     if (!newProfile) {
       throw new InternalServerErrorException(
@@ -40,7 +40,7 @@ export class CustomerProfileService {
   }
 
   async findOne(userId: string) {
-    const profile = await this.customerProfileRepository.findOne({
+    const profile = await this.customerRepository.findOne({
       where: { user: { id: userId } },
       relations: ['user'],
     });
@@ -76,7 +76,7 @@ export class CustomerProfileService {
     await this.userService.update(userId, updatedUserData); // 반환값 무시
 
     // 프로필 정보 조회
-    const profile = await this.customerProfileRepository.findOneBy({
+    const profile = await this.customerRepository.findOneBy({
       user: { id: userId },
     });
 
@@ -91,5 +91,20 @@ export class CustomerProfileService {
     return {
       message: '고객님의 프로필이 성공적으로 업데이트되었습니다.',
     };
+  }
+
+  public async getCustomerId(userId: string) {
+    const customer = await this.customerRepository.findOne({
+      where: { user: { id: userId } },
+      select: ['id'],
+    });
+
+    if (!customer) {
+      throw new NotFoundException(
+        '고객님의 프로필을 찾을 수 없습니다, 프로필을 생성해주세요!',
+      );
+    }
+
+    return customer.id;
   }
 }

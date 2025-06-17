@@ -35,7 +35,7 @@ export class MoverProfileService {
     @InjectRepository(MoverProfileView)
     private readonly moverProfileViewRepository: Repository<MoverProfileView>,
     @InjectRepository(CustomerProfile)
-    private readonly customerProfileRepository: Repository<CustomerProfile>,
+    private readonly customerRepository: Repository<CustomerProfile>,
     @InjectRepository(EstimateRequest)
     private readonly estimateRequestRepository: Repository<EstimateRequest>,
     @InjectRepository(Review)
@@ -113,10 +113,14 @@ export class MoverProfileService {
 
     // 고객일 경우, 해당 기사에게 지정 견적 요청을 했는지
     if (isCustomer) {
-      const customer = await this.customerProfileRepository.findOne({
+      const customer = await this.customerRepository.findOne({
         where: { user: { id: userId } },
         select: ['id'], // 필요한 필드만 가져오기
       });
+
+      if (!customer) {
+        throw new NotFoundException('고객 프로필을 찾을 수 없습니다.');
+      }
 
       const estimateRequest = await this.estimateRequestRepository.findOne({
         where: {
@@ -126,16 +130,23 @@ export class MoverProfileService {
         select: ['targetMoverIds'], // 필요한 필드만 가져오기
       });
 
-      targetMoverIds = estimateRequest.targetMoverIds; // 지정 견적 요청을 한 기사 ID 목록
+      if (!estimateRequest) {
+        throw new NotFoundException('지정 견적 요청을 찾을 수 없습니다.');
+      }
+
+      targetMoverIds = estimateRequest.targetMoverIds || []; // 지정 견적 요청을 한 기사 ID 목록
     }
 
-    const count = await qb.getCount();
+    // moversWithAggregates에 isTargeted 속성 추가
+    const moversWithTargetStatus = moversWithAggregates.map((mover) => ({
+      ...mover,
+      isTargeted: targetMoverIds.includes(mover.id),
+    }));
+
     return {
-      movers: moversWithAggregates,
-      count,
-      nextCursor,
+      movers: moversWithTargetStatus,
       hasNext,
-      targetMoverIds,
+      nextCursor,
     };
   }
 
@@ -268,5 +279,20 @@ export class MoverProfileService {
     }
 
     return updatedProfile;
+  }
+
+  public async getMoverId(userId: string) {
+    const mover = await this.moverProfileRepository.findOne({
+      where: { user: { id: userId } },
+      select: ['id'],
+    });
+
+    if (!mover) {
+      throw new NotFoundException(
+        '기사님의 프로필을 찾을 수 없습니다, 프로필을 생성해주세요!',
+      );
+    }
+
+    return mover.id;
   }
 }
