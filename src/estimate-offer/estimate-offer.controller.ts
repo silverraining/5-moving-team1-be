@@ -11,12 +11,15 @@ import {
 import { EstimateOfferService } from './estimate-offer.service';
 import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
 import { UpdateEstimateOfferDto } from './dto/update-estimate-offer.dto';
+import { GetEstimateOffersResponseDto } from './dto/estimate-offer-response.dto';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
 import {
   ApiGetEstimateOfferDetail,
   ApiGetPendingEstimateOffers,
   ApiCreateEstimateOffer,
   ApiRejectEstimateOffer,
+  ApiGetMoverEstimateOffers,
+  ApiGetRejectedEstimateOffers,
   ApiConfirmEstimateOffer,
 } from './docs/swagger';
 import { ApiBearerAuth } from '@nestjs/swagger';
@@ -110,6 +113,26 @@ export class EstimateOfferController {
     };
   }
 
+  // 기사가 보낸 견적 목록 조회
+  @Get('offers')
+  @RBAC(Role.MOVER)
+  @ApiGetMoverEstimateOffers()
+  async getMoverEstimateOffers(
+    @UserInfo() userInfo: UserInfo,
+  ): Promise<GetEstimateOffersResponseDto[]> {
+    return this.estimateOfferService.getMoverEstimateOffers(userInfo.sub);
+  }
+
+  // 기사가 반려한 견적 목록 조회
+  @Get('rejected-offers')
+  @RBAC(Role.MOVER)
+  @ApiGetRejectedEstimateOffers()
+  async getRejectedEstimateOffers(
+    @UserInfo() userInfo: UserInfo,
+  ): Promise<GetEstimateOffersResponseDto[]> {
+    return this.estimateOfferService.getRejectedEstimateOffers(userInfo.sub);
+  }
+
   // 고객이 기사의 제안 견적 확정
   @Patch(':requestId/:moverId/confirmed')
   @RBAC(Role.CUSTOMER)
@@ -132,4 +155,3 @@ export class EstimateOfferController {
       '견적 확정 처리 중 서버 오류가 발생했습니다.',
     );
   }
-}

@@ -13,6 +13,10 @@ import {
   RequestStatus,
 } from '@/estimate-request/entities/estimate-request.entity';
 import { MoverProfileView } from '@/mover-profile/view/mover-profile.view';
+import {
+  EstimateOfferResponseDto,
+  GetEstimateOffersResponseDto,
+} from './dto/estimate-offer-response.dto';
 import { EstimateOfferResponseDto } from './dto/estimate-offer-response.dto';
 import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
 import { UpdateEstimateOfferDto } from './dto/update-estimate-offer.dto';
@@ -294,6 +298,106 @@ export class EstimateOfferService {
   }
 
   /**
+   * 기사가 보낸 견적 목록 조회
+   */
+  async getMoverEstimateOffers(
+    userId: string,
+  ): Promise<GetEstimateOffersResponseDto[]> {
+    // 1. 기사 프로필 조회
+    const mover = await this.moverRepository.findOne({
+      where: { user: { id: userId } },
+    });
+
+    if (!mover) {
+      throw new BadRequestException('기사 프로필을 찾을 수 없습니다.');
+    }
+
+    // 2. 기사가 보낸 견적 목록 조회
+    const offers = await this.offerRepository.find({
+      where: {
+        moverId: mover.id,
+        status: In([
+          OfferStatus.PENDING,
+          OfferStatus.CONFIRMED,
+          OfferStatus.CANCELED,
+          OfferStatus.COMPLETED,
+        ]),
+      },
+      relations: [
+        'estimateRequest',
+        'estimateRequest.customer',
+        'estimateRequest.customer.user',
+      ],
+      order: { createdAt: 'DESC' },
+    });
+
+    // 3. 응답 DTO로 변환
+    return offers.map((offer) => ({
+      status: offer.status,
+      isConfirmed: offer.isConfirmed,
+      moveType: offer.estimateRequest.moveType,
+      moveDate: offer.estimateRequest.moveDate,
+      isTargeted: offer.isTargeted,
+      customerName: offer.estimateRequest.customer.user.name,
+      fromAddressMinimal: {
+        sido: offer.estimateRequest.fromAddress.sido,
+        sigungu: offer.estimateRequest.fromAddress.sigungu,
+      },
+      toAddressMinimal: {
+        sido: offer.estimateRequest.toAddress.sido,
+        sigungu: offer.estimateRequest.toAddress.sigungu,
+      },
+      price: offer.price,
+      estimateRequestId: offer.estimateRequestId,
+      createdAt: offer.createdAt,
+    }));
+  }
+
+  /**
+   * 기사가 반려한 견적 목록 조회
+   */
+  async getRejectedEstimateOffers(
+    userId: string,
+  ): Promise<GetEstimateOffersResponseDto[]> {
+    // 1. 기사 프로필 조회
+    const mover = await this.moverRepository.findOne({
+      where: { user: { id: userId } },
+    });
+
+    if (!mover) {
+      throw new BadRequestException('기사 프로필을 찾을 수 없습니다.');
+    }
+
+    // 2. 기사가 반려한 견적 목록 조회
+    const offers = await this.offerRepository.find({
+      where: { moverId: mover.id, status: OfferStatus.REJECTED },
+      relations: [
+        'estimateRequest',
+        'estimateRequest.customer',
+        'estimateRequest.customer.user',
+      ],
+      order: { createdAt: 'DESC' },
+    });
+
+    return offers.map((offer) => ({
+      status: offer.status,
+      isConfirmed: offer.isConfirmed,
+      moveType: offer.estimateRequest.moveType,
+      moveDate: offer.estimateRequest.moveDate,
+      isTargeted: offer.isTargeted,
+      customerName: offer.estimateRequest.customer.user.name,
+      fromAddressMinimal: {
+        sido: offer.estimateRequest.fromAddress.sido,
+        sigungu: offer.estimateRequest.fromAddress.sigungu,
+      },
+      toAddressMinimal: {
+        sido: offer.estimateRequest.toAddress.sido,
+        sigungu: offer.estimateRequest.toAddress.sigungu,
+      },
+      estimateRequestId: offer.estimateRequestId,
+      createdAt: offer.createdAt,
+    }));
+      
    * 고객이 특정 기사님의 제안 견적을 수락
    */
 
