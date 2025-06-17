@@ -3,8 +3,8 @@ import { DataSource, ViewColumn, ViewEntity } from 'typeorm';
 import { MoverProfile } from '../entities/mover-profile.entity';
 import { EstimateOffer } from '@/estimate-offer/entities/estimate-offer.entity';
 import { MOVER_PROFILE_VIEW_TABLE } from '@/common/const/query-builder.const';
-import { OrderField } from '@/common/dto/cursor-pagination.dto';
 import { Like } from '@/like/entities/like.entity';
+import { OrderField } from '@/common/validator/order.validator';
 
 @ViewEntity({
   name: MOVER_PROFILE_VIEW_TABLE,

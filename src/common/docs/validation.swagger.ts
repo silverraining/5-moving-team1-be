@@ -221,7 +221,38 @@ export const unsupportedSocialLoginError = {
   },
 };
 
-//404
+export const estimateRequestAlreadyProcessedError = {
+  key: 'estimateRequestAlreadyProcessedError',
+  summary: '이미 처리된 견적 요청인 경우',
+  value: {
+    statusCode: 400,
+    message: '이미 처리된 견적 요청입니다.',
+    error: 'Bad Request',
+  },
+};
+
+export const estimateOfferAlreadyProcessedError = {
+  key: 'estimateOfferAlreadyProcessedError',
+  summary: '이미 처리된 견적 제안인 경우',
+  value: {
+    statusCode: 400,
+    message: '이미 처리된 견적 제안입니다.',
+    error: 'Bad Request',
+  },
+};
+
+// 403
+export const ForbiddenError = {
+  key: 'ForbiddenError',
+  summary: '접근 권한 없음',
+  value: {
+    statusCode: 403,
+    message: '접근 권한이 없습니다.',
+    error: 'Forbidden',
+  },
+};
+
+// 404
 export const moverNotFoundError = {
   key: 'moverNotFoundError',
   summary: '기사님을 찾을 수 없는 경우',
@@ -258,6 +289,26 @@ export const moverProfileNotFoundError = {
   value: {
     statusCode: 404,
     message: '[mover] 프로필을 찾을 수 없습니다.',
+    error: 'Not Found',
+  },
+};
+
+export const estimateRequestNotFoundError = {
+  key: 'estimateRequestNotFoundError',
+  summary: '견적 요청을 찾을 수 없는 경우',
+  value: {
+    statusCode: 404,
+    message: '견적 요청을 찾을 수 없습니다.',
+    error: 'Not Found',
+  },
+};
+
+export const estimateOfferNotFoundError = {
+  key: 'estimateOfferNotFoundError',
+  summary: '견적 제안을 찾을 수 없는 경우',
+  value: {
+    statusCode: 404,
+    message: '해당 견적 제안을 찾을 수 없습니다.',
     error: 'Not Found',
   },
 };

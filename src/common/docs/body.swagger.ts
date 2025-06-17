@@ -1,7 +1,7 @@
 import {
-  defaultServiceRegionMap,
-  defaultServiceTypeMap,
-} from '@/mover-profile/dto/get-mover-profiles.dto';
+  defaultServiceRegion,
+  defaultServiceType,
+} from '../const/service.const';
 
 /**
  * ApiBody에서 사용되는 예시 데이터
@@ -26,8 +26,8 @@ export const CreateMoverProfileFullExample = {
     experience: 5,
     intro: '친절한 이사 전문가입니다.',
     description: '고객님의 이사를 정성껏 도와드립니다.',
-    serviceType: defaultServiceTypeMap,
-    serviceRegion: defaultServiceRegionMap,
+    serviceType: defaultServiceType,
+    serviceRegion: defaultServiceRegion,
   },
 };
 
@@ -39,8 +39,8 @@ export const UpdateMoverProfileFullExample = {
     experience: 10,
     intro: '알잘딱 이사 전문가입니다.',
     description: '고객님의 이사를 정성껏 도와드립니다.',
-    serviceType: defaultServiceTypeMap,
-    serviceRegion: defaultServiceRegionMap,
+    serviceType: defaultServiceType,
+    serviceRegion: defaultServiceRegion,
   },
 };
 
@@ -48,8 +48,8 @@ export const CreateCustomerProfileFullExample = {
   summary: '[customer] 프로필 등록 예시',
   value: {
     imageUrl: 'https://example.com/image.jpg',
-    serviceType: defaultServiceTypeMap,
-    serviceRegion: defaultServiceRegionMap,
+    serviceType: defaultServiceType,
+    serviceRegion: defaultServiceRegion,
   },
 };
 
@@ -61,8 +61,8 @@ export const UpdateCustomerProfileFullExample = {
     password: 'passwordTest1234!',
     newPassword: 'passwordTest4321!',
     imageUrl: 'https://example.com/image.jpg',
-    serviceType: defaultServiceTypeMap,
-    serviceRegion: defaultServiceRegionMap,
+    serviceType: defaultServiceType,
+    serviceRegion: defaultServiceRegion,
   },
 };
 
@@ -76,8 +76,8 @@ export const GetMoverProfilesFullExample = {
       field: 'review_count',
       direction: 'DESC',
     },
-    serviceType: defaultServiceTypeMap,
-    serviceRegion: defaultServiceRegionMap,
+    serviceType: defaultServiceType,
+    serviceRegion: defaultServiceRegion,
   },
 };
 
@@ -89,8 +89,8 @@ export const GetMoverProfileDefaultExample = {
       field: 'review_count',
       direction: 'DESC',
     },
-    serviceType: defaultServiceTypeMap,
-    serviceRegion: defaultServiceRegionMap,
+    serviceType: defaultServiceType,
+    serviceRegion: defaultServiceRegion,
   },
 };
 

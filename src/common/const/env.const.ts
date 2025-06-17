@@ -5,6 +5,7 @@ const dbPort = 'DB_PORT';
 const dbUsername = 'DB_USERNAME';
 const dbPassword = 'DB_PASSWORD';
 const dbDatabase = 'DB_DATABASE';
+const dbSynchronize = 'DB_SYNCHRONIZE';
 const hashRounds = 'HASH_ROUNDS';
 const accessToken = 'ACCESS_TOKEN_SECRET';
 const refreshToken = 'REFRESH_TOKEN_SECRET';
@@ -26,6 +27,7 @@ export const envVariableKeys = {
   dbUsername,
   dbPassword,
   dbDatabase,
+  dbSynchronize,
   hashRounds,
   accessToken,
   refreshToken,
