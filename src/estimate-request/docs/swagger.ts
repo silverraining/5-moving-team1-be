@@ -162,14 +162,14 @@ export function ApiAddTargetMover() {
       schema: {
         type: 'object',
         properties: {
-          moverId: {
+          moverProfileId: {
             type: 'string',
             format: 'uuid',
             example: '9ec9e7ba-d922-48b4-a821-17842bc02944',
-            description: '추가할 기사님 ID (MoverId)',
+            description: '추가할 기사님 ID (moverProfileId)',
           },
         },
-        required: ['moverId'],
+        required: ['moverProfileId'],
       },
     }),
     ApiResponse({
@@ -232,7 +232,6 @@ export function ApiGetRequestListForMover() {
       description:
         '이후 응답에서 받은 `nextCursor` 값을 사용해 다음 페이지를 조회하세요.',
     }),
-
     ApiQuery({
       name: 'take',
       required: false,
@@ -240,15 +239,12 @@ export function ApiGetRequestListForMover() {
       example: 5,
     }),
 
-    // 추가된 부분
     ApiExtraModels(GenericPaginatedDto, EstimateRequestResponseDto),
     ApiOkResponse({
       description: '견적 요청 목록 조회 성공',
       schema: {
         allOf: [
-          {
-            $ref: getSchemaPath(GenericPaginatedDto),
-          },
+          { $ref: getSchemaPath(GenericPaginatedDto) },
           {
             properties: {
               items: {

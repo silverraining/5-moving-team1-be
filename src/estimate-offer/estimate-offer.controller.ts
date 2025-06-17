@@ -52,12 +52,12 @@ export class EstimateOfferController {
   }
 
   // 견적 요청 ID와 기사 ID로 견적 제안 상세 조회
-  @Get(':requestId/:moverId/pending')
+  @Get(':requestId/:moverProfileId/pending')
   @RBAC(Role.CUSTOMER)
   @ApiGetEstimateOfferDetail()
   async getOfferDetail(
     @Param('requestId') requestId: string,
-    @Param('moverId') moverId: string,
+    @Param('moverProfileId') moverId: string,
     @UserInfo() userInfo: UserInfo,
   ) {
     return this.estimateOfferService.findOneByCompositeKey(
