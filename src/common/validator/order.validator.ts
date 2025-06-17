@@ -19,7 +19,7 @@ export enum OrderDirection {
   DESC = 'DESC', // 내림차순
 }
 
-export type OrderString = `${OrderField}_${OrderDirection}`;
+export type OrderString = `${OrderField} ${OrderDirection}`;
 
 const validOrders = new Set(
   Object.values(OrderField).flatMap((field) =>

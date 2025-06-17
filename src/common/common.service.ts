@@ -12,6 +12,7 @@ import {
   OrderField,
   OrderString,
 } from './validator/order.validator';
+import { PagePaginationDto } from './dto/page-pagination.dto';
 
 export enum Service {
   ServiceType = 'serviceType',
@@ -21,6 +22,20 @@ export enum Service {
 @Injectable()
 export class CommonService {
   constructor() {}
+
+  applyPagePaginationParamsToQb<T>(
+    qb: SelectQueryBuilder<T>,
+    dto: PagePaginationDto,
+  ) {
+    const { page, take } = dto;
+
+    if (take && page) {
+      const skip = (page - 1) * take;
+
+      qb.take(take);
+      qb.skip(skip);
+    }
+  }
 
   async applyCursorPaginationParamsToQb<T>(
     qb: SelectQueryBuilder<T>,
