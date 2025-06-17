@@ -1,7 +1,7 @@
-import { BaseTable } from 'src/common/entity/base-table.entity';
 import { User } from 'src/user/entities/user.entity';
 import {
   Column,
+  CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
@@ -15,7 +15,15 @@ export enum NotificationType {
 }
 
 @Entity()
-export class Notification extends BaseTable {
+export class Notification {
+  /**
+   * id : string
+   * type : 알림타입
+   * message : 알림 내용
+   * targetId : 대상 id
+   * isRead : 읽음 상태
+   * createAt : 생성 일자
+   */
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -30,6 +38,9 @@ export class Notification extends BaseTable {
 
   @Column({ default: false })
   isRead: boolean;
+
+  @CreateDateColumn()
+  createdAt: Date;
 
   // User : Notification <-> 1:N 관계
   @ManyToOne(() => User, (user) => user.notifications, {
