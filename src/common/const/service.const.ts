@@ -24,5 +24,6 @@ export enum ServiceRegion {
   JEJU = 'Jeju-do',
 }
 
-export const defaultServiceType = Object.values(ServiceType).join(',');
-export const defaultServiceRegion = Object.values(ServiceRegion).join(',');
+export const defaultServiceType: ServiceType[] = Object.values(ServiceType);
+export const defaultServiceRegion: ServiceRegion[] =
+  Object.values(ServiceRegion);

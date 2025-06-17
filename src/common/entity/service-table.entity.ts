@@ -3,12 +3,20 @@ import { BaseTable } from './base-table.entity';
 import {
   defaultServiceRegion,
   defaultServiceType,
+  ServiceRegion,
+  ServiceType,
 } from '../const/service.const';
 
 export class ServiceTable extends BaseTable {
-  @Column({ default: defaultServiceType })
-  serviceType: string;
+  @Column({
+    type: 'jsonb', // PostgreSQL의 JSONB 타입
+    default: defaultServiceType,
+  })
+  serviceType: ServiceType[];
 
-  @Column({ default: defaultServiceRegion })
-  serviceRegion: string;
+  @Column({
+    type: 'jsonb', // PostgreSQL의 JSONB 타입
+    default: defaultServiceRegion,
+  })
+  serviceRegion: ServiceRegion[];
 }
