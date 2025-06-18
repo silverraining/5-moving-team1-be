@@ -6,7 +6,7 @@ export class EstimateOfferResponseDto {
   estimateRequestId: string;
   moverId: string;
   price: number;
-  status: string;
+  offerStatus: string;
   requestStatus: string;
   isTargeted: boolean;
   isConfirmed: boolean;
@@ -47,11 +47,11 @@ export class EstimateOfferResponseDto {
   ): EstimateOfferResponseDto {
     const dto = new EstimateOfferResponseDto();
     dto.offerId = offer.id;
-    // dto.estimateRequestId = offer.estimateRequestId;
-    // dto.moverId = offer.moverId;
+    dto.estimateRequestId = offer.estimateRequestId;
+    dto.moverId = offer.moverId;
     dto.price = offer.price;
-    dto.status = offer.status;
-    // dto.requestStatus = offer.estimateRequest.status;
+    dto.offerStatus = offer.status;
+    dto.requestStatus = offer.estimateRequest.status;
     dto.isTargeted = !!offer.estimateRequest.targetMoverIds?.includes(
       offer.moverId,
     );
