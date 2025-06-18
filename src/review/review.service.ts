@@ -139,10 +139,48 @@ export class ReviewService {
     };
   }
 
-  findByCustomerId(customerId: string) {
-    return this.reviewRepository.find({
-      where: { customerId },
-    });
+  async findByCustomerId(customerId: string, dto: PagePaginationDto) {
+    const qb = this.reviewRepository
+      .createQueryBuilder('review') // Review 엔티티를 'review'라는 별칭으로 시작
+      .leftJoin('review.estimateOffer', 'offer') // Review 엔티티의 estimateOffer 관계 조인
+      .leftJoin('offer.mover', 'mover') // estimateOffer 엔티티의 mover 관계 조인
+      .where('review.customerId = :customerId', { customerId }) // customerId로 필터링
+      .select([
+        'review.rating AS rating', // 리뷰 평점
+        'review.comment AS comment', // 리뷰 내용
+        'review.createdAt AS createdAt', // 리뷰 작성일
+        'offer.isTargeted AS isTargeted', // 확정된 제안의 지정견적 여부
+        'offer.price AS offerPrice', // 견적 제안 가격
+        'offer.moveType AS moveType', // 이사 종류
+        'offer.moveDate AS moveDate', // 이사 날짜
+        'mover.nickname AS moverNickname', // 이사 업체 기사 닉네임
+        'mover.imageUrl AS moverImageUrl', // 이사 업체 기사 이미지 URL
+      ])
+      .orderBy('review.createdAt', 'DESC'); // 최신 리뷰부터 정렬
+
+    this.commonService.applyPagePaginationParamsToQb(qb, dto);
+
+    const rawReviews = await qb.getRawMany(); // 결과 데이터 목록을 일반 객체 배열로 가져옴
+    const total = await qb.getCount(); // 전체 결과 개수를 가져옴 (페이지네이션 적용 전의 총 개수)
+
+    const formattedReviews = rawReviews.map((row) => ({
+      moveType: row.moveType, // 이사 종류
+      isTargeted: row.isTargeted, // 확정된 제안의 지정견적 여부
+      createdAt: row.createdAt, // 작성일
+      moveDate: row.moveDate, // 이사일
+      price: row.offerPrice, // 제안 가격
+      rating: row.rating, // 평점
+      comment: row.comment, // 리뷰 내용
+      mover: {
+        nickname: row.moverNickname, // 기사 닉네임
+        imageUrl: row.moverImageUrl, // 기사 이미지 URL
+      },
+    }));
+
+    return {
+      reviews: formattedReviews, // 고객이 작성한 리뷰 목록
+      total, // 페이지네이션을 위한 총 개수
+    };
   }
 
   findByMoverId(moverId: string) {
