@@ -12,10 +12,11 @@ import { Like } from 'src/like/entities/like.entity';
 import { EstimateOffer } from 'src/estimate-offer/entities/estimate-offer.entity';
 import { Review } from 'src/review/entities/review.entity';
 import { MOVER_PROFILE_TABLE } from '@/common/const/query-builder.const';
-import { ServiceTable } from '@/common/entity/service-table.entity';
+import { ServiceRegionMap, ServiceTypeMap } from '@/common/const/service.const';
+import { BaseTable } from '@/common/entity/base-table.entity';
 
 @Entity(MOVER_PROFILE_TABLE)
-export class MoverProfile extends ServiceTable {
+export class MoverProfile extends BaseTable {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -33,6 +34,12 @@ export class MoverProfile extends ServiceTable {
 
   @Column()
   description: string; /// 상세 설명
+
+  @Column({ type: 'json' })
+  serviceType: ServiceTypeMap;
+
+  @Column({ type: 'json' })
+  serviceRegion: ServiceRegionMap;
 
   /// User : MoverProfile <-> 1:1 관계
   @OneToOne(() => User, (user) => user.moverProfile)
