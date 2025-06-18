@@ -50,6 +50,7 @@ export class CommonService {
         values: Record<string, any>;
         order: OrderString;
       };
+      console.log(JSON.stringify(cursorObj, null, 2));
 
       const { values } = cursorObj;
       order = cursorObj.order; // cursorObj에서 order 추출
@@ -58,18 +59,11 @@ export class CommonService {
 
       const orderAlias = this.getOrderFieldAlias(qb, field);
       const cursorId = values.id;
-      const cursorValue = values[field];
+      const cursorValue = parseFloat(values[field]);
 
       const operator = direction === OrderDirection.DESC ? '<' : '>';
-      const equals = '=';
-
-      qb.andWhere(
-        `(${orderAlias} ${operator} :cursorValue OR (${orderAlias} ${equals} :cursorValue AND ${qb.alias}.id ${operator} :cursorId))`,
-        {
-          cursorValue,
-          cursorId,
-        },
-      );
+      const whereClause = `(${orderAlias} ${operator} :cursorValue OR (${orderAlias} = :cursorValue AND ${qb.alias}.id ${operator} :cursorId))`;
+      qb.andWhere(whereClause, { cursorValue, cursorId });
     }
 
     const { field, direction } = parseOrderString(order);
@@ -94,15 +88,16 @@ export class CommonService {
     qb.take(take);
 
     const results = await qb.getRawMany();
-    const nextCursor = this.generateNextCursor(results, order);
+    const nextCursor = this.generateNextCursor(results, order, orderAlias);
     const hasNext = !!nextCursor; // nextCursor가 없으면 더 불러올 데이터 없음
 
-    return { results, nextCursor, hasNext };
+    return { nextCursor, hasNext };
   }
 
   private generateNextCursor<T>(
     results: T[],
     order: OrderString,
+    orderAlias: string,
   ): string | null {
     if (results.length === 0) return null;
 
@@ -119,11 +114,12 @@ export class CommonService {
 
     const lastItem = results.at(-1);
     const { field } = parseOrderString(order);
-    const value = lastItem[field];
+    const sqlAlias = orderAlias.split('.')[0];
+    const value = lastItem[`${sqlAlias}_${field}`];
 
     const cursorObj = {
       values: {
-        id: lastItem['id'],
+        id: lastItem[`${sqlAlias}_id`],
         [field]: value,
       },
       order,
@@ -132,6 +128,8 @@ export class CommonService {
     const nextCursor = Buffer.from(JSON.stringify(cursorObj)).toString(
       'base64',
     );
+
+    console.log('nextCursor: ', nextCursor);
 
     return nextCursor;
   }
@@ -148,15 +146,14 @@ export class CommonService {
 
     if (activeKeys.length === 0) return; // 활성화된 키가 없으면 필터링하지 않음
 
-    const paramName = `${serviceColumnName}FilterKeys`; // 파라미터 이름 (예: 'serviceTypeFilterKeys')
+    // 조건문 배열 생성 (json 컬럼 내부 키가 'true'인지 확인)
+    const conditions = activeKeys.map(
+      (key) =>
+        `(${entityAlias}.${serviceColumnName} ->> '${key}')::boolean = true`,
+    );
 
-    const condition = `EXISTS(
-      SELECT 1 FROM jsonb_array_elements_text(${entityAlias}.${serviceColumnName}) AS elem_value
-      WHERE elem_value.value IN (:...${paramName})
-    )`;
-    const params = { [paramName]: activeKeys };
-
-    qb.andWhere(condition, params);
+    // 각 조건을 OR로 연결 (serviceType 중 하나라도 true인 것 필터링)
+    qb.andWhere(conditions.join(' OR'));
   }
 
   private getOrderFieldAlias<T>(
