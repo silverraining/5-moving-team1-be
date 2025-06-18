@@ -14,7 +14,7 @@ export function parseFilterString(filter?: string): string[] {
 }
 
 export function parseOrderString(order: OrderString) {
-  const parts = order.split('_');
+  const parts = order.split(' ');
 
   const [field, direction] = parts;
 

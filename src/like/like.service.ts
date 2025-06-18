@@ -12,6 +12,7 @@ import { MoverProfileView } from '@/mover-profile/view/mover-profile.view';
 import { MoverProfile } from '@/mover-profile/entities/mover-profile.entity';
 import { MoverProfileService } from '@/mover-profile/mover-profile.service';
 import { handleError } from '@/common/utils/handle-error.util';
+import { CustomerProfileService } from '@/customer-profile/customer-profile.service';
 
 @Injectable()
 export class LikeService {
@@ -19,14 +20,16 @@ export class LikeService {
     @InjectRepository(Like)
     private readonly likeRepository: Repository<Like>,
     @InjectRepository(CustomerProfile)
-    private readonly customerRepository: Repository<CustomerProfile>,
+    private readonly customerProfileRepository: Repository<CustomerProfile>,
     @InjectRepository(MoverProfile)
     private readonly moverProfileRepository: Repository<MoverProfile>,
+
     private readonly moverProfileService: MoverProfileService,
+    private readonly customerProfileService: CustomerProfileService,
   ) {}
 
   async create(userId: string, moverId: string) {
-    const customerId = await this.getCustomerId(userId); // 고객 ID 가져오기
+    const customerId = await this.customerProfileService.getCustomerId(userId); // 고객 ID 가져오기
     const moverNickname = await this.checkMoverExists(moverId); // 기사 존재 여부 확인 후 별명 가져오기
 
     await handleError(
@@ -38,9 +41,9 @@ export class LikeService {
   }
 
   async findAll(userId: string) {
-    const customerId = await this.getCustomerId(userId);
+    const customerId = await this.customerProfileService.getCustomerId(userId);
 
-    const customer = await this.customerRepository.findOne({
+    const customer = await this.customerProfileRepository.findOne({
       where: { id: customerId },
       relations: ['likedMovers'],
     });
@@ -76,7 +79,7 @@ export class LikeService {
   }
 
   async remove(userId: string, moverId: string) {
-    const customerId = await this.getCustomerId(userId); // 고객 ID 가져오기
+    const customerId = await this.customerProfileService.getCustomerId(userId); // 고객 ID 가져오기
     const moverNickname = await this.checkMoverExists(moverId); // 기사 존재 여부 확인 후 별명 가져오기
 
     await handleError(
@@ -85,21 +88,6 @@ export class LikeService {
     );
 
     return { message: `찜하기 취소 성공!` };
-  }
-
-  private async getCustomerId(userId: string) {
-    const customer = await this.customerRepository.findOne({
-      where: { user: { id: userId } },
-      select: ['id'],
-    });
-
-    if (!customer) {
-      throw new NotFoundException(
-        '고객님의 프로필을 찾을 수 없습니다, 프로필을 생성해주세요!',
-      );
-    }
-
-    return customer.id;
   }
 
   private async checkMoverExists(moverId: string) {

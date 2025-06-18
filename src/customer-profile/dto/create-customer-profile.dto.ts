@@ -1,28 +1,28 @@
 import {
-  defaultServiceRegion,
-  defaultServiceType,
   ServiceRegion,
+  ServiceRegionMap,
   ServiceType,
+  ServiceTypeMap,
 } from '@/common/const/service.const';
-import { IsCommaSeparatedEnum } from '@/common/validator/service.validator';
-import { IsOptional, IsString } from 'class-validator';
+import { HasAtLeastOneTrue } from '@/common/validator/service.validator';
+import { Type } from 'class-transformer';
+import { IsObject, IsOptional, IsString } from 'class-validator';
 
 export class CreateCustomerProfileDto {
   @IsString()
   @IsOptional()
   imageUrl?: string;
 
-  @IsOptional()
-  @IsString()
-  @IsCommaSeparatedEnum(ServiceType, {
-    message: 'serviceType의 값이 유효하지 않습니다.',
+  @IsObject()
+  @HasAtLeastOneTrue(ServiceType, {
+    message: '서비스 타입은 최소 하나 이상 선택되어야 합니다.',
   })
-  serviceType?: string = defaultServiceType;
+  serviceType: ServiceTypeMap;
 
-  @IsOptional()
-  @IsString()
-  @IsCommaSeparatedEnum(ServiceRegion, {
-    message: 'serviceRegion의 값이 유효하지 않습니다.',
+  @IsObject()
+  @Type(() => Object)
+  @HasAtLeastOneTrue(ServiceRegion, {
+    message: '서비스 지역은 최소 하나 이상 선택되어야 합니다.',
   })
-  serviceRegion?: string = defaultServiceRegion;
+  serviceRegion: ServiceRegionMap;
 }

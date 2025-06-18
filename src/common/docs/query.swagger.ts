@@ -1,6 +1,6 @@
 import {
-  defaultServiceRegion,
-  defaultServiceType,
+  commaDefaultServiceRegion,
+  commaDefaultServiceType,
 } from '../const/service.const';
 
 export const cursorQuery = {
@@ -44,7 +44,7 @@ export const serviceTypeQuery = {
   type: String,
   required: false,
   description: '쉼표로 구분된 서비스 유형',
-  example: defaultServiceType,
+  example: commaDefaultServiceType,
 };
 
 export const serviceRegionQuery = {
@@ -52,5 +52,5 @@ export const serviceRegionQuery = {
   type: String,
   required: false,
   description: '쉼표로 구분된 서비스 지역',
-  example: defaultServiceRegion,
+  example: commaDefaultServiceRegion,
 };
