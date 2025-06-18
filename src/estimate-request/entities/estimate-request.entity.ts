@@ -1,4 +1,4 @@
-import { ServiceType } from 'src/common/const/service.const';
+import { ServiceType } from '@/common/const/service.const';
 import { BaseTable } from 'src/common/entity/base-table.entity';
 import { CustomerProfile } from 'src/customer-profile/entities/customer-profile.entity';
 import { EstimateOffer } from 'src/estimate-offer/entities/estimate-offer.entity';
