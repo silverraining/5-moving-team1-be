@@ -1,11 +1,18 @@
 import { applyDecorators } from '@nestjs/common';
 import { Notification } from '../entities/notification.entity';
-import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
+import { CreateNotificationDto } from '../dto/create-notification.dto';
 
 export const ApiCreateNotification = () =>
   applyDecorators(
     ApiBearerAuth(),
     ApiOperation({ summary: '알림 생성' }),
+    ApiBody({ type: CreateNotificationDto }),
     ApiResponse({
       status: 201,
       description: '생성된 알림 반환',
