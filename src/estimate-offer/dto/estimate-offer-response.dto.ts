@@ -93,6 +93,7 @@ export class EstimateOfferResponseDto {
 
 // 기사가 보낸 견적 목록 조회 응답 DTO
 export class GetEstimateOffersByMoverResponseDto {
+  offerId: string;
   status: string;
   isConfirmed: boolean;
   moveType: string;

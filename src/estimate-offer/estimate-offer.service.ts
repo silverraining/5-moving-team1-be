@@ -333,6 +333,7 @@ export class EstimateOfferService {
 
     // 3. 응답 DTO로 변환
     return offers.map((offer) => ({
+      offerId: offer.id,
       status: offer.status,
       isConfirmed: offer.isConfirmed,
       moveType: offer.estimateRequest.moveType,
@@ -380,6 +381,7 @@ export class EstimateOfferService {
     });
 
     return offers.map((offer) => ({
+      offerId: offer.id,
       status: offer.status,
       isConfirmed: offer.isConfirmed,
       moveType: offer.estimateRequest.moveType,
