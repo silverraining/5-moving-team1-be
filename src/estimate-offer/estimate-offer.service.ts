@@ -15,7 +15,7 @@ import {
 import { MoverProfileView } from '@/mover-profile/view/mover-profile.view';
 import {
   EstimateOfferResponseDto,
-  GetEstimateOffersResponseDto,
+  GetEstimateOffersByMoverResponseDto,
   GetEstimateOfferDetailByMoverResponseDto,
 } from './dto/estimate-offer-response.dto';
 import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
@@ -302,7 +302,7 @@ export class EstimateOfferService {
    */
   async getMoverEstimateOffers(
     userId: string,
-  ): Promise<GetEstimateOffersResponseDto[]> {
+  ): Promise<GetEstimateOffersByMoverResponseDto[]> {
     // 1. 기사 프로필 조회
     const mover = await this.moverRepository.findOne({
       where: { user: { id: userId } },
@@ -358,7 +358,7 @@ export class EstimateOfferService {
    */
   async getRejectedEstimateOffers(
     userId: string,
-  ): Promise<GetEstimateOffersResponseDto[]> {
+  ): Promise<GetEstimateOffersByMoverResponseDto[]> {
     // 1. 기사 프로필 조회
     const mover = await this.moverRepository.findOne({
       where: { user: { id: userId } },

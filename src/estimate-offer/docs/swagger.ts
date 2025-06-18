@@ -22,7 +22,7 @@ import {
 } from '@/common/docs/response.swagger';
 import {
   EstimateOfferResponseDto,
-  GetEstimateOffersResponseDto,
+  GetEstimateOffersByMoverResponseDto,
   GetEstimateOfferDetailByMoverResponseDto,
 } from '../dto/estimate-offer-response.dto';
 import { CreateEstimateOfferDto } from '../dto/create-estimate-offer.dto';
@@ -120,11 +120,12 @@ export function ApiGetPendingEstimateOffers() {
   );
 }
 
-export function ApiGetEstimateOfferDetail() {
+export function ApiGetEstimateOfferDetailByCustomer() {
   return applyDecorators(
     ApiOperation({
-      summary: '견적 상세 조회',
-      description: '특정 견적 요청에 대한 기사별 견적서를 상세 조회합니다.',
+      summary: '고객이 받은 견적 상세 조회',
+      description:
+        '고객이 받은 견적 상세 정보를 조회합니다. 견적 제안 상세 조회와 동일한 정보를 반환합니다.',
     }),
     ApiBearerAuth(),
     ApiParam({
@@ -354,7 +355,7 @@ export function ApiGetRejectedEstimateOffers() {
     ApiResponse({
       status: 200,
       description: '반려된 견적 목록 조회 성공',
-      type: GetEstimateOffersResponseDto,
+      type: GetEstimateOffersByMoverResponseDto,
       isArray: true,
       schema: {
         example: [
