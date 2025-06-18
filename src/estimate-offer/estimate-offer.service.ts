@@ -180,25 +180,28 @@ export class EstimateOfferService {
       .andWhere('estimateRequest.status = :status', {
         status: RequestStatus.PENDING,
       });
-
+    //복합 커서 처리
     if (cursor) {
-      queryBuilder.andWhere('offer.createdAt < :cursor', {
-        cursor: new Date(cursor), // 커서가 ISO 문자열로 들어오므로 Date로 변환해서 비교
-      });
+      const [createdAtCursor, idCursor] = cursor.split('|');
+      queryBuilder.andWhere(
+        `(offer.createdAt < :createdAtCursor OR (offer.createdAt = :createdAtCursor AND offer.id < :idCursor))`,
+        {
+          createdAtCursor: new Date(createdAtCursor),
+          idCursor,
+        },
+      );
     }
+    //정렬 조건
+    queryBuilder
+      .orderBy('offer.createdAt', 'DESC')
+      .addOrderBy('offer.id', 'DESC');
 
-    queryBuilder.orderBy('offer.createdAt', 'DESC');
-
-    // offers에서 take+1개 가져오기
     const offers = await queryBuilder.limit(take + 1).getMany();
 
-    // 실제 응답에 사용할 slice
     const hasNext = offers.length > take;
     const sliced = hasNext ? offers.slice(0, take) : offers;
-
-    //  nextCursor
     const nextCursor = hasNext
-      ? sliced[sliced.length - 1].createdAt.toISOString()
+      ? `${sliced[sliced.length - 1].createdAt.toISOString()}|${sliced[sliced.length - 1].id}`
       : null;
     const moverViews = await this.dataSource
       .getRepository(MoverProfileView)
@@ -212,7 +215,8 @@ export class EstimateOfferService {
           'like_count',
         ],
       });
-    const moverViewMap = new Map(moverViews.map((view) => [view.id, view])); // 빠르게 해당 moverId의 view 데이터를 찾기 위해서
+
+    const moverViewMap = new Map(moverViews.map((view) => [view.id, view]));
 
     const items = sliced.map((offer) => {
       const isLiked = offer.mover.likedCustomers?.some(
@@ -230,7 +234,6 @@ export class EstimateOfferService {
       });
     });
 
-    // totalCount 쿼리 재사용
     const totalCount = await this.offerRepository.count({
       where: {
         estimateRequest: {
