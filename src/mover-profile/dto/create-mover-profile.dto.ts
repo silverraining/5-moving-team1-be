@@ -1,6 +1,13 @@
-import { CreateServiceDto } from '@/common/dto/create-service.dto';
+import {
+  ServiceRegion,
+  ServiceRegionMap,
+  ServiceType,
+  ServiceTypeMap,
+} from '@/common/const/service.const';
+import { HasAtLeastOneTrue } from '@/common/validator/service.validator';
 import {
   IsInt,
+  IsObject,
   IsOptional,
   IsString,
   Length,
@@ -9,7 +16,7 @@ import {
   Min,
 } from 'class-validator';
 
-export class CreateMoverProfileDto extends CreateServiceDto {
+export class CreateMoverProfileDto {
   @IsString()
   @Length(2, 20, { message: '별명은 2자 이상 20자 이하여야 합니다.' })
   @Matches(/^[가-힣a-zA-Z0-9]+$/, {
@@ -37,4 +44,16 @@ export class CreateMoverProfileDto extends CreateServiceDto {
   @IsString()
   @Length(10, 500, { message: '설명은 10자 이상 500자 이하 입니다.' })
   description: string;
+
+  @IsObject()
+  @HasAtLeastOneTrue(ServiceType, {
+    message: '서비스 타입은 최소 하나 이상 선택되어야 합니다.',
+  })
+  serviceType: ServiceTypeMap;
+
+  @IsObject()
+  @HasAtLeastOneTrue(ServiceRegion, {
+    message: '서비스 지역은 최소 하나 이상 선택되어야 합니다.',
+  })
+  serviceRegion: ServiceRegionMap;
 }
