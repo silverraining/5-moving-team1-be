@@ -10,7 +10,6 @@ import {
   ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
-  Unique,
 } from 'typeorm';
 
 export enum OfferStatus {
@@ -22,16 +21,16 @@ export enum OfferStatus {
 }
 
 @Entity()
-@Unique(['estimateRequestId', 'moverId']) // 복합 유니크 제약
+@Index('UQ_ESTIMATE_REQUEST_MOVER', ['estimateRequestId', 'moverId'], {
+  unique: true,
+}) // 복합 유니크 인덱스
 export class EstimateOffer extends BaseTable {
   @PrimaryGeneratedColumn('uuid')
   id: string; // 견적 제안 ID
 
-  @Index('IDX_ESTIMATE_OFFER_REQUEST_ID') // 인덱스 생성
   @Column({ type: 'uuid' })
   estimateRequestId: string;
 
-  @Index('IDX_ESTIMATE_OFFER_MOVER_ID') // 인덱스 생성
   @Column({ type: 'uuid' })
   moverId: string;
 
