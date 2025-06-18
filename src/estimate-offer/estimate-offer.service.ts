@@ -24,6 +24,7 @@ import { MoverProfile } from '@/mover-profile/entities/mover-profile.entity';
 import { OrderField } from '@/common/validator/order.validator';
 import { GenericPaginatedDto } from '@/common/dto/paginated-response.dto';
 import { CreatedAtCursorPaginationDto } from '../common/dto/created-at-pagination.dto';
+import { CustomerProfile } from '@/customer-profile/entities/customer-profile.entity';
 
 @Injectable()
 export class EstimateOfferService {
@@ -32,6 +33,8 @@ export class EstimateOfferService {
     private readonly offerRepository: Repository<EstimateOffer>,
     @InjectRepository(EstimateRequest)
     private readonly requestRepository: Repository<EstimateRequest>,
+    @InjectRepository(CustomerProfile)
+    private readonly customerProfileRepository: Repository<CustomerProfile>,
     @InjectRepository(MoverProfile)
     private readonly moverRepository: Repository<MoverProfile>,
     private readonly dataSource: DataSource,
@@ -241,6 +244,7 @@ export class EstimateOfferService {
   }
 
   /**
+   * 고객이 받은 견적 상세 조회
    * 견적 요청ID에 대한 오퍼 중 특정 기사 오퍼 상세 조회
    */
   async findOneByCompositeKey(
@@ -253,6 +257,7 @@ export class EstimateOfferService {
       relations: [
         'mover',
         'mover.likedCustomers',
+        'mover.likedCustomers.customer',
         'estimateRequest',
         'estimateRequest.customer',
         'estimateRequest.customer.user',
@@ -278,8 +283,14 @@ export class EstimateOfferService {
       ],
     });
 
+    const customerProfileId = (
+      await this.customerProfileRepository.findOne({
+        where: { user: { id: userId } },
+      })
+    )?.id;
+
     const isLiked = offer.mover.likedCustomers?.some(
-      (like) => like.customer.id === userId,
+      (like) => like.customer?.id === customerProfileId,
     );
 
     const dto = EstimateOfferResponseDto.from(offer, isLiked ?? false, {
