@@ -126,20 +126,36 @@ export function ApiGetMyEstimateHistory() {
 export function ApiGetMyActiveEstimateRequest() {
   return applyDecorators(
     ApiOperation({
-      summary: '진행 중인 견적 요청 ID 조회 (개발용)',
-      description: 'PENDING, CONFIRMED 상태의 견적 요청 ID만 반환합니다.',
+      summary: '진행 중인 견적 요청 ID 조회',
+      description: 'PENDING 상태의 견적 요청 ID만 반환합니다.',
     }),
     ApiResponse({
       status: 200,
-      description: '진행 중인 estimateRequestId 리스트',
+      description: '진행 중인 견적 요청이 없을 경우 메시지를 반환합니다.',
       schema: {
-        type: 'array',
-        items: {
-          type: 'object',
-          properties: {
-            estimateRequestId: { type: 'string', example: 'uuid-example' },
+        oneOf: [
+          {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                estimateRequestId: {
+                  type: 'string',
+                  example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+                },
+              },
+            },
           },
-        },
+          {
+            type: 'object',
+            properties: {
+              message: {
+                type: 'string',
+                example: '현재 진행중인 견적 요청이 없습니다.',
+              },
+            },
+          },
+        ],
       },
     }),
   );

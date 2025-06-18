@@ -47,18 +47,20 @@ export class EstimateRequestService {
    */
   async findActiveEstimateRequestIds(
     userId: string,
-  ): Promise<{ estimateRequestId: string }[]> {
-    return this.estimateRequestRepository
-      .find({
-        where: {
-          customer: { user: { id: userId } },
-          status: In([RequestStatus.PENDING, RequestStatus.CONFIRMED]),
-        },
-        select: { id: true }, // `id`만 반환
-      })
-      .then((requests) =>
-        requests.map((req) => ({ estimateRequestId: req.id })),
-      );
+  ): Promise<{ message: string } | { estimateRequestId: string }[]> {
+    const requests = await this.estimateRequestRepository.find({
+      where: {
+        customer: { user: { id: userId } },
+        status: RequestStatus.PENDING,
+      },
+      select: { id: true },
+    });
+
+    if (requests.length === 0) {
+      return { message: '현재 진행중인 견적 요청이 없습니다.' };
+    }
+
+    return requests.map((req) => ({ estimateRequestId: req.id }));
   }
   /**
    * 견적 요청 생성
