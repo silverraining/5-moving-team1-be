@@ -1,22 +1,11 @@
 import { Column } from 'typeorm';
 import { BaseTable } from './base-table.entity';
-import {
-  defaultServiceRegion,
-  defaultServiceType,
-  ServiceRegion,
-  ServiceType,
-} from '../const/service.const';
+import { ServiceRegionMap, ServiceTypeMap } from '../const/service.const';
 
 export class ServiceTable extends BaseTable {
-  @Column({
-    type: 'jsonb', // PostgreSQL의 JSONB 타입
-    default: defaultServiceType,
-  })
-  serviceType: ServiceType[];
+  @Column({ type: 'json' })
+  serviceType: ServiceTypeMap;
 
-  @Column({
-    type: 'jsonb', // PostgreSQL의 JSONB 타입
-    default: defaultServiceRegion,
-  })
-  serviceRegion: ServiceRegion[];
+  @Column({ type: 'json' })
+  serviceRegion: ServiceRegionMap;
 }
