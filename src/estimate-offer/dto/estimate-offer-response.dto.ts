@@ -90,3 +90,18 @@ export class EstimateOfferResponseDto {
     return dto;
   }
 }
+
+// 기사가 보낸 견적 목록 조회 응답 DTO
+export class GetEstimateOffersResponseDto {
+  status: string;
+  isConfirmed: boolean;
+  moveType: string;
+  moveDate: Date;
+  isTargeted: boolean;
+  customerName: string;
+  fromAddressMinimal: { sido: string; sigungu: string };
+  toAddressMinimal: { sido: string; sigungu: string };
+  price?: number;
+  estimateRequestId: string;
+  createdAt: Date;
+}

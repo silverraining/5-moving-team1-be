@@ -7,6 +7,9 @@ import {
   ApiParam,
   ApiQuery,
   ApiResponse,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
+  ApiBadRequestResponse,
   getSchemaPath,
 } from '@nestjs/swagger';
 import {
@@ -29,6 +32,7 @@ import {
   ForbiddenError,
 } from '@/common/docs/validation.swagger';
 import { GenericPaginatedDto } from '@/common/dto/paginated-response.dto';
+import { GetEstimateOffersResponseDto } from '../dto/estimate-offer-response.dto';
 
 export function ApiGetPendingEstimateOffers() {
   return applyDecorators(
@@ -127,7 +131,7 @@ export function ApiGetEstimateOfferDetail() {
       type: String,
     }),
     ApiParam({
-      name: 'moverId',
+      name: 'moverProfileId',
       description: '기사 ID (UUID)',
       example: '9ec9e7ba-d922-48b4-a821-17842bc02944',
       type: String,
@@ -234,6 +238,162 @@ export function ApiRejectEstimateOffer() {
   );
 }
 
+export function ApiGetMoverEstimateOffers() {
+  return applyDecorators(
+    ApiOperation({
+      summary: '기사가 보낸 견적 목록 조회',
+      description:
+        '로그인한 기사가 여러 고객의 요청에 대해 보낸 견적의 목록을 조회합니다.',
+    }),
+    ApiBearerAuth(),
+    ApiResponse({
+      status: 200,
+      description: '견적 목록 조회 성공',
+      schema: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            isConfirmed: {
+              type: 'boolean',
+              description: '견적이 확정되었는지 여부',
+              example: false,
+            },
+            moveType: {
+              type: 'string',
+              description: '이사 유형',
+              example: 'SMALL',
+            },
+            moveDate: {
+              type: 'string',
+              format: 'date-time',
+              description: '이사 예정일',
+              example: '2024-01-15T00:00:00.000Z',
+            },
+            isTargeted: {
+              type: 'boolean',
+              description: '지명 견적 여부 (고객이 기사를 직접 지정했는지)',
+              example: false,
+            },
+            customerName: {
+              type: 'string',
+              description: '고객 이름',
+              example: '김고객',
+            },
+            fromAddressMinimal: {
+              type: 'object',
+              description: '출발지 간단 주소 (시도, 시군구)',
+              properties: {
+                sido: {
+                  type: 'string',
+                  example: '서울특별시',
+                },
+                sigungu: {
+                  type: 'string',
+                  example: '강남구',
+                },
+              },
+            },
+            toAddressMinimal: {
+              type: 'object',
+              description: '도착지 간단 주소 (시도, 시군구)',
+              properties: {
+                sido: {
+                  type: 'string',
+                  example: '서울특별시',
+                },
+                sigungu: {
+                  type: 'string',
+                  example: '서초구',
+                },
+              },
+            },
+            price: {
+              type: 'number',
+              description: '견적 가격 (원)',
+              example: 120000,
+            },
+            estimateRequestId: {
+              type: 'string',
+              description: '견적 요청 ID',
+              example: '9ed4f4a0-0391-4a4f-af22-039aed8ccc9b',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+              description: '견적 제안 생성일시',
+              example: '2024-01-10T10:30:00.000Z',
+            },
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 400,
+      description: '잘못된 요청 (기사 프로필을 찾을 수 없는 경우)',
+    }),
+    ApiResponse(CODE_401_RESPONSES),
+    ApiResponse({
+      status: 403,
+      description: '권한 없음 (기사가 아닌 경우)',
+    }),
+  );
+}
+
+export function ApiGetRejectedEstimateOffers() {
+  return applyDecorators(
+    ApiOperation({
+      summary: '기사가 반려한 견적 목록 조회',
+      description: '기사가 고객의 요청에 대해 반려한 견적의 목록을 조회합니다.',
+    }),
+
+    ApiBearerAuth(),
+    ApiResponse({
+      status: 200,
+      description: '반려된 견적 목록 조회 성공',
+      type: GetEstimateOffersResponseDto,
+      isArray: true,
+      schema: {
+        example: [
+          {
+            isConfirmed: false,
+            moveType: 'HOME',
+            moveDate: '2024-03-20',
+            isTargeted: true,
+            customerName: '홍길동',
+            fromAddressMinimal: {
+              sido: '서울특별시',
+              sigungu: '강남구',
+            },
+            toAddressMinimal: {
+              sido: '경기도',
+              sigungu: '성남시',
+            },
+            estimateRequestId: 'uuid-string',
+            createdAt: '2024-03-15T09:00:00.000Z',
+          },
+        ],
+      },
+    }),
+    ApiUnauthorizedResponse({
+      description: '인증되지 않은 사용자',
+    }),
+    ApiForbiddenResponse({
+      description: '기사 권한이 없는 사용자',
+    }),
+    ApiBadRequestResponse({
+      description: '기사 프로필을 찾을 수 없는 경우',
+      schema: {
+        example: {
+          message: '기사 프로필을 찾을 수 없습니다.',
+          statusCode: 400,
+          error: 'Bad Request',
+        },
+      },
+    }),
+  );
+}
+
 export function ApiConfirmEstimateOffer() {
   return applyDecorators(
     ApiOperation({
@@ -249,7 +409,7 @@ export function ApiConfirmEstimateOffer() {
       type: String,
     }),
     ApiParam({
-      name: 'moverId',
+      name: 'moverProfileId',
       required: true,
       description: '기사 ID (UUID)',
       example: '1a2b3c4d-5678-90ef-abcd-1234567890ab',

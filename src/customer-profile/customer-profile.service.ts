@@ -92,4 +92,19 @@ export class CustomerProfileService {
       message: '고객님의 프로필이 성공적으로 업데이트되었습니다.',
     };
   }
+
+  public async getCustomerId(userId: string) {
+    const customer = await this.customerProfileRepository.findOne({
+      where: { user: { id: userId } },
+      select: ['id'],
+    });
+
+    if (!customer) {
+      throw new NotFoundException(
+        '고객님의 프로필을 찾을 수 없습니다, 프로필을 생성해주세요!',
+      );
+    }
+
+    return customer.id;
+  }
 }

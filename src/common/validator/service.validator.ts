@@ -39,3 +39,52 @@ export function IsCommaSeparatedEnum<T>(
     });
   };
 }
+
+export function HasAtLeastOneTrue<T extends Record<string, any>>(
+  enumObj: T,
+  validationOptions?: ValidationOptions,
+) {
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: 'hasAtLeastOneTrue',
+      target: object.constructor,
+      propertyName: propertyName,
+      options: validationOptions,
+      constraints: [enumObj],
+      validator: {
+        validate(value: any, args: ValidationArguments) {
+          if (!value || typeof value !== 'object') {
+            return false;
+          }
+
+          const [relatedEnum] = args.constraints;
+          const enumKeys = Object.values(relatedEnum);
+          const valueKeys = Object.keys(value);
+
+          if (
+            valueKeys.length !== enumKeys.length ||
+            !valueKeys.every((key) => enumKeys.includes(key))
+          ) {
+            return false;
+          }
+
+          const values = Object.values(value);
+
+          if (!values.every((item) => typeof item === 'boolean')) {
+            return false;
+          }
+
+          const hasTrue = values.some((item) => item === true);
+          return hasTrue;
+        },
+
+        defaultMessage(args: ValidationArguments) {
+          if (validationOptions?.message) {
+            return validationOptions.message as string;
+          }
+          return `${args.property}의 값이 유효하지 않습니다.`;
+        },
+      },
+    });
+  };
+}

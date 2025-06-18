@@ -5,10 +5,11 @@ import { Review } from 'src/review/entities/review.entity';
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToOne,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 
 export enum OfferStatus {
@@ -20,18 +21,17 @@ export enum OfferStatus {
 }
 
 @Entity()
+@Index('UQ_ESTIMATE_REQUEST_MOVER', ['estimateRequestId', 'moverId'], {
+  unique: true,
+}) // 복합 유니크 인덱스
 export class EstimateOffer extends BaseTable {
-  /**@PrimaryColumn + @ManyToOne 조합 문제 발생
-  EstimateOffer 엔티티는 복합키(estimateRequestId, moverId)를 사용하고 있는데
-  @PrimaryColumn에 직접 @ManyToOne을 붙이면 TypeORM이 내부적으로 estimateRequest를
-  string으로 취급해 createdAt 같은 속성을 못 넣게 됩니다.
-  @ManyToOne은 @JoinColumn과 함께 별도의 FK 필드로 분리**/
+  @PrimaryGeneratedColumn('uuid')
+  id: string; // 견적 제안 ID
 
-  // EstimateRequest : EstimateOffer <-> 1:N 관계
-  @PrimaryColumn({ type: 'uuid' })
+  @Column({ type: 'uuid' })
   estimateRequestId: string;
-  // MoverProfile : EstimateOffer <-> 1:N 관계
-  @PrimaryColumn({ type: 'uuid' })
+
+  @Column({ type: 'uuid' })
   moverId: string;
 
   @Column({ nullable: true })
@@ -54,20 +54,21 @@ export class EstimateOffer extends BaseTable {
 
   // EstimateOffer : Review <-> 1:1 관계
   @OneToOne(() => Review, (review) => review.estimateOffer, { nullable: true })
-  review?: Review; // 리뷰 목록
-  // 관계 설정
+  review?: Review; // 리뷰
+
+  // EstimateRequest : EstimateOffer <-> 1:N 관계
   @ManyToOne(() => EstimateRequest, (e) => e.estimateOffers)
   @JoinColumn({ name: 'estimateRequestId' })
   estimateRequest: EstimateRequest;
 
+  // MoverProfile : EstimateOffer <-> 1:N 관계
   @ManyToOne(() => MoverProfile, (m) => m.estimateOffers)
   @JoinColumn({ name: 'moverId' })
   mover: MoverProfile;
-  id: string;
 }
 
 /**
- * PK 설정을 estimateRequestId, moverId에 두 곳에 설정하여 중복을 방지
+ * unique 설정을 estimateRequestId, moverId에 두 곳에 설정하여 중복을 방지
  * 예를 들어 한 명의 기사가 한 개의 견적 요청을 여러번 제안하는 경우를 방지 하기 위해
  * DB 무결성 유지를 위해
  */

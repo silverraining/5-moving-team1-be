@@ -12,6 +12,7 @@ import {
   OrderField,
   OrderString,
 } from './validator/order.validator';
+import { PagePaginationDto } from './dto/page-pagination.dto';
 
 export enum Service {
   ServiceType = 'serviceType',
@@ -21,6 +22,20 @@ export enum Service {
 @Injectable()
 export class CommonService {
   constructor() {}
+
+  applyPagePaginationParamsToQb<T>(
+    qb: SelectQueryBuilder<T>,
+    dto: PagePaginationDto,
+  ) {
+    const { page, take } = dto;
+
+    if (take && page) {
+      const skip = (page - 1) * take;
+
+      qb.take(take);
+      qb.skip(skip);
+    }
+  }
 
   async applyCursorPaginationParamsToQb<T>(
     qb: SelectQueryBuilder<T>,
@@ -35,25 +50,20 @@ export class CommonService {
         values: Record<string, any>;
         order: OrderString;
       };
+      console.log(JSON.stringify(cursorObj, null, 2));
 
       const { values } = cursorObj;
       order = cursorObj.order; // cursorObj에서 order 추출
 
       const { field, direction } = parseOrderString(order);
+
       const orderAlias = this.getOrderFieldAlias(qb, field);
       const cursorId = values.id;
-      const cursorValue = values[field];
+      const cursorValue = parseFloat(values[field]);
 
       const operator = direction === OrderDirection.DESC ? '<' : '>';
-      const equals = '=';
-
-      qb.andWhere(
-        `(${orderAlias} ${operator} :cursorValue OR (${orderAlias} ${equals} :cursorValue AND ${qb.alias}.id ${operator} :cursorId))`,
-        {
-          cursorValue,
-          cursorId,
-        },
-      );
+      const whereClause = `(${orderAlias} ${operator} :cursorValue OR (${orderAlias} = :cursorValue AND ${qb.alias}.id ${operator} :cursorId))`;
+      qb.andWhere(whereClause, { cursorValue, cursorId });
     }
 
     const { field, direction } = parseOrderString(order);
@@ -77,16 +87,17 @@ export class CommonService {
 
     qb.take(take);
 
-    const results = await qb.getMany();
-    const nextCursor = this.generateNextCursor(results, order);
+    const results = await qb.getRawMany();
+    const nextCursor = this.generateNextCursor(results, order, orderAlias);
     const hasNext = !!nextCursor; // nextCursor가 없으면 더 불러올 데이터 없음
 
-    return { qb, nextCursor, hasNext };
+    return { nextCursor, hasNext };
   }
 
   private generateNextCursor<T>(
     results: T[],
     order: OrderString,
+    orderAlias: string,
   ): string | null {
     if (results.length === 0) return null;
 
@@ -97,20 +108,18 @@ export class CommonService {
      *      id: 27,
      *      field: value, // 정렬 필드값
      *    }, ...],
-     *    order: {
-     *      field: MoverOrderField,
-     *      direction: OrderDirection,
-     *    }
+     *    order: `${MoverOrderField} ${OrderDirection}`
      * }
      */
 
     const lastItem = results.at(-1);
     const { field } = parseOrderString(order);
-    const value = lastItem[field];
+    const sqlAlias = orderAlias.split('.')[0];
+    const value = lastItem[`${sqlAlias}_${field}`];
 
     const cursorObj = {
       values: {
-        id: lastItem['id'],
+        id: lastItem[`${sqlAlias}_id`],
         [field]: value,
       },
       order,
@@ -120,14 +129,16 @@ export class CommonService {
       'base64',
     );
 
+    console.log('nextCursor: ', nextCursor);
+
     return nextCursor;
   }
 
   applyServiceFilterToQb<T>(
     qb: SelectQueryBuilder<T>,
     filterString: string,
-    service: Service,
-    table: string,
+    serviceColumnName: Service,
+    entityAlias: string,
   ) {
     if (!filterString) return;
 
@@ -137,7 +148,8 @@ export class CommonService {
 
     // 조건문 배열 생성 (json 컬럼 내부 키가 'true'인지 확인)
     const conditions = activeKeys.map(
-      (key) => `(${table}.${service} ->> '${key}')::boolean = true`,
+      (key) =>
+        `(${entityAlias}.${serviceColumnName} ->> '${key}')::boolean = true`,
     );
 
     // 각 조건을 OR로 연결 (serviceType 중 하나라도 true인 것 필터링)

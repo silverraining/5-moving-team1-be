@@ -11,12 +11,15 @@ import {
 import { EstimateOfferService } from './estimate-offer.service';
 import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
 import { UpdateEstimateOfferDto } from './dto/update-estimate-offer.dto';
+import { GetEstimateOffersResponseDto } from './dto/estimate-offer-response.dto';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
 import {
   ApiGetEstimateOfferDetail,
   ApiGetPendingEstimateOffers,
   ApiCreateEstimateOffer,
   ApiRejectEstimateOffer,
+  ApiGetMoverEstimateOffers,
+  ApiGetRejectedEstimateOffers,
   ApiConfirmEstimateOffer,
 } from './docs/swagger';
 import { ApiBearerAuth } from '@nestjs/swagger';
@@ -52,12 +55,12 @@ export class EstimateOfferController {
   }
 
   // 견적 요청 ID와 기사 ID로 견적 제안 상세 조회
-  @Get(':requestId/:moverId/pending')
+  @Get(':requestId/:moverProfileId/pending')
   @RBAC(Role.CUSTOMER)
   @ApiGetEstimateOfferDetail()
   async getOfferDetail(
     @Param('requestId') requestId: string,
-    @Param('moverId') moverId: string,
+    @Param('moverProfileId') moverId: string,
     @UserInfo() userInfo: UserInfo,
   ) {
     return this.estimateOfferService.findOneByCompositeKey(
@@ -108,6 +111,26 @@ export class EstimateOfferController {
     return {
       message: '견적 요청이 성공적으로 반려되었습니다.',
     };
+  }
+
+  // 기사가 보낸 견적 목록 조회
+  @Get('offers')
+  @RBAC(Role.MOVER)
+  @ApiGetMoverEstimateOffers()
+  async getMoverEstimateOffers(
+    @UserInfo() userInfo: UserInfo,
+  ): Promise<GetEstimateOffersResponseDto[]> {
+    return this.estimateOfferService.getMoverEstimateOffers(userInfo.sub);
+  }
+
+  // 기사가 반려한 견적 목록 조회
+  @Get('rejected-offers')
+  @RBAC(Role.MOVER)
+  @ApiGetRejectedEstimateOffers()
+  async getRejectedEstimateOffers(
+    @UserInfo() userInfo: UserInfo,
+  ): Promise<GetEstimateOffersResponseDto[]> {
+    return this.estimateOfferService.getRejectedEstimateOffers(userInfo.sub);
   }
 
   // 고객이 기사의 제안 견적 확정
