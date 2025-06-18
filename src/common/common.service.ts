@@ -50,7 +50,7 @@ export class CommonService {
         values: Record<string, any>;
         order: OrderString;
       };
-      console.log(JSON.stringify(cursorObj, null, 2));
+      console.log('cursorObj: ', cursorObj);
 
       const { values } = cursorObj;
       order = cursorObj.order; // cursorObj에서 order 추출
@@ -88,6 +88,7 @@ export class CommonService {
     qb.take(take);
 
     const results = await qb.getRawMany();
+    console.log('results: ', results);
     const nextCursor = this.generateNextCursor(results, order, orderAlias);
     const hasNext = !!nextCursor; // nextCursor가 없으면 더 불러올 데이터 없음
 
@@ -113,17 +114,17 @@ export class CommonService {
      */
 
     const lastItem = results.at(-1);
+    console.log('lastItem: ', lastItem);
     const { field } = parseOrderString(order);
     const sqlAlias = orderAlias.split('.')[0];
+    const id = lastItem[`${sqlAlias}_id`];
     const value = lastItem[`${sqlAlias}_${field}`];
 
     const cursorObj = {
-      values: {
-        id: lastItem[`${sqlAlias}_id`],
-        [field]: value,
-      },
+      values: { id, [field]: value },
       order,
     };
+    console.log('cursorObj: ', cursorObj);
 
     const nextCursor = Buffer.from(JSON.stringify(cursorObj)).toString(
       'base64',
