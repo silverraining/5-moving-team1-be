@@ -12,7 +12,7 @@ import {
   RequestStatus,
 } from './entities/estimate-request.entity';
 import { CustomerProfile } from '@/customer-profile/entities/customer-profile.entity';
-import { DataSource, In, Repository } from 'typeorm';
+import { Brackets, DataSource, In, Repository } from 'typeorm';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
 
 import { EstimateOfferResponseDto } from '@/estimate-offer/dto/estimate-offer-response.dto';
@@ -273,7 +273,12 @@ export class EstimateRequestService {
   ): Promise<GenericPaginatedDto<EstimateRequestResponseDto>> {
     const { orderField, cursor, take = 5 } = pagination;
 
-    //  mover 프로필 조회
+    const dbFieldMap = {
+      move_date: 'moveDate',
+      created_at: 'createdAt',
+    };
+    const orderByField = dbFieldMap[orderField] ?? orderField;
+
     const mover = await this.moverProfileRepository.findOne({
       where: { user: { id: userId } },
     });
@@ -281,32 +286,46 @@ export class EstimateRequestService {
       throw new NotFoundException('기사 프로필을 찾을 수 없습니다.');
     }
 
-    // 견적 요청 쿼리 빌더
+    const [cursorDatePart, cursorIdPart] = cursor?.split('|') ?? [];
+    const cursorValue = cursorDatePart ? new Date(cursorDatePart) : undefined;
+    if (cursorValue && isNaN(cursorValue.getTime())) {
+      throw new BadRequestException('유효하지 않은 커서 값입니다.');
+    }
+
     const qb = this.estimateRequestRepository
       .createQueryBuilder('request')
       .leftJoinAndSelect('request.customer', 'customer')
       .leftJoinAndSelect('customer.user', 'user')
       .where('request.status = :status', { status: RequestStatus.PENDING })
-      .orderBy(`request.${orderField}`, 'ASC')
-      .addOrderBy('request.createdAt', 'ASC') //이사일이 같으면 생성일로 정렬
-      .take(take + 1); // hasNext 판단용으로 실제데이터 take +1 가져옴
+      .orderBy(`request.${orderByField}`, 'ASC')
+      .addOrderBy('request.id', 'ASC')
+      .take(take + 1);
 
-    // 커서 페이징 조건 추가
-    if (cursor) {
-      const cursorValue =
-        ['move_date', 'created_at'].includes(orderField) &&
-        typeof cursor === 'string'
-          ? new Date(cursor) //cursor는 ISO 문자열로 들어오므로 Date 타입 변환
-          : cursor;
-      qb.andWhere(`request.${orderField} > :cursor`, { cursor: cursorValue });
+    if (cursorValue) {
+      qb.andWhere(
+        new Brackets((qb) => {
+          qb.where(`request.${orderByField} > :cursorValue`, { cursorValue });
+          if (cursorIdPart) {
+            qb.orWhere(
+              new Brackets((qb2) => {
+                qb2
+                  .where(`request.${orderByField} = :cursorValue`, {
+                    cursorValue,
+                  })
+                  .andWhere('request.id > :cursorId', {
+                    cursorId: cursorIdPart,
+                  });
+              }),
+            );
+          }
+        }),
+      );
     }
 
-    // 데이터 조회
     const requests = await qb.getMany();
-    const hasNext = requests.length > take; //hasNext 판단 후 슬라이스
+    const hasNext = requests.length > take;
     const sliced = requests.slice(0, take);
 
-    // 응답 DTO 변환
     const items = sliced.map((request) =>
       EstimateRequestResponseDto.from(
         request,
@@ -316,10 +335,10 @@ export class EstimateRequestService {
       ),
     );
 
-    // nextCursor를 마지막 요소의 정렬 기준 값으로 설정
-    const nextCursor = hasNext ? sliced[sliced.length - 1]?.[orderField] : null;
+    const last = sliced[sliced.length - 1];
+    const nextCursor =
+      hasNext && last ? `${last[orderByField].toISOString()}|${last.id}` : null;
 
-    // totalCount (필터 없이)
     const totalCount = await this.estimateRequestRepository
       .createQueryBuilder('request')
       .where('request.status = :status', { status: RequestStatus.PENDING })
@@ -332,8 +351,4 @@ export class EstimateRequestService {
       totalCount,
     };
   }
-
-  // remove(id: number) {
-  //   return `This action removes a #${id} estimateRequest`;
-  // }
 }
