@@ -20,7 +20,11 @@ import {
   CODE_404_NOT_FOUND,
   CODE_500_INTERNAL_SERVER_ERROR,
 } from '@/common/docs/response.swagger';
-import { EstimateOfferResponseDto } from '../dto/estimate-offer-response.dto';
+import {
+  EstimateOfferResponseDto,
+  GetEstimateOffersByMoverResponseDto,
+  GetEstimateOfferDetailByMoverResponseDto,
+} from '../dto/estimate-offer-response.dto';
 import { CreateEstimateOfferDto } from '../dto/create-estimate-offer.dto';
 import { UpdateEstimateOfferDto } from '../dto/update-estimate-offer.dto';
 import { MessageSchema } from '@/common/docs/schema.swagger';
@@ -32,7 +36,6 @@ import {
   ForbiddenError,
 } from '@/common/docs/validation.swagger';
 import { GenericPaginatedDto } from '@/common/dto/paginated-response.dto';
-import { GetEstimateOffersResponseDto } from '../dto/estimate-offer-response.dto';
 
 export function ApiGetPendingEstimateOffers() {
   return applyDecorators(
@@ -117,11 +120,12 @@ export function ApiGetPendingEstimateOffers() {
   );
 }
 
-export function ApiGetEstimateOfferDetail() {
+export function ApiGetEstimateOfferDetailByCustomer() {
   return applyDecorators(
     ApiOperation({
-      summary: '견적 상세 조회',
-      description: '특정 견적 요청에 대한 기사별 견적서를 상세 조회합니다.',
+      summary: '고객이 받은 견적 상세 조회',
+      description:
+        '고객이 받은 견적 상세 정보를 조회합니다. 견적 제안 상세 조회와 동일한 정보를 반환합니다.',
     }),
     ApiBearerAuth(),
     ApiParam({
@@ -351,7 +355,7 @@ export function ApiGetRejectedEstimateOffers() {
     ApiResponse({
       status: 200,
       description: '반려된 견적 목록 조회 성공',
-      type: GetEstimateOffersResponseDto,
+      type: GetEstimateOffersByMoverResponseDto,
       isArray: true,
       schema: {
         example: [
@@ -439,6 +443,43 @@ export function ApiConfirmEstimateOffer() {
       CODE_500_INTERNAL_SERVER_ERROR({
         description: '견적 요청 확정 실패한 경우',
         message: '견적 확정 처리 중 서버 오류가 발생했습니다.',
+      }),
+    ),
+  );
+}
+
+export function ApiGetEstimateOfferDetailByMover() {
+  return applyDecorators(
+    ApiOperation({
+      summary: '기사가 보낸 견적 상세 조회',
+      description: '기사가 보낸 견적의 상세 정보를 조회합니다.',
+    }),
+    ApiParam({
+      name: 'offerId',
+      required: true,
+      description: '견적 제안 ID',
+    }),
+    ApiResponse({
+      status: 200,
+      description: '견적 제안 상세 정보',
+      type: GetEstimateOfferDetailByMoverResponseDto,
+    }),
+    ApiBadRequestResponse({
+      description: '잘못된 요청',
+      schema: {
+        example: {
+          statusCode: 400,
+          message: '해당 견적 제안을 찾을 수 없습니다.',
+          error: 'Bad Request',
+        },
+      },
+    }),
+    ApiResponse(CODE_401_RESPONSES),
+    ApiResponse(CODE_403_FORBIDDEN([ForbiddenError])),
+    ApiResponse(
+      CODE_500_INTERNAL_SERVER_ERROR({
+        description: '견적 제안 상세 조회 실패한 경우',
+        message: '견적 제안 상세 조회 처리 중 서버 오류가 발생했습니다.',
       }),
     ),
   );

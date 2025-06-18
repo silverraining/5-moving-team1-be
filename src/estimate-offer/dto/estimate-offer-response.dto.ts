@@ -92,7 +92,8 @@ export class EstimateOfferResponseDto {
 }
 
 // 기사가 보낸 견적 목록 조회 응답 DTO
-export class GetEstimateOffersResponseDto {
+export class GetEstimateOffersByMoverResponseDto {
+  offerId: string;
   status: string;
   isConfirmed: boolean;
   moveType: string;
@@ -104,4 +105,18 @@ export class GetEstimateOffersResponseDto {
   price?: number;
   estimateRequestId: string;
   createdAt: Date;
+}
+
+// 기사가 보낸 견적 상세 조회 응답 DTO
+export class GetEstimateOfferDetailByMoverResponseDto {
+  moveType: string;
+  isTargeted: boolean;
+  customerName: string;
+  moveDate: Date;
+  fromAddressMinimal: { sido: string; sigungu: string };
+  toAddressMinimal: { sido: string; sigungu: string };
+  price: number;
+  estimateRequestCreatedAt: Date;
+  fromAddress: AddressDto;
+  toAddress: AddressDto;
 }

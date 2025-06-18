@@ -11,16 +11,21 @@ import {
 import { EstimateOfferService } from './estimate-offer.service';
 import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
 import { UpdateEstimateOfferDto } from './dto/update-estimate-offer.dto';
-import { GetEstimateOffersResponseDto } from './dto/estimate-offer-response.dto';
+import {
+  EstimateOfferResponseDto,
+  GetEstimateOfferDetailByMoverResponseDto,
+  GetEstimateOffersByMoverResponseDto,
+} from './dto/estimate-offer-response.dto';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
 import {
-  ApiGetEstimateOfferDetail,
+  ApiGetEstimateOfferDetailByCustomer,
   ApiGetPendingEstimateOffers,
   ApiCreateEstimateOffer,
   ApiRejectEstimateOffer,
   ApiGetMoverEstimateOffers,
   ApiGetRejectedEstimateOffers,
   ApiConfirmEstimateOffer,
+  ApiGetEstimateOfferDetailByMover,
 } from './docs/swagger';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { RBAC } from '@/auth/decorator/rbac.decorator';
@@ -30,7 +35,6 @@ import { handleError } from '@/common/utils/handle-error.util';
 import { QueryRunner } from '@/common/decorator/query-runner.decorator';
 import type { QueryRunner as QR } from 'typeorm';
 import { GenericPaginatedDto } from '@/common/dto/paginated-response.dto';
-import { EstimateOfferResponseDto } from './dto/estimate-offer-response.dto';
 import { CreatedAtCursorPaginationDto } from '../common/dto/created-at-pagination.dto';
 
 @Controller('estimate-offer')
@@ -38,7 +42,7 @@ import { CreatedAtCursorPaginationDto } from '../common/dto/created-at-paginatio
 export class EstimateOfferController {
   constructor(private readonly estimateOfferService: EstimateOfferService) {}
 
-  // 견적 요청 ID로 대기 중인 견적 목록 조회
+  // 고객이 받은 견적 목록 조회 (견적 요청 ID로 조회)
   @Get(':requestId/pending')
   @RBAC(Role.CUSTOMER)
   @ApiGetPendingEstimateOffers()
@@ -54,10 +58,10 @@ export class EstimateOfferController {
     );
   }
 
-  // 견적 요청 ID와 기사 ID로 견적 제안 상세 조회
+  // 고객이 받은 견적 제안 상세 조회 (견적 요청 ID와 기사 ID로 조회)
   @Get(':requestId/:moverProfileId/pending')
   @RBAC(Role.CUSTOMER)
-  @ApiGetEstimateOfferDetail()
+  @ApiGetEstimateOfferDetailByCustomer()
   async getOfferDetail(
     @Param('requestId') requestId: string,
     @Param('moverProfileId') moverId: string,
@@ -71,7 +75,7 @@ export class EstimateOfferController {
     );
   }
 
-  // 견적 제안 생성
+  // 기사가 견적 제안 생성
   @Post(':requestId')
   @RBAC(Role.MOVER)
   @ApiCreateEstimateOffer()
@@ -91,7 +95,7 @@ export class EstimateOfferController {
     };
   }
 
-  // 견적 요청 반려
+  // 기사가 견적 요청 반려
   // TODO: 견적 요청 반려는 사실 update 가 아니라 create의 또 다른 형태이다.
   // 따라서 추후 함수명, dto 이름 변경 필요
   @Post(':requestId/rejected')
@@ -119,7 +123,7 @@ export class EstimateOfferController {
   @ApiGetMoverEstimateOffers()
   async getMoverEstimateOffers(
     @UserInfo() userInfo: UserInfo,
-  ): Promise<GetEstimateOffersResponseDto[]> {
+  ): Promise<GetEstimateOffersByMoverResponseDto[]> {
     return this.estimateOfferService.getMoverEstimateOffers(userInfo.sub);
   }
 
@@ -129,11 +133,11 @@ export class EstimateOfferController {
   @ApiGetRejectedEstimateOffers()
   async getRejectedEstimateOffers(
     @UserInfo() userInfo: UserInfo,
-  ): Promise<GetEstimateOffersResponseDto[]> {
+  ): Promise<GetEstimateOffersByMoverResponseDto[]> {
     return this.estimateOfferService.getRejectedEstimateOffers(userInfo.sub);
   }
 
-  // 고객이 기사의 제안 견적 확정
+  // 고객이 받은 견적 확정 (견적 요청 ID와 기사 ID로 조회)
   @Patch(':requestId/:moverId/confirmed')
   @RBAC(Role.CUSTOMER)
   @UseInterceptors(TransactionInterceptor)
@@ -153,6 +157,20 @@ export class EstimateOfferController {
           queryRunner,
         ),
       '견적 확정 처리 중 서버 오류가 발생했습니다.',
+    );
+  }
+
+  // 기사가 보낸 견적 상세 조회
+  @Get(':offerId')
+  @RBAC(Role.MOVER)
+  @ApiGetEstimateOfferDetailByMover()
+  async getEstimateOfferDetailByMover(
+    @Param('offerId') offerId: string,
+    @UserInfo() userInfo: UserInfo,
+  ): Promise<GetEstimateOfferDetailByMoverResponseDto> {
+    return this.estimateOfferService.getEstimateOfferDetailByMover(
+      offerId,
+      userInfo.sub,
     );
   }
 }
