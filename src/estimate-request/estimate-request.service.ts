@@ -23,6 +23,7 @@ import { EstimateRequestPaginationDto } from './dto/estimate-request-pagination.
 import { GenericPaginatedDto } from '@/common/dto/paginated-response.dto';
 import { EstimateOffer } from '@/estimate-offer/entities/estimate-offer.entity';
 import { CreatedAtCursorPaginationDto } from '@/common/dto/created-at-pagination.dto';
+import { EstimateRequestEventDispatcher } from '@/notification/events/dispatcher';
 
 @Injectable()
 export class EstimateRequestService {
@@ -35,6 +36,8 @@ export class EstimateRequestService {
     @InjectRepository(MoverProfile)
     private readonly moverProfileRepository: Repository<MoverProfile>,
     private readonly dataSource: DataSource,
+    //알림 생성부분
+    private readonly dispatcher: EstimateRequestEventDispatcher,
   ) {}
 
   /**
@@ -251,7 +254,8 @@ export class EstimateRequestService {
 
     request.targetMoverIds = [...currentIds, moverProfileId];
     await this.estimateRequestRepository.save(request);
-
+    //모든 로직이 종료된 후 이벤트 리스너 동작
+    this.dispatcher.targetMoverAssigned(request.id, moverId);
     return {
       message: `🧑‍🔧 ${mover.nickname} 기사님이 지정 견적 기사로 추가되었습니다.`,
     };
