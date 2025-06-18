@@ -283,14 +283,14 @@ export class EstimateOfferService {
       ],
     });
 
-    const customerId = (
+    const customerProfileId = (
       await this.customerProfileRepository.findOne({
         where: { user: { id: userId } },
       })
     )?.id;
 
     const isLiked = offer.mover.likedCustomers?.some(
-      (like) => like.customer?.id === customerId,
+      (like) => like.customer?.id === customerProfileId,
     );
 
     const dto = EstimateOfferResponseDto.from(offer, isLiked ?? false, {
