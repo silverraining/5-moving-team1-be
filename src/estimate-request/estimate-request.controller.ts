@@ -67,12 +67,12 @@ export class EstimateRequestController {
   @ApiAddTargetMover()
   async addTargetedMover(
     @Param('requestId') estimateRequestId: string,
-    @Body() body: { moverId: string },
+    @Body() body: { moverProfileId: string },
     @UserInfo() user: UserInfo,
   ) {
     return this.estimateRequestService.addTargetMover(
       estimateRequestId,
-      body.moverId,
+      body.moverProfileId,
       user.sub,
     );
   }
