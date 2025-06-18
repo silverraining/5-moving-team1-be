@@ -20,7 +20,7 @@ export class LikeService {
     @InjectRepository(Like)
     private readonly likeRepository: Repository<Like>,
     @InjectRepository(CustomerProfile)
-    private readonly customerRepository: Repository<CustomerProfile>,
+    private readonly customerProfileRepository: Repository<CustomerProfile>,
     @InjectRepository(MoverProfile)
     private readonly moverProfileRepository: Repository<MoverProfile>,
 
@@ -43,7 +43,7 @@ export class LikeService {
   async findAll(userId: string) {
     const customerId = await this.customerProfileService.getCustomerId(userId);
 
-    const customer = await this.customerRepository.findOne({
+    const customer = await this.customerProfileRepository.findOne({
       where: { id: customerId },
       relations: ['likedMovers'],
     });
