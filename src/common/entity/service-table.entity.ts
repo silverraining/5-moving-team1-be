@@ -1,14 +1,11 @@
 import { Column } from 'typeorm';
 import { BaseTable } from './base-table.entity';
-import {
-  defaultServiceRegion,
-  defaultServiceType,
-} from '../const/service.const';
+import { ServiceRegionMap, ServiceTypeMap } from '../const/service.const';
 
 export class ServiceTable extends BaseTable {
-  @Column({ default: defaultServiceType })
-  serviceType: string;
+  @Column({ type: 'json' })
+  serviceType: ServiceTypeMap;
 
-  @Column({ default: defaultServiceRegion })
-  serviceRegion: string;
+  @Column({ type: 'json' })
+  serviceRegion: ServiceRegionMap;
 }

@@ -1,4 +1,4 @@
-import { IsCommaSeparatedEnum } from '@/common/validator/service.validator';
+import { CreateServiceDto } from '@/common/dto/create-service.dto';
 import {
   IsInt,
   IsOptional,
@@ -8,14 +8,8 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import {
-  defaultServiceRegion,
-  defaultServiceType,
-  ServiceRegion,
-  ServiceType,
-} from 'src/common/const/service.const';
 
-export class CreateMoverProfileDto {
+export class CreateMoverProfileDto extends CreateServiceDto {
   @IsString()
   @Length(2, 20, { message: '별명은 2자 이상 20자 이하여야 합니다.' })
   @Matches(/^[가-힣a-zA-Z0-9]+$/, {
@@ -43,18 +37,4 @@ export class CreateMoverProfileDto {
   @IsString()
   @Length(10, 500, { message: '설명은 10자 이상 500자 이하 입니다.' })
   description: string;
-
-  @IsOptional()
-  @IsString()
-  @IsCommaSeparatedEnum(ServiceType, {
-    message: 'serviceType의 값이 유효하지 않습니다.',
-  })
-  serviceType?: string = defaultServiceType;
-
-  @IsOptional()
-  @IsString()
-  @IsCommaSeparatedEnum(ServiceRegion, {
-    message: 'serviceRegion의 값이 유효하지 않습니다.',
-  })
-  serviceRegion?: string = defaultServiceRegion;
 }

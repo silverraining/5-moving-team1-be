@@ -7,7 +7,7 @@ import {
   IsOptional,
   IsArray,
 } from 'class-validator';
-import { ServiceType } from 'src/common/const/service.const';
+import { ServiceType } from '@/common/const/service.const';
 
 export class AddressDto {
   @IsString()

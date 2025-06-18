@@ -95,7 +95,7 @@ export class AppModule implements NestModule {
       .apply(BearerTokenMiddleware)
       .exclude(
         { path: 'auth/register', method: RequestMethod.POST }, /// 회원가입 제외
-        { path: 'auth/login/local', method: RequestMethod.POST }, /// 로컬 로그인 제외
+        { path: 'auth/login', method: RequestMethod.POST }, /// 로컬 로그인 제외
         { path: 'auth/login/:social', method: RequestMethod.GET }, /// 모든 소셜 로그인 (:social 매개변수 사용) 제외
         { path: 'auth/callback/:social', method: RequestMethod.GET }, /// 모든 소셜 콜백 (:social 매개변수 사용) 제외
       )

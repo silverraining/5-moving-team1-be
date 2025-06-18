@@ -14,5 +14,6 @@ import { UserModule } from '@/user/user.module';
   ],
   controllers: [CustomerProfileController],
   providers: [CustomerProfileService],
+  exports: [CustomerProfileService],
 })
 export class CustomerProfileModule {}
