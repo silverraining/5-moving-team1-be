@@ -90,6 +90,7 @@ export class EstimateRequestService {
       moveDate: new Date(dto.moveDate),
       fromAddress: dto.fromAddress,
       toAddress: dto.toAddress,
+      targetMoverIds: dto.targetMoverIds,
       customer,
     });
 
@@ -215,7 +216,7 @@ export class EstimateRequestService {
    */
   async addTargetMover(
     requestId: string,
-    moverId: string, // MoverProfile.id
+    moverProfileId: string, // MoverProfile.id
     userId: string,
   ): Promise<{ message: string }> {
     const request = await this.estimateRequestRepository.findOne({
@@ -227,9 +228,10 @@ export class EstimateRequestService {
     if (request.customer.user.id !== userId)
       throw new ForbiddenException('해당 요청에 접근할 수 없습니다.');
 
-    const currentIds = request.targetMoverIds || [];
+    const currentIds =
+      request.targetMoverIds?.filter((id): id is string => !!id) || [];
 
-    if (currentIds.includes(moverId)) {
+    if (currentIds.includes(moverProfileId)) {
       throw new BadRequestException('이미 지정 기사로 추가된 기사입니다.');
     }
 
@@ -240,14 +242,14 @@ export class EstimateRequestService {
     }
 
     const mover = await this.moverProfileRepository.findOne({
-      where: { id: moverId },
+      where: { id: moverProfileId },
     });
 
     if (!mover) {
       throw new NotFoundException('해당 기사님의 프로필을 찾을 수 없습니다.');
     }
 
-    request.targetMoverIds = [...currentIds, moverId];
+    request.targetMoverIds = [...currentIds, moverProfileId];
     await this.estimateRequestRepository.save(request);
 
     return {
