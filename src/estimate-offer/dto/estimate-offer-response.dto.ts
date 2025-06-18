@@ -105,3 +105,17 @@ export class GetEstimateOffersResponseDto {
   estimateRequestId: string;
   createdAt: Date;
 }
+
+// 기사가 보낸 견적 상세 조회 응답 DTO
+export class GetEstimateOfferDetailByMoverResponseDto {
+  moveType: string;
+  isTargeted: boolean;
+  customerName: string;
+  moveDate: Date;
+  fromAddressMinimal: { sido: string; sigungu: string };
+  toAddressMinimal: { sido: string; sigungu: string };
+  price: number;
+  estimateRequestCreatedAt: Date;
+  fromAddress: AddressDto;
+  toAddress: AddressDto;
+}

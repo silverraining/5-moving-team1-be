@@ -11,7 +11,11 @@ import {
 import { EstimateOfferService } from './estimate-offer.service';
 import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
 import { UpdateEstimateOfferDto } from './dto/update-estimate-offer.dto';
-import { GetEstimateOffersResponseDto } from './dto/estimate-offer-response.dto';
+import {
+  GetEstimateOffersResponseDto,
+  EstimateOfferResponseDto,
+  GetEstimateOfferDetailByMoverResponseDto,
+} from './dto/estimate-offer-response.dto';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
 import {
   ApiGetEstimateOfferDetail,
@@ -21,6 +25,7 @@ import {
   ApiGetMoverEstimateOffers,
   ApiGetRejectedEstimateOffers,
   ApiConfirmEstimateOffer,
+  ApiGetEstimateOfferDetailByMover,
 } from './docs/swagger';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { RBAC } from '@/auth/decorator/rbac.decorator';
@@ -30,7 +35,6 @@ import { handleError } from '@/common/utils/handle-error.util';
 import { QueryRunner } from '@/common/decorator/query-runner.decorator';
 import type { QueryRunner as QR } from 'typeorm';
 import { GenericPaginatedDto } from '@/common/dto/paginated-response.dto';
-import { EstimateOfferResponseDto } from './dto/estimate-offer-response.dto';
 import { CreatedAtCursorPaginationDto } from '../common/dto/created-at-pagination.dto';
 
 @Controller('estimate-offer')
@@ -153,6 +157,20 @@ export class EstimateOfferController {
           queryRunner,
         ),
       '견적 확정 처리 중 서버 오류가 발생했습니다.',
+    );
+  }
+
+  // 기사가 보낸 견적 상세 조회
+  @Get(':offerId')
+  @RBAC(Role.MOVER)
+  @ApiGetEstimateOfferDetailByMover()
+  async getEstimateOfferDetailByMover(
+    @Param('offerId') offerId: string,
+    @UserInfo() userInfo: UserInfo,
+  ): Promise<GetEstimateOfferDetailByMoverResponseDto> {
+    return this.estimateOfferService.getEstimateOfferDetailByMover(
+      offerId,
+      userInfo.sub,
     );
   }
 }

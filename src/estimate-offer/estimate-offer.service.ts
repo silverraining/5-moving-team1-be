@@ -16,6 +16,7 @@ import { MoverProfileView } from '@/mover-profile/view/mover-profile.view';
 import {
   EstimateOfferResponseDto,
   GetEstimateOffersResponseDto,
+  GetEstimateOfferDetailByMoverResponseDto,
 } from './dto/estimate-offer-response.dto';
 import { CreateEstimateOfferDto } from './dto/create-estimate-offer.dto';
 import { UpdateEstimateOfferDto } from './dto/update-estimate-offer.dto';
@@ -459,6 +460,57 @@ export class EstimateOfferService {
     // 6. 성공 메시지
     return {
       message: '견적 제안이 성공적으로 확정되었습니다.',
+    };
+  }
+
+  /**
+   * 기사가 보낸 견적 상세 조회
+   */
+  async getEstimateOfferDetailByMover(
+    offerId: string,
+    userId: string,
+  ): Promise<GetEstimateOfferDetailByMoverResponseDto> {
+    // 1. 기사 프로필 조회
+    const moverProfile = await this.moverRepository.findOne({
+      where: { user: { id: userId } },
+    });
+
+    if (!moverProfile) {
+      throw new BadRequestException('기사 프로필을 찾을 수 없습니다.');
+    }
+
+    // 2. 견적 제안 상세 조회
+    const offer = await this.offerRepository.findOne({
+      where: { id: offerId, moverId: moverProfile.id },
+      relations: [
+        'estimateRequest',
+        'estimateRequest.customer',
+        'estimateRequest.customer.user',
+      ],
+    });
+
+    if (!offer) {
+      throw new NotFoundException('견적 제안을 찾을 수 없습니다.');
+    }
+
+    // 3. 응답 DTO 변환 및 반환
+    return {
+      moveType: offer.estimateRequest.moveType,
+      isTargeted: offer.isTargeted,
+      customerName: offer.estimateRequest.customer.user.name,
+      moveDate: offer.estimateRequest.moveDate,
+      fromAddressMinimal: {
+        sido: offer.estimateRequest.fromAddress.sido,
+        sigungu: offer.estimateRequest.fromAddress.sigungu,
+      },
+      toAddressMinimal: {
+        sido: offer.estimateRequest.toAddress.sido,
+        sigungu: offer.estimateRequest.toAddress.sigungu,
+      },
+      price: offer.price,
+      estimateRequestCreatedAt: offer.estimateRequest.createdAt,
+      fromAddress: offer.estimateRequest.fromAddress,
+      toAddress: offer.estimateRequest.toAddress,
     };
   }
 }
