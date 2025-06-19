@@ -142,31 +142,28 @@ export class ReviewService {
       .andWhere('review.estimateOfferId IS NULL') // 리뷰가 없는 견적 제안만 선택
       .select(REVIEWABLE_MOVER_SELECT); // 작성 가능한 리뷰 목록을 위한 SELECT 문
 
+    const total = await qb.getCount(); // 전체 결과 개수를 가져옴 (페이지네이션 적용 전의 총 개수)
+
     this.commonService.applyPagePaginationParamsToQb(qb, dto); // 페이지네이션 적용
 
-    const reviewableOffers = await qb.getRawMany();
-    console.log('reviewableOffers: ', reviewableOffers);
-    const total = await qb.getCount();
-    console.log('total: ', total);
+    const rawReviewableOffers = await qb.getRawMany();
 
-    return null;
+    const formattedReviewableOffers = rawReviewableOffers.map((row) => ({
+      reviewableOfferId: row.reviewableOfferId, // 작성 가능한 리뷰 견적 제안 ID
+      moveType: row.moveType, // 이사 종류
+      moveDate: formatDateToKst(new Date(row.moveDate)), // 이사일
+      offerPrice: row.offerPrice, // 견적가
+      isTargeted: row.isTargeted, // 지정견적 여부
+      mover: {
+        nickname: row.moverNickname, // 기사의 닉네임
+        imageUrl: row.moverImageUrl, // 기사의 이미지 URL
+      },
+    }));
 
-    // const formattedReviewableOffers = rawReviewableOffers.map((row) => ({
-    //   reviewableOfferId: row.reviewableOfferId, // 작성 가능한 리뷰 견적 제안 ID
-    //   moveType: row.moveType, // 이사 종류
-    //   moveDate: row.moveDate, // 이사일
-    //   offerPrice: row.offerPrice, // 견적가
-    //   isTargeted: row.isTargeted, // 지정견적 여부
-    //   mover: {
-    //     nickname: row.moverNickname, // 기사의 닉네임
-    //     imageUrl: row.moverImageUrl, // 기사의 이미지 URL
-    //   },
-    // }));
-
-    // return {
-    //   reviewableOffers: formattedReviewableOffers, // 작성 가능한 리뷰 목록
-    //   total, // 페이지네이션을 위한 총 개수
-    // };
+    return {
+      reviewableOffers: formattedReviewableOffers, // 작성 가능한 리뷰 목록
+      total, // 페이지네이션을 위한 총 개수
+    };
   }
 
   /**
