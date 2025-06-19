@@ -5,8 +5,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Like } from './entities/like.entity';
 import {
   LIKED_MOVER_LIST_SELECT,
-  MOVER_PROFILE_TABLE,
-  MOVER_PROFILE_VIEW_TABLE,
+  MOVER_TABLE,
+  MOVER_VIEW_TABLE,
 } from '@/common/const/query-builder.const';
 import { MoverProfileView } from '@/mover-profile/view/mover-profile.view';
 import { MoverProfile } from '@/mover-profile/entities/mover-profile.entity';
@@ -60,15 +60,15 @@ export class LikeService {
 
     // 찜한 기사님이 있는 경우
     const qb = this.moverProfileRepository
-      .createQueryBuilder(MOVER_PROFILE_TABLE)
+      .createQueryBuilder(MOVER_TABLE)
       .select(LIKED_MOVER_LIST_SELECT) // entity select
       .leftJoinAndSelect(
         MoverProfileView,
-        MOVER_PROFILE_VIEW_TABLE,
-        `${MOVER_PROFILE_TABLE}.id = ${MOVER_PROFILE_VIEW_TABLE}.id`,
+        MOVER_VIEW_TABLE,
+        `${MOVER_TABLE}.id = ${MOVER_VIEW_TABLE}.id`,
       )
-      .where(`${MOVER_PROFILE_TABLE}.id IN (:...ids)`, { ids: likedMoverIds })
-      .orderBy(`${MOVER_PROFILE_VIEW_TABLE}.like_count`, 'DESC');
+      .where(`${MOVER_TABLE}.id IN (:...ids)`, { ids: likedMoverIds })
+      .orderBy(`${MOVER_TABLE}.like_count`, 'DESC');
 
     const { entities, raw: aggregates } = await qb.getRawAndEntities();
 
