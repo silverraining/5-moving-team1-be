@@ -209,7 +209,7 @@ export class EstimateOfferService {
           OrderField.CONFIRMED_ESTIMATE_COUNT,
           OrderField.REVIEW_COUNT,
           OrderField.AVERAGE_RATING,
-          'like_count',
+          OrderField.LIKE_COUNT,
         ],
       });
     const moverViewMap = new Map(moverViews.map((view) => [view.id, view])); // 빠르게 해당 moverId의 view 데이터를 찾기 위해서
