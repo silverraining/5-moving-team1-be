@@ -52,6 +52,7 @@ export const MoverProfileListSchema = {
         confirmed_estimate_count: 1,
         like_count: 1,
         isTargeted: false,
+        isLiked: false,
       },
     ],
     hasNext: true,
