@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateMoverProfileDto } from './dto/create-mover-profile.dto';
@@ -9,41 +8,29 @@ import { UpdateMoverProfileDto } from './dto/update-mover-profile.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MoverProfile } from './entities/mover-profile.entity';
-import { MoverProfileView } from './view/mover-profile.view';
-import { CustomerProfile } from '@/customer-profile/entities/customer-profile.entity';
-import {
-  EstimateRequest,
-  RequestStatus,
-} from '@/estimate-request/entities/estimate-request.entity';
 import { GetMoverProfilesDto } from './dto/get-mover-profiles.dto';
 import { CommonService, Service } from 'src/common/common.service';
 import {
   MOVER_LIST_SELECT,
   MOVER_LIST_STATS_SELECT,
+  MOVER_PROFILE_SELECT,
   MOVER_TABLE,
   MOVER_VIEW_TABLE,
 } from '@/common/const/query-builder.const';
 import { Role } from '@/user/entities/user.entity';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
-import { Review } from '@/review/entities/review.entity';
+import { MoverProfileHelper } from './mover-profile.helper';
+import { MoverProfileView } from './view/mover-profile.view';
 import { OrderField } from '@/common/validator/order.validator';
-import { CustomerProfileService } from '@/customer-profile/customer-profile.service';
 
 @Injectable()
 export class MoverProfileService {
   constructor(
     @InjectRepository(MoverProfile)
     private readonly moverProfileRepository: Repository<MoverProfile>,
-    @InjectRepository(MoverProfileView)
-    private readonly moverProfileViewRepository: Repository<MoverProfileView>,
-    @InjectRepository(CustomerProfile)
-    private readonly customerProfileRepository: Repository<CustomerProfile>,
-    @InjectRepository(EstimateRequest)
-    private readonly estimateRequestRepository: Repository<EstimateRequest>,
-    @InjectRepository(Review)
-    private readonly reviewRepository: Repository<Review>,
+
     private readonly commonService: CommonService,
-    private readonly customerProfileService: CustomerProfileService,
+    private readonly moverProfileHelper: MoverProfileHelper, // Helper로 분리하여 재사용 가능
   ) {}
 
   async create(userId: string, createMoverProfileDto: CreateMoverProfileDto) {
@@ -52,22 +39,15 @@ export class MoverProfileService {
       ...createMoverProfileDto,
     };
 
-    const newProfile = await this.moverProfileRepository.save(profileData);
+    await this.moverProfileRepository.save(profileData);
 
-    if (!newProfile) {
-      throw new InternalServerErrorException(
-        '기사님의 프로필 생성에 실패했습니다!',
-      );
-    }
-
-    return newProfile;
+    return { message: '기사님의 프로필이 성공적으로 생성되었습니다.' };
   }
 
   async findAll(user: UserInfo, dto: GetMoverProfilesDto) {
     const { serviceType, serviceRegion, order } = dto;
     const { sub: userId, role } = user;
     const isCustomer = role === Role.CUSTOMER;
-    let targetMoverIds: string[] = [];
 
     if (!order) {
       throw new BadRequestException(
@@ -75,14 +55,14 @@ export class MoverProfileService {
       );
     }
 
-    // MoverProfile 엔티티의 쿼리 빌더 생성 및 집계 필드 조인
+    // 1. MoverProfile 엔티티의 쿼리 빌더 생성 및 집계 필드 조인
     const qb = this.moverProfileRepository
       .createQueryBuilder(MOVER_TABLE)
       .select(MOVER_LIST_SELECT)
       .leftJoin(`${MOVER_TABLE}.stats`, 'stats')
       .addSelect(MOVER_LIST_STATS_SELECT);
 
-    // 서비스 필터링 적용 (MoverProfile 기준)
+    // 2. 서비스 필터링 적용 (MoverProfile 기준)
     this.commonService.applyServiceFilterToQb(
       qb,
       serviceType,
@@ -97,57 +77,121 @@ export class MoverProfileService {
       MOVER_TABLE,
     );
 
-    // 커서 기반 페이징 적용
+    // 3. 커서 기반 페이징 적용
     const { nextCursor, hasNext } =
       await this.commonService.applyCursorPaginationParamsToQb(qb, dto);
 
     const movers = await qb.getMany();
-    const moversWithAggregates = this.mergeMoversAndAggregates(movers); // 통계 정보와 함께 프로필 병합
 
-    // 고객일 경우, 해당 기사에게 지정 견적 요청을 했는지
-    if (isCustomer) {
-      const customerId =
-        await this.customerProfileService.getCustomerId(userId);
+    // 4. 집계 필드와 함께 프로필 병합
+    const moversWithAggregates = movers.map((mover) =>
+      this.moverProfileHelper.mergeMoverProfileWithAggregates(mover),
+    );
 
-      const estimateRequest = await this.estimateRequestRepository.findOne({
-        where: {
-          customer: { id: customerId },
-          status: RequestStatus.PENDING,
-        },
-        select: ['targetMoverIds'], // 필요한 필드만 가져오기
-      });
+    // 5. 고객인 경우, 고객 ID를 가져온 뒤 관련 기사 정보 조회
+    const { targetMoverIds, likedMoverIds } =
+      await this.moverProfileHelper.getCustomerRelatedMoverIds(
+        userId,
+        isCustomer,
+      );
 
-      if (!estimateRequest) {
-        throw new NotFoundException('지정 견적 요청을 찾을 수 없습니다.');
-      }
-
-      targetMoverIds = estimateRequest.targetMoverIds || []; // 지정 견적 요청을 한 기사 ID 목록
-    }
-
-    // moversWithAggregates에 isTargeted 속성 추가
-    const moversWithTargetStatus = moversWithAggregates.map((mover) => ({
+    // 6. 각 기사에 고객 기준의 상태(isTargeted, isLiked)를 추가
+    const moversWithCustomerStatus = moversWithAggregates.map((mover) => ({
       ...mover,
-      isTargeted: targetMoverIds.includes(mover.id),
+      isTargeted: targetMoverIds.includes(mover.id), // 고객이 이 기사에게 견적 요청을 보냈는가?
+      isLiked: likedMoverIds.includes(mover.id), // 고객이 이 기사를 좋아요 했는가?
     }));
 
     return {
-      movers: moversWithTargetStatus,
+      movers: moversWithCustomerStatus,
       hasNext,
       nextCursor,
     };
   }
 
-  public mergeMoversAndAggregates(profile: MoverProfile[]) {
-    return profile.map(({ stats, ...rest }) => ({
-      ...rest,
-      review_count: Number(stats.review_count),
-      average_rating: Number(stats.average_rating),
-      confirmed_estimate_count: Number(stats.confirmed_estimate_count),
-      like_count: Number(stats.like_count),
-    }));
+  async findMe(userId: string) {
+    // 1. MoverProfile이 존재하는지 확인 후 id 조회
+    const moverId = await this.moverProfileHelper.getMoverId(userId);
+
+    // 2. MoverProfile 엔티티의 쿼리 빌더 생성 및 집계 필드 조인
+    const qb = this.moverProfileRepository
+      .createQueryBuilder(MOVER_TABLE)
+      .select(MOVER_PROFILE_SELECT)
+      .leftJoin(`${MOVER_TABLE}.stats`, 'stats')
+      .addSelect(MOVER_LIST_STATS_SELECT)
+      .where(`${MOVER_TABLE}.id = :moverId`, { moverId });
+
+    const mover = await qb.getOne();
+
+    // 3. 집계 필드와 함께 프로필 병합
+    const moverWithAggregates =
+      this.moverProfileHelper.mergeMoverProfileWithAggregates(mover);
+
+    return moverWithAggregates;
   }
 
-  mergeEntityWithAggregates(
+  async findOne(user: UserInfo, moverId: string) {
+    const { sub: userId, role } = user;
+    const isCustomer = role === Role.CUSTOMER;
+
+    // 1. MoverProfile이 존재하는지 확인
+    const profile = await this.moverProfileRepository.findOne({
+      where: { id: moverId },
+    });
+
+    if (!profile) {
+      throw new NotFoundException('기사님의 프로필을 찾을 수 없습니다.');
+    }
+
+    // 2. MoverProfile 엔티티의 쿼리 빌더 생성 및 집계 필드 조인
+    const qb = this.moverProfileRepository
+      .createQueryBuilder(MOVER_TABLE)
+      .select(MOVER_PROFILE_SELECT)
+      .leftJoin(`${MOVER_TABLE}.stats`, 'stats')
+      .addSelect(MOVER_LIST_STATS_SELECT)
+      .where(`${MOVER_TABLE}.id = :moverId`, { moverId });
+
+    const mover = await qb.getOne();
+
+    // 3. 집계 필드와 함께 프로필 병합
+    const moverWithAggregates =
+      this.moverProfileHelper.mergeMoverProfileWithAggregates(mover);
+
+    // 4. 고객인 경우, 고객 ID를 가져온 뒤 관련 기사 ids 조회
+    const { targetMoverIds, likedMoverIds } =
+      await this.moverProfileHelper.getCustomerRelatedMoverIds(
+        userId,
+        isCustomer,
+      );
+
+    // 5. 각 기사에 고객 기준의 상태(isTargeted, isLiked)를 추가
+    const moverWithCustomerStatus = {
+      ...moverWithAggregates, // 집계 필드가 포함된 mover 프로필
+      isTargeted: targetMoverIds.includes(moverWithAggregates.id), // 고객이 이 기사에게 견적 요청을 보냈는가?
+      isLiked: likedMoverIds.includes(moverWithAggregates.id), // 고객이 이 기사를 좋아요 했는가?
+    };
+
+    return moverWithCustomerStatus;
+  }
+
+  async update(userId: string, updateMoverProfileDto: UpdateMoverProfileDto) {
+    const profile = await this.moverProfileRepository.findOneBy({
+      user: { id: userId }, // user의 id로 프로필 찾기
+    });
+
+    if (!profile) {
+      throw new NotFoundException('기사님의 프로필을 찾을 수 없습니다.');
+    }
+
+    // DTO 객체의 값들을 profile 객체에 덮어씌움
+    Object.assign(profile, updateMoverProfileDto);
+
+    await this.moverProfileRepository.save(profile);
+
+    return { message: '기사님의 프로필이 성공적으로 수정되었습니다.' };
+  }
+
+  public mergeEntityWithAggregates(
     entities: MoverProfile[],
     aggregates: MoverProfileView[],
   ) {
@@ -170,121 +214,5 @@ export class MoverProfileService {
       likeCount:
         parseInt(aggregates[index][`${MOVER_VIEW_TABLE}_like_count`]) || 0,
     }));
-  }
-
-  async findMe(userId: string) {
-    const profile = await this.moverProfileRepository.findOneBy({
-      user: { id: userId },
-    });
-
-    if (!profile) {
-      throw new NotFoundException('기사님의 프로필을 찾을 수 없습니다.');
-    }
-
-    const aggregate = await this.moverProfileViewRepository.findOne({
-      where: { id: profile.id },
-      select: [
-        OrderField.REVIEW_COUNT, // 리뷰 개수
-        OrderField.AVERAGE_RATING, // 평균 평점
-        OrderField.CONFIRMED_ESTIMATE_COUNT, // 확정된 견적 요청 개수
-        OrderField.LIKE_COUNT, // 좋아요 개수
-      ],
-    });
-
-    const mover = this.mergeEntityWithAggregates([profile], [aggregate])[0];
-
-    const reviews = await this.reviewRepository.find({
-      where: { mover: { id: profile.id } },
-      relations: ['customer', 'customer.user'],
-      select: {
-        rating: true, // 리뷰 평점
-        comment: true, // 리뷰 내용
-        createdAt: true, // 리뷰 작성일
-        customer: {
-          user: {
-            email: true, // 고객 이메일
-          },
-        },
-      },
-    });
-
-    return { ...mover, reviews };
-  }
-
-  async findOne(moverId: string) {
-    const profile = await this.moverProfileRepository.findOneBy({
-      id: moverId,
-    });
-
-    if (!profile) {
-      throw new NotFoundException('기사님의 프로필을 찾을 수 없습니다.');
-    }
-
-    const aggregate = await this.moverProfileViewRepository.findOne({
-      where: { id: moverId },
-      select: [
-        OrderField.REVIEW_COUNT, // 리뷰 개수
-        OrderField.AVERAGE_RATING, // 평균 평점
-        OrderField.CONFIRMED_ESTIMATE_COUNT, // 확정된 견적 요청 개수
-        OrderField.LIKE_COUNT, // 좋아요 개수
-      ],
-    });
-
-    const mover = this.mergeEntityWithAggregates([profile], [aggregate])[0];
-
-    const reviews = await this.reviewRepository.find({
-      where: { mover: { id: moverId } },
-      relations: ['customer', 'customer.user'],
-      select: {
-        rating: true, // 리뷰 평점
-        comment: true, // 리뷰 내용
-        createdAt: true, // 리뷰 작성일
-        customer: {
-          user: {
-            email: true, // 고객 이메일
-          },
-        },
-      },
-    });
-
-    return { ...mover, reviews };
-  }
-
-  async update(userId: string, updateMoverProfileDto: UpdateMoverProfileDto) {
-    const profile = await this.moverProfileRepository.findOneBy({
-      user: { id: userId }, // user의 id로 프로필 찾기
-    });
-
-    if (!profile) {
-      throw new NotFoundException('기사님의 프로필을 찾을 수 없습니다.');
-    }
-
-    // DTO 객체의 값들을 profile 객체에 덮어씌움
-    Object.assign(profile, updateMoverProfileDto);
-
-    const updatedProfile = await this.moverProfileRepository.save(profile);
-
-    if (!updatedProfile) {
-      throw new InternalServerErrorException(
-        '기사님의 프로필 업데이트에 실패했습니다!',
-      );
-    }
-
-    return updatedProfile;
-  }
-
-  public async getMoverId(userId: string) {
-    const mover = await this.moverProfileRepository.findOne({
-      where: { user: { id: userId } },
-      select: ['id'],
-    });
-
-    if (!mover) {
-      throw new NotFoundException(
-        '기사님의 프로필을 찾을 수 없습니다, 프로필을 생성해주세요!',
-      );
-    }
-
-    return mover.id;
   }
 }
