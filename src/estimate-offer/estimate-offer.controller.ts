@@ -144,7 +144,7 @@ export class EstimateOfferController {
   @ApiConfirmEstimateOffer()
   async confirmOffer(
     @Param('requestId') requestId: string,
-    @Param('moverId') moverId: string,
+    @Param('moverProfileId') moverId: string,
     @UserInfo() userInfo: UserInfo,
     @QueryRunner() queryRunner: QR,
   ) {

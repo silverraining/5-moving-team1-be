@@ -4,7 +4,8 @@ import { EstimateOfferResponseDto } from '@/estimate-offer/dto/estimate-offer-re
 import { EstimateRequest } from '../entities/estimate-request.entity';
 
 export class EstimateRequestResponseDto {
-  id: string;
+  requestId: string;
+  requestStatus: EstimateRequest['status']; // 견적 요청 상태 (PENDING, CONFIRMED, REJECTED, COMPLETED, CANCELED, EXPIRED)
   createdAt: Date;
   moveType: ServiceType;
   moveDate: Date;
@@ -37,13 +38,13 @@ export class EstimateRequestResponseDto {
   ): EstimateRequestResponseDto {
     const dto = new EstimateRequestResponseDto();
 
-    dto.id = request.id;
+    dto.requestId = request.id;
+    dto.requestStatus = request.status;
     dto.createdAt = request.createdAt;
     dto.moveType = request.moveType;
     dto.moveDate = request.moveDate;
     dto.estimateOffers = offers;
     dto.offerCount = offers.length;
-
     dto.isTargeted = isTargeted ?? false;
     dto.customerName = request.customer?.user?.name ?? null;
 

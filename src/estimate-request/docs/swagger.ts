@@ -81,7 +81,7 @@ export function ApiGetMyEstimateHistory() {
     ApiOperation({
       summary: '받았던 견적 목록 조회',
       description:
-        '고객이 생성한 견적 요청 중 완료(COMPLETED), 취소(CANCELED), 만료(EXPIRED)된 요청 목록에 대해 받았던 견적서 목록을 커서 기반 페이지네이션 방식으로 조회합니다.\n정렬 기준은 생성일 최신 순(`createdAt DESC`)으로 고정되어 있습니다.',
+        '고객이 생성한 견적 요청 중 확정(CONFIRMED), 완료(COMPLETED),  만료(EXPIRED)된 요청 목록에 대해 받았던 견적서 목록을 커서 기반 페이지네이션 방식으로 조회합니다.\n정렬 기준은 생성일 최신 순(`createdAt DESC`)으로 고정되어 있습니다.',
     }),
     ApiBearerAuth(),
 
@@ -90,7 +90,6 @@ export function ApiGetMyEstimateHistory() {
       required: false,
       description:
         '커서 기준 값. 응답의 `nextCursor` 값을 복사해 다음 요청에 사용하세요.',
-      example: '2025-06-15T12:00:00.000Z',
     }),
     ApiQuery({
       name: 'take',
@@ -126,20 +125,36 @@ export function ApiGetMyEstimateHistory() {
 export function ApiGetMyActiveEstimateRequest() {
   return applyDecorators(
     ApiOperation({
-      summary: '진행 중인 견적 요청 ID 조회 (개발용)',
-      description: 'PENDING, CONFIRMED 상태의 견적 요청 ID만 반환합니다.',
+      summary: '진행 중인 견적 요청 ID 조회',
+      description: 'PENDING 상태의 견적 요청 ID만 반환합니다.',
     }),
     ApiResponse({
       status: 200,
-      description: '진행 중인 estimateRequestId 리스트',
+      description: '진행 중인 견적 요청이 없을 경우 메시지를 반환합니다.',
       schema: {
-        type: 'array',
-        items: {
-          type: 'object',
-          properties: {
-            estimateRequestId: { type: 'string', example: 'uuid-example' },
+        oneOf: [
+          {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                estimateRequestId: {
+                  type: 'string',
+                  example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+                },
+              },
+            },
           },
-        },
+          {
+            type: 'object',
+            properties: {
+              message: {
+                type: 'string',
+                example: '현재 진행중인 견적 요청이 없습니다.',
+              },
+            },
+          },
+        ],
       },
     }),
   );

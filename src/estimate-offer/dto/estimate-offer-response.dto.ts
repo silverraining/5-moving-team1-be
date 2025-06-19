@@ -2,10 +2,11 @@ import { AddressDto } from '@/common/dto/address.dto';
 import { EstimateOffer } from '../entities/estimate-offer.entity';
 
 export class EstimateOfferResponseDto {
+  offerId: string;
   estimateRequestId: string;
   moverId: string;
   price: number;
-  status: string;
+  offerStatus: string;
   requestStatus: string;
   isTargeted: boolean;
   isConfirmed: boolean;
@@ -20,6 +21,7 @@ export class EstimateOfferResponseDto {
   toAddressMinimal?: { sido: string; sigungu: string };
 
   mover: {
+    moverId: string;
     nickname: string;
     imageUrl?: string;
     experience: number;
@@ -44,11 +46,11 @@ export class EstimateOfferResponseDto {
     },
   ): EstimateOfferResponseDto {
     const dto = new EstimateOfferResponseDto();
-
+    dto.offerId = offer.id;
     dto.estimateRequestId = offer.estimateRequestId;
     dto.moverId = offer.moverId;
     dto.price = offer.price;
-    dto.status = offer.status;
+    dto.offerStatus = offer.status;
     dto.requestStatus = offer.estimateRequest.status;
     dto.isTargeted = !!offer.estimateRequest.targetMoverIds?.includes(
       offer.moverId,
@@ -76,6 +78,7 @@ export class EstimateOfferResponseDto {
     }
 
     dto.mover = {
+      moverId: offer.moverId,
       nickname: offer.mover.nickname,
       imageUrl: offer.mover.imageUrl,
       experience: offer.mover.experience,

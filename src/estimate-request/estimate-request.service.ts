@@ -47,18 +47,20 @@ export class EstimateRequestService {
    */
   async findActiveEstimateRequestIds(
     userId: string,
-  ): Promise<{ estimateRequestId: string }[]> {
-    return this.estimateRequestRepository
-      .find({
-        where: {
-          customer: { user: { id: userId } },
-          status: In([RequestStatus.PENDING, RequestStatus.CONFIRMED]),
-        },
-        select: { id: true }, // `id`만 반환
-      })
-      .then((requests) =>
-        requests.map((req) => ({ estimateRequestId: req.id })),
-      );
+  ): Promise<{ message: string } | { estimateRequestId: string }[]> {
+    const requests = await this.estimateRequestRepository.find({
+      where: {
+        customer: { user: { id: userId } },
+        status: RequestStatus.PENDING,
+      },
+      select: { id: true },
+    });
+
+    if (requests.length === 0) {
+      return { message: '현재 진행중인 견적 요청이 없습니다.' };
+    }
+
+    return requests.map((req) => ({ estimateRequestId: req.id }));
   }
   /**
    * 견적 요청 생성
@@ -112,17 +114,21 @@ export class EstimateRequestService {
    * @param userId 고객 ID
    * @returns EstimateRequestResponseDto[]
    */
-  // COMPLETED, CANCELED, EXPIRED 상태만 조회 (대기, 진행 중인 요청 제외)
+  // CONFIRMED, COMPLETED, EXPIRED 상태만 조회 (대기중인 요청 제외)
   validStatuses = ['CONFIRMED', 'COMPLETED', 'EXPIRED'];
-
   async findAllRequestHistoryWithPagination(
     userId: string,
     { cursor, take = 5 }: CreatedAtCursorPaginationDto,
   ): Promise<GenericPaginatedDto<EstimateRequestResponseDto>> {
-    //기본 쿼리 빌더 구성: 고객이 생성한 견적 요청 + 관련 정보 join
+    const [cursorDatePart, cursorIdPart] = cursor?.split('|') ?? [];
+    const cursorValue = cursorDatePart ? new Date(cursorDatePart) : undefined;
+    if (cursorValue && isNaN(cursorValue.getTime())) {
+      throw new BadRequestException('유효하지 않은 커서 값입니다.');
+    }
+
     const qb = this.estimateRequestRepository
       .createQueryBuilder('request')
-      .addSelect('request.status') // dto에서 requestStatus 사용 시 명시적 select 필요
+      .addSelect('request.status')
       .leftJoinAndSelect('request.customer', 'customer')
       .leftJoinAndSelect('customer.user', 'user')
       .leftJoinAndSelect('request.estimateOffers', 'offer')
@@ -136,16 +142,28 @@ export class EstimateRequestService {
         statuses: this.validStatuses,
       })
       .orderBy('request.createdAt', 'DESC')
-      .take(take + 1); // hasNext 확인용 +1
-    // 커서 기반 페이지네이션 처리
-    // 클라이언트는 마지막 항목의 createdAt을 cursor로 전달함
-    // cursor 이전(createdAt < cursor)의 데이터만 조회하여 중복 없이 다음 페이지 구성
-    if (cursor) {
-      qb.andWhere('request.createdAt < :cursor', {
-        cursor: new Date(cursor),
-      });
+      .addOrderBy('request.id', 'DESC')
+      .take(take + 1);
+
+    if (cursorValue) {
+      qb.andWhere(
+        new Brackets((qb) => {
+          qb.where('request.createdAt < :cursorValue', { cursorValue });
+          if (cursorIdPart) {
+            qb.orWhere(
+              new Brackets((qb2) => {
+                qb2
+                  .where('request.createdAt = :cursorValue', { cursorValue })
+                  .andWhere('request.id < :cursorId', {
+                    cursorId: cursorIdPart,
+                  });
+              }),
+            );
+          }
+        }),
+      );
     }
-    // 데이터 조회 및 커서 페이징 처리
+
     const requests = await qb.getMany();
     const hasNext = requests.length > take;
     const sliced = requests.slice(0, take);
@@ -153,14 +171,12 @@ export class EstimateRequestService {
     const allMoverIds = sliced.flatMap((req) =>
       req.estimateOffers.map((o) => o.moverId),
     );
-    // offer에 대응하는 moverView 조회
     const moverViews = await this.dataSource
       .getRepository(MoverProfileView)
       .findBy({ id: In(allMoverIds) });
 
     const moverViewMap = new Map(moverViews.map((v) => [v.id, v]));
 
-    //  각 request에 포함된 offer 리스트 변환
     const mapOffers = (
       offers: EstimateOffer[],
       viewMap: Map<string, MoverProfileView>,
@@ -187,10 +203,9 @@ export class EstimateRequestService {
       return EstimateRequestResponseDto.from(request, offers);
     });
 
-    //  커서 생성
-    const nextCursor = hasNext
-      ? sliced[sliced.length - 1].createdAt.toISOString()
-      : null;
+    const last = sliced[sliced.length - 1];
+    const nextCursor =
+      hasNext && last ? `${last.createdAt.toISOString()}|${last.id}` : null;
 
     const totalCount = await this.estimateRequestRepository
       .createQueryBuilder('request')
