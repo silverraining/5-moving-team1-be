@@ -22,7 +22,6 @@ import {
   ApiGetMyMoverProfile,
   ApiUpdateMyMoverProfile,
 } from './docs/swagger';
-import { handleError } from '@/common/utils/handle-error.util';
 
 @Controller('mover')
 @RBAC(Role.MOVER) // mover만 접근 가능, customer은 접근 불가
@@ -35,40 +34,27 @@ export class MoverProfileController {
     @Body() createMoverProfileDto: CreateMoverProfileDto,
     @UserInfo() userInfo: UserInfo,
   ) {
-    return handleError(
-      () =>
-        this.moverProfileService.create(userInfo.sub, createMoverProfileDto),
-      '기사님의 프로필 생성 중 서버에 오류가 생겨 실패했습니다, 다시 시도해주세요!',
-    );
+    return this.moverProfileService.create(userInfo.sub, createMoverProfileDto);
   }
 
   @Get()
   @Public()
   @ApiGetMoverProfiles()
   findAll(@UserInfo() userInfo: UserInfo, @Query() dto: GetMoverProfilesDto) {
-    return handleError(
-      () => this.moverProfileService.findAll(userInfo, dto),
-      '기사님 프로필 목록 조회 중 서버에 오류가 생겨 실패했습니다, 다시 시도해주세요!',
-    );
+    return this.moverProfileService.findAll(userInfo, dto);
   }
 
   @Get('me')
   @ApiGetMyMoverProfile()
   findMe(@UserInfo() userInfo: UserInfo) {
-    return handleError(
-      () => this.moverProfileService.findMe(userInfo.sub),
-      '기사님 프로필 조회 중 서버에 오류가 생겨 실패했습니다, 다시 시도해주세요!',
-    );
+    return this.moverProfileService.findMe(userInfo.sub);
   }
 
   @Get(':id')
   @Public()
   @ApiGetMoverProfileById()
   findOne(@UserInfo() userInfo: UserInfo, @Param('id') id: string) {
-    return handleError(
-      () => this.moverProfileService.findOne(userInfo, id),
-      '기사님 프로필 조회 중 서버에 오류가 생겨 실패했습니다, 다시 시도해주세요!',
-    );
+    return this.moverProfileService.findOne(userInfo, id);
   }
 
   @Patch('me')
@@ -77,10 +63,6 @@ export class MoverProfileController {
     @UserInfo() userInfo: UserInfo,
     @Body() updateMoverProfileDto: UpdateMoverProfileDto,
   ) {
-    return handleError(
-      () =>
-        this.moverProfileService.update(userInfo.sub, updateMoverProfileDto),
-      '기사님의 프로필 수정 중 서버에 오류가 생겨 실패했습니다, 다시 시도해주세요!',
-    );
+    return this.moverProfileService.update(userInfo.sub, updateMoverProfileDto);
   }
 }

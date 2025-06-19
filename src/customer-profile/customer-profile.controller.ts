@@ -10,7 +10,6 @@ import {
   ApiGetMyCustomerProfile,
   ApiUpdateMyCustomerProfile,
 } from './docs/swagger';
-import { handleError } from '@/common/utils/handle-error.util';
 
 @Controller('customer')
 @RBAC(Role.CUSTOMER)
@@ -25,13 +24,9 @@ export class CustomerProfileController {
     @Body() createCustomerProfileDto: CreateCustomerProfileDto,
     @UserInfo() userInfo: UserInfo,
   ) {
-    return handleError(
-      () =>
-        this.customerProfileService.create(
-          userInfo.sub,
-          createCustomerProfileDto,
-        ),
-      '고객님의 프로필 생성에 실패했습니다!',
+    return this.customerProfileService.create(
+      userInfo.sub,
+      createCustomerProfileDto,
     );
   }
 
@@ -47,13 +42,9 @@ export class CustomerProfileController {
     @UserInfo() userInfo: UserInfo,
     @Body() updateCustomerProfileDto: UpdateCustomerProfileDto,
   ) {
-    return handleError(
-      () =>
-        this.customerProfileService.update(
-          userInfo.sub,
-          updateCustomerProfileDto,
-        ),
-      '고객님의 프로필 수정에 실패했습니다!',
+    return this.customerProfileService.update(
+      userInfo.sub,
+      updateCustomerProfileDto,
     );
   }
 }
