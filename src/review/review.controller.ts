@@ -7,6 +7,14 @@ import { RBAC } from '@/auth/decorator/rbac.decorator';
 import { PagePaginationDto } from '@/common/dto/page-pagination.dto';
 import { CustomerProfileHelper } from '@/customer-profile/customer-profile.helper';
 import { MoverProfileHelper } from '@/mover-profile/mover-profile.helper';
+import {
+  ApiCreateReview,
+  ApiFindAllAvailableReviews,
+  ApiFindMyReviewsAsCustomer,
+  ApiFindReviewsAsMover,
+  ApiFindReviewsByMoverId,
+} from './docs/swagger';
+import { Public } from '@/auth/decorator/public.decorator';
 
 @Controller('review')
 export class ReviewController {
@@ -18,6 +26,7 @@ export class ReviewController {
 
   @Post(':completedOfferId')
   @RBAC(Role.CUSTOMER)
+  @ApiCreateReview()
   create(
     @UserInfo() userInfo: UserInfo,
     @Param('completedOfferId') completedOfferId: string,
@@ -32,6 +41,7 @@ export class ReviewController {
 
   @Get('available')
   @RBAC(Role.CUSTOMER)
+  @ApiFindAllAvailableReviews()
   findAllAvailable(
     @UserInfo() userInfo: UserInfo,
     @Query() dto: PagePaginationDto,
@@ -41,7 +51,8 @@ export class ReviewController {
 
   @Get('customer/me')
   @RBAC(Role.CUSTOMER)
-  async findByCustomerId(
+  @ApiFindMyReviewsAsCustomer()
+  async findMyReviewsAsCustomer(
     @UserInfo() userInfo: UserInfo,
     @Query() dto: PagePaginationDto,
   ) {
@@ -52,14 +63,24 @@ export class ReviewController {
     return this.reviewService.findByCustomerId(customerId, dto);
   }
 
-  @Get('mover/:id')
+  @Get('mover/me')
   @RBAC(Role.MOVER)
-  async findByMoverId(
+  @ApiFindReviewsAsMover()
+  async findMyReviewsAsMover(
     @UserInfo() userInfo: UserInfo,
     @Query() dto: PagePaginationDto,
   ) {
     const moverId = await this.moverProfileHelper.getMoverId(userInfo.sub);
+    return this.reviewService.findByMoverId(moverId, dto);
+  }
 
+  @Get('mover/:id')
+  @Public()
+  @ApiFindReviewsByMoverId()
+  async findByMoverId(
+    @Param('id') moverId: string,
+    @Query() dto: PagePaginationDto,
+  ) {
     return this.reviewService.findByMoverId(moverId, dto);
   }
 }

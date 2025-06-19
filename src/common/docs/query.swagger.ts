@@ -31,6 +31,14 @@ export const orderQuery = {
   ],
 };
 
+export const pageQuery = {
+  name: 'page',
+  type: Number,
+  required: false,
+  description: '페이지 번호 (기본값: 1)',
+  example: 1,
+};
+
 export const takeQuery = {
   name: 'take',
   type: Number,
