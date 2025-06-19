@@ -8,11 +8,20 @@ export enum OrderField {
   // string 맵핑 값에 무조건 소문자로 정의 postgreSQL에서 소문자만 인식함
   REVIEW_COUNT = 'review_count', // 리뷰 수
   AVERAGE_RATING = 'average_rating', // 평균 평점
-  EXPERIENCE = 'experience', // 경력
   CONFIRMED_ESTIMATE_COUNT = 'confirmed_estimate_count', // 확정 견적 수
+  LIKE_COUNT = 'like_count', // 좋아요 수
+
+  EXPERIENCE = 'experience', // 경력
   CREATED_AT = 'created_at', // 생성일 DESC 최신순
   MOVE_DATE = 'move_date', // 이사 날짜
 }
+
+export const MoverStatsField = [
+  OrderField.REVIEW_COUNT,
+  OrderField.AVERAGE_RATING,
+  OrderField.CONFIRMED_ESTIMATE_COUNT,
+  OrderField.LIKE_COUNT,
+];
 
 export enum OrderDirection {
   ASC = 'ASC', // 오름차순

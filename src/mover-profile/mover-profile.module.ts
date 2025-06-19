@@ -8,6 +8,7 @@ import { CommonModule } from 'src/common/common.module';
 import { CustomerProfile } from '@/customer-profile/entities/customer-profile.entity';
 import { EstimateRequest } from '@/estimate-request/entities/estimate-request.entity';
 import { Review } from '@/review/entities/review.entity';
+import { CustomerProfileModule } from '@/customer-profile/customer-profile.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { Review } from '@/review/entities/review.entity';
       Review,
     ]),
     CommonModule,
+    CustomerProfileModule,
   ],
   controllers: [MoverProfileController],
   providers: [MoverProfileService],

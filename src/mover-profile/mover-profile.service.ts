@@ -18,14 +18,16 @@ import {
 import { GetMoverProfilesDto } from './dto/get-mover-profiles.dto';
 import { CommonService, Service } from 'src/common/common.service';
 import {
-  MOVER_PROFILE_LIST_SELECT,
-  MOVER_PROFILE_TABLE,
-  MOVER_PROFILE_VIEW_TABLE,
+  MOVER_LIST_SELECT,
+  MOVER_LIST_STATS_SELECT,
+  MOVER_TABLE,
+  MOVER_VIEW_TABLE,
 } from '@/common/const/query-builder.const';
 import { Role } from '@/user/entities/user.entity';
 import { UserInfo } from '@/user/decorator/user-info.decorator';
 import { Review } from '@/review/entities/review.entity';
 import { OrderField } from '@/common/validator/order.validator';
+import { CustomerProfileService } from '@/customer-profile/customer-profile.service';
 
 @Injectable()
 export class MoverProfileService {
@@ -41,6 +43,7 @@ export class MoverProfileService {
     @InjectRepository(Review)
     private readonly reviewRepository: Repository<Review>,
     private readonly commonService: CommonService,
+    private readonly customerProfileService: CustomerProfileService,
   ) {}
 
   async create(userId: string, createMoverProfileDto: CreateMoverProfileDto) {
@@ -72,59 +75,43 @@ export class MoverProfileService {
       );
     }
 
-    // 집계 필드 정렬시: MoverProfile을 베이스로 하고 뷰와 조인
+    // MoverProfile 엔티티의 쿼리 빌더 생성 및 집계 필드 조인
     const qb = this.moverProfileRepository
-      .createQueryBuilder(MOVER_PROFILE_TABLE)
-      .select(MOVER_PROFILE_LIST_SELECT);
-
-    // 뷰와 조인해서 집계 데이터 가져오기
-    qb.leftJoinAndSelect(
-      MoverProfileView,
-      MOVER_PROFILE_VIEW_TABLE,
-      `${MOVER_PROFILE_TABLE}.id = ${MOVER_PROFILE_VIEW_TABLE}.id`,
-    );
+      .createQueryBuilder(MOVER_TABLE)
+      .select(MOVER_LIST_SELECT)
+      .leftJoin(`${MOVER_TABLE}.stats`, 'stats')
+      .addSelect(MOVER_LIST_STATS_SELECT);
 
     // 서비스 필터링 적용 (MoverProfile 기준)
     this.commonService.applyServiceFilterToQb(
       qb,
       serviceType,
       Service.ServiceType,
-      MOVER_PROFILE_TABLE,
+      MOVER_TABLE,
     );
 
     this.commonService.applyServiceFilterToQb(
       qb,
       serviceRegion,
       Service.ServiceRegion,
-      MOVER_PROFILE_TABLE,
+      MOVER_TABLE,
     );
 
     // 커서 기반 페이징 적용
     const { nextCursor, hasNext } =
       await this.commonService.applyCursorPaginationParamsToQb(qb, dto);
 
-    const { entities, raw: aggregates } = await qb.getRawAndEntities();
-
-    // 엔티티와 뷰 데이터를 병합
-    const moversWithAggregates = this.mergeEntityWithAggregates(
-      entities,
-      aggregates,
-    );
+    const movers = await qb.getMany();
+    const moversWithAggregates = this.mergeMoversAndAggregates(movers); // 통계 정보와 함께 프로필 병합
 
     // 고객일 경우, 해당 기사에게 지정 견적 요청을 했는지
     if (isCustomer) {
-      const customer = await this.customerProfileRepository.findOne({
-        where: { user: { id: userId } },
-        select: ['id'], // 필요한 필드만 가져오기
-      });
-
-      if (!customer) {
-        throw new NotFoundException('고객 프로필을 찾을 수 없습니다.');
-      }
+      const customerId =
+        await this.customerProfileService.getCustomerId(userId);
 
       const estimateRequest = await this.estimateRequestRepository.findOne({
         where: {
-          customer: { id: customer.id },
+          customer: { id: customerId },
           status: RequestStatus.PENDING,
         },
         select: ['targetMoverIds'], // 필요한 필드만 가져오기
@@ -150,6 +137,16 @@ export class MoverProfileService {
     };
   }
 
+  public mergeMoversAndAggregates(profile: MoverProfile[]) {
+    return profile.map(({ stats, ...rest }) => ({
+      ...rest,
+      review_count: Number(stats.review_count),
+      average_rating: Number(stats.average_rating),
+      confirmed_estimate_count: Number(stats.confirmed_estimate_count),
+      like_count: Number(stats.like_count),
+    }));
+  }
+
   mergeEntityWithAggregates(
     entities: MoverProfile[],
     aggregates: MoverProfileView[],
@@ -158,25 +155,20 @@ export class MoverProfileService {
       ...entity,
       [OrderField.REVIEW_COUNT]:
         parseInt(
-          aggregates[index][
-            `${MOVER_PROFILE_VIEW_TABLE}_${OrderField.REVIEW_COUNT}`
-          ],
+          aggregates[index][`${MOVER_VIEW_TABLE}_${OrderField.REVIEW_COUNT}`],
         ) || 0,
       [OrderField.AVERAGE_RATING]:
         parseFloat(
-          aggregates[index][
-            `${MOVER_PROFILE_VIEW_TABLE}_${OrderField.AVERAGE_RATING}`
-          ],
+          aggregates[index][`${MOVER_VIEW_TABLE}_${OrderField.AVERAGE_RATING}`],
         ) || 0.0,
       [OrderField.CONFIRMED_ESTIMATE_COUNT]:
         parseInt(
           aggregates[index][
-            `${MOVER_PROFILE_VIEW_TABLE}_${OrderField.CONFIRMED_ESTIMATE_COUNT}`
+            `${MOVER_VIEW_TABLE}_${OrderField.CONFIRMED_ESTIMATE_COUNT}`
           ],
         ) || 0,
       likeCount:
-        parseInt(aggregates[index][`${MOVER_PROFILE_VIEW_TABLE}_like_count`]) ||
-        0,
+        parseInt(aggregates[index][`${MOVER_VIEW_TABLE}_like_count`]) || 0,
     }));
   }
 
@@ -195,7 +187,7 @@ export class MoverProfileService {
         OrderField.REVIEW_COUNT, // 리뷰 개수
         OrderField.AVERAGE_RATING, // 평균 평점
         OrderField.CONFIRMED_ESTIMATE_COUNT, // 확정된 견적 요청 개수
-        'like_count', // 좋아요 개수
+        OrderField.LIKE_COUNT, // 좋아요 개수
       ],
     });
 
@@ -234,7 +226,7 @@ export class MoverProfileService {
         OrderField.REVIEW_COUNT, // 리뷰 개수
         OrderField.AVERAGE_RATING, // 평균 평점
         OrderField.CONFIRMED_ESTIMATE_COUNT, // 확정된 견적 요청 개수
-        'like_count', // 좋아요 개수
+        OrderField.LIKE_COUNT, // 좋아요 개수
       ],
     });
 
