@@ -49,7 +49,6 @@ export class CommonService {
         values: Record<string, any>;
         order: OrderString;
       };
-      console.log('request cursorObj: ', cursorObj);
 
       const { values } = cursorObj;
       order = cursorObj.order; // cursorObj에서 order 추출
@@ -57,12 +56,8 @@ export class CommonService {
       const { field, direction } = parseOrderString(order);
 
       const orderAlias = this.getOrderFieldAlias(qb, field);
-      console.log('orderAlias: ', orderAlias);
       const cursorId = values.id;
-      console.log('cursorId: ', cursorId);
       const cursorValue = parseFloat(values[field]);
-      console.log('cursorValue: ', cursorValue);
-      console.log('typeof cursorValue: ', typeof cursorValue);
 
       const operator = direction === OrderDirection.DESC ? '<' : '>';
       const whereClause = `(${orderAlias} ${operator} :cursorValue OR (${orderAlias} = :cursorValue AND ${qb.alias}.id < :cursorId))`;
@@ -76,12 +71,10 @@ export class CommonService {
     }
 
     const orderAlias = this.getOrderFieldAlias(qb, field);
-    console.log('orderAlias: ', orderAlias);
 
     qb.addOrderBy(orderAlias, direction); // 정렬 기준 필드
     qb.addOrderBy(`${qb.alias}.id`, OrderDirection.DESC); // 항상 id도 정렬에 포함
 
-    console.log('FULL SQL:', qb.getQueryAndParameters());
     /**
      * Q) qb.addOrderBy(`${qb.alias}.id`, direction); 이거 왜 해용 ?.?
      * A) 정렬 기준 값이 동일할 때, 중복 제거 및 페이지네이션 정확도를 위한 보조 정렬로서,
@@ -115,14 +108,10 @@ export class CommonService {
 
     // join은 어차피 계속 될거라서 그냥 배열에 있는 값이랑 OrderField랑 있는지 비교해서 있으면 true로 변경하기
 
-    console.log('results: ', results);
     const lastItem = results.at(-1);
-    console.log('lastItem: ', lastItem);
     const { field } = parseOrderString(order);
     const isStatsField = MoverStatsField.includes(field);
-    console.log('field: ', field);
     const value = isStatsField ? lastItem[statsAlias][field] : lastItem[field];
-    console.log('value: ', value);
 
     if (!value) {
       throw new BadRequestException(
@@ -138,7 +127,6 @@ export class CommonService {
       },
       order,
     };
-    console.log('cursorObj: ', cursorObj);
 
     const nextCursor = Buffer.from(JSON.stringify(cursorObj)).toString(
       'base64',
