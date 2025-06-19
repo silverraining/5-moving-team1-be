@@ -6,14 +6,15 @@ import { handleError } from '@/common/utils/handle-error.util';
 import { Role } from '@/user/entities/user.entity';
 import { RBAC } from '@/auth/decorator/rbac.decorator';
 import { PagePaginationDto } from '@/common/dto/page-pagination.dto';
-import { CustomerProfileService } from '@/customer-profile/customer-profile.service';
+
 import { Public } from '@/auth/decorator/public.decorator';
+import { CustomerProfileHelper } from '@/customer-profile/customer-profile.helper';
 
 @Controller('review')
 export class ReviewController {
   constructor(
     private readonly reviewService: ReviewService,
-    private readonly customerProfileService: CustomerProfileService,
+    private readonly customerProfileHelper: CustomerProfileHelper,
   ) {}
 
   @Post(':confirmedOfferId')
@@ -52,7 +53,7 @@ export class ReviewController {
     @UserInfo() userInfo: UserInfo,
     @Query() dto: PagePaginationDto,
   ) {
-    const customerId = await this.customerProfileService.getCustomerId(
+    const customerId = await this.customerProfileHelper.getCustomerId(
       userInfo.sub,
     );
 

@@ -14,7 +14,7 @@ import {
 } from '@/estimate-request/entities/estimate-request.entity';
 import { PagePaginationDto } from '@/common/dto/page-pagination.dto';
 import { CommonService } from '@/common/common.service';
-import { CustomerProfileService } from '@/customer-profile/customer-profile.service';
+import { CustomerProfileHelper } from '@/customer-profile/customer-profile.helper';
 
 @Injectable()
 export class ReviewService {
@@ -27,7 +27,7 @@ export class ReviewService {
     private readonly estimateOfferRepository: Repository<EstimateOffer>,
 
     private readonly commonService: CommonService,
-    private readonly customerProfileService: CustomerProfileService,
+    private readonly customerProfileHelper: CustomerProfileHelper,
   ) {}
 
   /**
@@ -46,7 +46,7 @@ export class ReviewService {
     createReviewDto: CreateReviewDto,
   ) {
     // 1. 사용자 ID로 고객 ID를 추출
-    const customerId = await this.customerProfileService.getCustomerId(userId);
+    const customerId = await this.customerProfileHelper.getCustomerId(userId);
 
     // 2. 견적 제안 ID로 해당 견적 제안을 조회
     const offer = await this.estimateOfferRepository.findOne({

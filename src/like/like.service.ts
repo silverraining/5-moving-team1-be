@@ -12,7 +12,7 @@ import { MoverProfileView } from '@/mover-profile/view/mover-profile.view';
 import { MoverProfile } from '@/mover-profile/entities/mover-profile.entity';
 import { MoverProfileService } from '@/mover-profile/mover-profile.service';
 import { handleError } from '@/common/utils/handle-error.util';
-import { CustomerProfileService } from '@/customer-profile/customer-profile.service';
+import { CustomerProfileHelper } from '@/customer-profile/customer-profile.helper';
 
 @Injectable()
 export class LikeService {
@@ -25,11 +25,11 @@ export class LikeService {
     private readonly moverProfileRepository: Repository<MoverProfile>,
 
     private readonly moverProfileService: MoverProfileService,
-    private readonly customerProfileService: CustomerProfileService,
+    private readonly customerProfileHelper: CustomerProfileHelper,
   ) {}
 
   async create(userId: string, moverId: string) {
-    const customerId = await this.customerProfileService.getCustomerId(userId); // 고객 ID 가져오기
+    const customerId = await this.customerProfileHelper.getCustomerId(userId); // 고객 ID 가져오기
     const moverNickname = await this.checkMoverExists(moverId); // 기사 존재 여부 확인 후 별명 가져오기
 
     await handleError(
@@ -41,7 +41,7 @@ export class LikeService {
   }
 
   async findAll(userId: string) {
-    const customerId = await this.customerProfileService.getCustomerId(userId);
+    const customerId = await this.customerProfileHelper.getCustomerId(userId);
 
     const customer = await this.customerProfileRepository.findOne({
       where: { id: customerId },
@@ -79,7 +79,7 @@ export class LikeService {
   }
 
   async remove(userId: string, moverId: string) {
-    const customerId = await this.customerProfileService.getCustomerId(userId); // 고객 ID 가져오기
+    const customerId = await this.customerProfileHelper.getCustomerId(userId); // 고객 ID 가져오기
     const moverNickname = await this.checkMoverExists(moverId); // 기사 존재 여부 확인 후 별명 가져오기
 
     await handleError(
