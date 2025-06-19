@@ -17,6 +17,17 @@ export const MOVER_LIST_STATS_SELECT = [
   `stats.like_count`,
 ];
 
+export const MOVER_PROFILE_SELECT = [
+  `${MOVER_TABLE}.id`,
+  `${MOVER_TABLE}.nickname`,
+  `${MOVER_TABLE}.imageUrl`,
+  `${MOVER_TABLE}.experience`,
+  `${MOVER_TABLE}.intro`,
+  `${MOVER_TABLE}.description`,
+  `${MOVER_TABLE}.serviceType`,
+  `${MOVER_TABLE}.serviceRegion`,
+];
+
 export const LIKED_MOVER_LIST_SELECT = [
   `${MOVER_TABLE}.id`,
   `${MOVER_TABLE}.nickname`,
