@@ -37,20 +37,26 @@ export const MoverProfileListSchema = {
   example: {
     movers: [
       {
-        id: 'c9844fd7-d5f5-455c-8e11-f73ac3cfb9df',
-        nickname: '무빙이',
+        id: 'f888f633-2c37-4e39-a898-a4a288d39355',
+        nickname: '기사님6',
         imageUrl: 'https://example.com/image.jpg',
         experience: 5,
         intro: '친절한 이사 전문가입니다.',
-        description: '고객님의 이사를 정성껏 도와드립니다.',
-        serviceType: defaultServiceType,
-        serviceRegion: defaultServiceRegion,
+        serviceType: {
+          SMALL: true,
+          HOME: true,
+          OFFICE: true,
+        },
+        review_count: 0,
+        average_rating: 0,
+        confirmed_estimate_count: 1,
+        like_count: 1,
+        isTargeted: false,
       },
     ],
-    count: 1,
+    hasNext: true,
     nextCursor:
       'eyJ2YWx1ZXMiOnsiaWQiOiJjOTg0NGZkNy1kNWY1LTQ1NWMtOGUxMS1mNzNhYzNjZmI5ZGYifSwib3JkZXIiOnsiZmllbGQiOiJjb25maXJtZWRfZXN0aW1hdGVfY291bnQiLCJkaXJlY3Rpb24iOiJERVNDIn19',
-    hasNext: true,
   },
 };
 
