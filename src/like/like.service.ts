@@ -5,14 +5,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Like } from './entities/like.entity';
 import {
   LIKED_MOVER_LIST_SELECT,
-  MOVER_PROFILE_TABLE,
-  MOVER_PROFILE_VIEW_TABLE,
+  MOVER_TABLE,
+  MOVER_VIEW_TABLE,
 } from '@/common/const/query-builder.const';
 import { MoverProfileView } from '@/mover-profile/view/mover-profile.view';
 import { MoverProfile } from '@/mover-profile/entities/mover-profile.entity';
 import { MoverProfileService } from '@/mover-profile/mover-profile.service';
 import { handleError } from '@/common/utils/handle-error.util';
-import { CustomerProfileService } from '@/customer-profile/customer-profile.service';
+import { CustomerProfileHelper } from '@/customer-profile/customer-profile.helper';
 
 @Injectable()
 export class LikeService {
@@ -25,11 +25,11 @@ export class LikeService {
     private readonly moverProfileRepository: Repository<MoverProfile>,
 
     private readonly moverProfileService: MoverProfileService,
-    private readonly customerProfileService: CustomerProfileService,
+    private readonly customerProfileHelper: CustomerProfileHelper,
   ) {}
 
   async create(userId: string, moverId: string) {
-    const customerId = await this.customerProfileService.getCustomerId(userId); // 고객 ID 가져오기
+    const customerId = await this.customerProfileHelper.getCustomerId(userId); // 고객 ID 가져오기
     const moverNickname = await this.checkMoverExists(moverId); // 기사 존재 여부 확인 후 별명 가져오기
 
     await handleError(
@@ -41,7 +41,7 @@ export class LikeService {
   }
 
   async findAll(userId: string) {
-    const customerId = await this.customerProfileService.getCustomerId(userId);
+    const customerId = await this.customerProfileHelper.getCustomerId(userId);
 
     const customer = await this.customerProfileRepository.findOne({
       where: { id: customerId },
@@ -60,15 +60,15 @@ export class LikeService {
 
     // 찜한 기사님이 있는 경우
     const qb = this.moverProfileRepository
-      .createQueryBuilder(MOVER_PROFILE_TABLE)
+      .createQueryBuilder(MOVER_TABLE)
       .select(LIKED_MOVER_LIST_SELECT) // entity select
       .leftJoinAndSelect(
         MoverProfileView,
-        MOVER_PROFILE_VIEW_TABLE,
-        `${MOVER_PROFILE_TABLE}.id = ${MOVER_PROFILE_VIEW_TABLE}.id`,
+        MOVER_VIEW_TABLE,
+        `${MOVER_TABLE}.id = ${MOVER_VIEW_TABLE}.id`,
       )
-      .where(`${MOVER_PROFILE_TABLE}.id IN (:...ids)`, { ids: likedMoverIds })
-      .orderBy(`${MOVER_PROFILE_VIEW_TABLE}.like_count`, 'DESC');
+      .where(`${MOVER_TABLE}.id IN (:...ids)`, { ids: likedMoverIds })
+      .orderBy(`${MOVER_TABLE}.like_count`, 'DESC');
 
     const { entities, raw: aggregates } = await qb.getRawAndEntities();
 
@@ -79,7 +79,7 @@ export class LikeService {
   }
 
   async remove(userId: string, moverId: string) {
-    const customerId = await this.customerProfileService.getCustomerId(userId); // 고객 ID 가져오기
+    const customerId = await this.customerProfileHelper.getCustomerId(userId); // 고객 ID 가져오기
     const moverNickname = await this.checkMoverExists(moverId); // 기사 존재 여부 확인 후 별명 가져오기
 
     await handleError(

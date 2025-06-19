@@ -11,11 +11,11 @@ import {
 import { Like } from 'src/like/entities/like.entity';
 import { EstimateOffer } from 'src/estimate-offer/entities/estimate-offer.entity';
 import { Review } from 'src/review/entities/review.entity';
-import { MOVER_PROFILE_TABLE } from '@/common/const/query-builder.const';
 import { ServiceRegionMap, ServiceTypeMap } from '@/common/const/service.const';
 import { BaseTable } from '@/common/entity/base-table.entity';
+import { MoverProfileView } from '../view/mover-profile.view';
 
-@Entity(MOVER_PROFILE_TABLE)
+@Entity()
 export class MoverProfile extends BaseTable {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -58,4 +58,8 @@ export class MoverProfile extends BaseTable {
   // moverProfile : Review <-> 1:N 관계
   @OneToMany(() => Review, (review) => review.mover)
   reviews: Review[];
+
+  // MoverProfile : MoverProfileView <-> 1:1 관계
+  @OneToOne(() => MoverProfileView, (view) => view.moverProfile)
+  stats: MoverProfileView;
 }

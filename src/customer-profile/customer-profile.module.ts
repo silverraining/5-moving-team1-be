@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CommonModule } from '@/common/common.module';
 import { CustomerProfile } from './entities/customer-profile.entity';
 import { UserModule } from '@/user/user.module';
+import { CustomerProfileHelper } from './customer-profile.helper';
 
 @Module({
   imports: [
@@ -13,7 +14,7 @@ import { UserModule } from '@/user/user.module';
     CommonModule,
   ],
   controllers: [CustomerProfileController],
-  providers: [CustomerProfileService],
-  exports: [CustomerProfileService, TypeOrmModule],
+  providers: [CustomerProfileService, CustomerProfileHelper],
+  exports: [CustomerProfileService, CustomerProfileHelper, TypeOrmModule],
 })
 export class CustomerProfileModule {}

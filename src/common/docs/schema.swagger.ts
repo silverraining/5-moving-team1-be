@@ -37,44 +37,68 @@ export const MoverProfileListSchema = {
   example: {
     movers: [
       {
-        id: 'c9844fd7-d5f5-455c-8e11-f73ac3cfb9df',
-        nickname: '무빙이',
+        id: 'f888f633-2c37-4e39-a898-a4a288d39355',
+        nickname: '기사님6',
         imageUrl: 'https://example.com/image.jpg',
         experience: 5,
         intro: '친절한 이사 전문가입니다.',
-        description: '고객님의 이사를 정성껏 도와드립니다.',
-        serviceType: defaultServiceType,
-        serviceRegion: defaultServiceRegion,
+        serviceType: {
+          SMALL: true,
+          HOME: true,
+          OFFICE: true,
+        },
+        review_count: 0,
+        average_rating: 0,
+        confirmed_estimate_count: 1,
+        like_count: 1,
+        isTargeted: false,
+        isLiked: false,
       },
     ],
-    count: 1,
+    hasNext: true,
     nextCursor:
       'eyJ2YWx1ZXMiOnsiaWQiOiJjOTg0NGZkNy1kNWY1LTQ1NWMtOGUxMS1mNzNhYzNjZmI5ZGYifSwib3JkZXIiOnsiZmllbGQiOiJjb25maXJtZWRfZXN0aW1hdGVfY291bnQiLCJkaXJlY3Rpb24iOiJERVNDIn19',
-    hasNext: true,
   },
 };
 
 export const MoverProfileDetailSchema = {
   example: {
-    id: '8a12f8b9-1e4b-49f2-8302-4c5c8cbcb488',
-    nickname: '최강이사',
+    id: 'f888f633-2c37-4e39-a898-a4a288d39355',
+    nickname: '기사님6',
+    imageUrl: 'https://example.com/image.jpg',
     experience: 5,
-    averageRating: 4.8,
-    reviewCount: 10,
-    confirmedEstimateCount: 15,
-    like_count: 21,
-    reviews: [
-      {
-        rating: 5,
-        comment: '정말 친절하셨어요!',
-        createdAt: '2025-05-01T12:34:56.000Z',
-        customer: {
-          user: {
-            email: 'customer@example.com',
-          },
-        },
-      },
-    ],
+    intro: '친절한 이사 전문가입니다.',
+    description: '고객님의 이사를 정성껏 도와드립니다.',
+    serviceType: {
+      SMALL: true,
+      HOME: true,
+      OFFICE: true,
+    },
+    serviceRegion: {
+      Seoul: true,
+      'Gyeonggi-do': true,
+      Incheon: true,
+      'Gangwon-do': true,
+      'Chungcheongbuk-do': true,
+      'Chungcheongnam-do': true,
+      'Sejong-si': true,
+      Daejeon: true,
+      'Jeonbuk-do': true,
+      'Jeollanam-do': true,
+      Gwangju: true,
+      'Gyeongsangbuk-do': true,
+      'Gyeongsangnam-do': true,
+      Daegu: true,
+      Ulsan: true,
+      Busan: true,
+      'Jeju-do': true,
+    },
+    reviewCount: 0,
+    averageRating: 0,
+    confirmedEstimateCount: 1,
+    likeCount: 1,
+    isTargeted: false,
+    isLiked: false,
   },
 };
 

@@ -366,4 +366,20 @@ export class EstimateRequestService {
       totalCount,
     };
   }
+
+  public async getTargetMoverIds(customerId: string) {
+    const estimateRequest = await this.estimateRequestRepository.findOne({
+      where: {
+        customer: { id: customerId },
+        status: RequestStatus.PENDING,
+      },
+      select: ['targetMoverIds'], // 필요한 필드만 가져오기
+    });
+
+    if (!estimateRequest) {
+      throw new NotFoundException('지정 견적 요청을 찾을 수 없습니다.');
+    }
+
+    return estimateRequest?.targetMoverIds || [];
+  }
 }

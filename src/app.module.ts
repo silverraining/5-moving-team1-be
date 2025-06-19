@@ -99,6 +99,7 @@ export class AppModule implements NestModule {
         { path: 'auth/login', method: RequestMethod.POST }, /// 로컬 로그인 제외
         { path: 'auth/login/:social', method: RequestMethod.GET }, /// 모든 소셜 로그인 (:social 매개변수 사용) 제외
         { path: 'auth/callback/:social', method: RequestMethod.GET }, /// 모든 소셜 콜백 (:social 매개변수 사용) 제외
+        { path: 'auth/logout', method: RequestMethod.POST }, /// 로그아웃 제외
       )
       .forRoutes('*'); /// 모든 라우트에 미들웨어 적용
   }

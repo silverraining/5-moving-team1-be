@@ -20,7 +20,6 @@ import {
   MessageSchema,
   MoverProfileDetailSchema,
   MoverProfileListSchema,
-  MoverProfileSchema,
 } from '@/common/docs/schema.swagger';
 import {
   CreateMoverProfileFullExample,
@@ -67,7 +66,7 @@ export const ApiCreateMoverProfile = () =>
     ApiResponse(
       CODE_201_CREATED({
         description: '[mover] 프로필 생성 성공',
-        schema: MoverProfileSchema,
+        schema: MessageSchema('기사님의 프로필이 성공적으로 생성되었습니다.'),
       }),
     ),
     ApiResponse(
@@ -105,7 +104,7 @@ export function ApiUpdateMyMoverProfile() {
     ApiResponse(
       CODE_200_SUCCESS({
         description: '본인의 [mover] 프로필 수정 성공한 경우',
-        schema: MessageSchema('[mover] 프로필이 성공적으로 수정되었습니다.'),
+        schema: MessageSchema('기사님의 프로필이 성공적으로 수정되었습니다.'),
       }),
     ),
     ApiResponse(

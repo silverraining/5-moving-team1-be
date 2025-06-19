@@ -212,7 +212,7 @@ export class EstimateOfferService {
           OrderField.CONFIRMED_ESTIMATE_COUNT,
           OrderField.REVIEW_COUNT,
           OrderField.AVERAGE_RATING,
-          'like_count',
+          OrderField.LIKE_COUNT,
         ],
       });
 
