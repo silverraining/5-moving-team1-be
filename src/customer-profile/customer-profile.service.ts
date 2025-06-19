@@ -37,7 +37,7 @@ export class CustomerProfileService {
       );
     }
 
-    return newProfile;
+    return { message: '고객님의 프로필이 성공적으로 생성되었습니다.' };
   }
 
   async findOne(userId: string) {
@@ -90,7 +90,7 @@ export class CustomerProfileService {
     Object.assign(profile, updatedProfileData);
 
     return {
-      message: '고객님의 프로필이 성공적으로 업데이트되었습니다.',
+      message: '고객님의 프로필이 성공적으로 수정되었습니다.',
     };
   }
 }
