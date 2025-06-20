@@ -51,7 +51,6 @@ export class EstimateOfferService {
     // 1. 견적 요청 존재 여부 및 상태 확인
     const estimateRequest = await this.requestRepository.findOne({
       where: { id: estimateRequestId },
-      select: ['id', 'status'],
     });
 
     if (!estimateRequest) {
@@ -83,6 +82,11 @@ export class EstimateOfferService {
       throw new BadRequestException('이미 해당 견적 요청에 제안을 하셨습니다.');
     }
 
+    // 기사에 대한 지정 요청 견적인지 판별
+    const isTargeted = (estimateRequest?.targetMoverIds ?? []).includes(
+      mover.id,
+    );
+
     // 4. 견적 제안 생성
     const estimateOffer = this.offerRepository.create({
       estimateRequestId: estimateRequestId,
@@ -90,7 +94,7 @@ export class EstimateOfferService {
       price: createEstimateOfferDto.price,
       comment: createEstimateOfferDto.comment,
       status: OfferStatus.PENDING,
-      isTargeted: false,
+      isTargeted,
       isConfirmed: false,
     });
 
@@ -418,23 +422,23 @@ export class EstimateOfferService {
   /**
    * 고객이 특정 기사님의 제안 견적을 수락
    */
-  async confirm(
-    requestId: string,
-    moverId: string,
-    userId: string,
-    qr: QueryRunner,
-  ) {
+  async confirm(offerId: string, userId: string, qr: QueryRunner) {
     const manager = qr.manager; // QueryRunner를 사용하여 트랜잭션을 관리
 
-    // 1. 견적 요청 조회
-    const request = await manager.findOne(EstimateRequest, {
-      where: { id: requestId },
-      relations: ['customer', 'customer.user'],
+    // 1. 제안 견적 조회
+    const offer = await manager.findOne(EstimateOffer, {
+      where: { id: offerId },
     });
 
-    if (!request) {
-      throw new NotFoundException('견적 요청을 찾을 수 없습니다.');
+    if (!offer) {
+      throw new NotFoundException('해당 견적 제안을 찾을 수 없습니다.');
     }
+
+    // 2. 요청 견적 조회
+    const request = await manager.findOne(EstimateRequest, {
+      where: { id: offer.estimateRequestId },
+      relations: ['customer', 'customer.user'],
+    });
 
     // 2. 요청한 고객이 본인인지 확인
     const isMyRequestEstimate = request.customer.user.id === userId;
@@ -442,33 +446,25 @@ export class EstimateOfferService {
       throw new ForbiddenException('접근 권한이 없습니다.');
     }
 
-    // 3. 요청 상태 확인
+    // 3. 요청 및 제안 견적 상태 확인
     if (request.status !== RequestStatus.PENDING) {
-      throw new BadRequestException('이미 처리된 견적 요청입니다.');
+      throw new BadRequestException(
+        `request status: ${request.status} 이미 처리된 견적 요청입니다.`,
+      );
     }
-
-    // 4. 견적 제안 조회
-    const offer = await manager.findOneBy(EstimateOffer, {
-      estimateRequestId: requestId,
-      moverId,
-    });
-
-    if (!offer) {
-      throw new NotFoundException('해당 견적 제안을 찾을 수 없습니다.');
-    }
-
-    // 5. 제안 상태 확인
     if (offer.status !== OfferStatus.PENDING) {
-      throw new BadRequestException('이미 처리된 견적 제안입니다.');
+      throw new BadRequestException(
+        `offer status: ${offer.status} 이미 처리된 견적 요청입니다.`,
+      );
     }
 
-    // 4. 제안 상태 업데이트
+    // 4. 제안 견적 상태 업데이트
     offer.status = OfferStatus.CONFIRMED;
     offer.isConfirmed = true;
     offer.confirmedAt = new Date();
     await manager.save(offer);
 
-    // 5. 견적 요청 상태 업데이트
+    // 5. 요청 견적 상태 업데이트
     request.status = RequestStatus.CONFIRMED;
     request.confirmedOfferId = offer.id;
     await manager.save(request);

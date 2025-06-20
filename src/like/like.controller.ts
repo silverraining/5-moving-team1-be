@@ -8,7 +8,6 @@ import {
   ApiDeleteLike,
   ApiGetLikedMovers,
 } from './docs/swagger';
-import { handleError } from '@/common/utils/handle-error.util';
 
 @Controller('like')
 @RBAC(Role.CUSTOMER) // 좋아요는 고객만 가능
@@ -27,10 +26,7 @@ export class LikeController {
   @Get()
   @ApiGetLikedMovers()
   findAll(@UserInfo() userInfo: UserInfo) {
-    return handleError(
-      () => this.likeService.findAll(userInfo.sub),
-      '찜한 기사 목록 조회 중 오류 발생',
-    );
+    return this.likeService.findAll(userInfo.sub);
   }
 
   @Delete(':moverId')

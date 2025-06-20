@@ -312,3 +312,67 @@ export const estimateOfferNotFoundError = {
     error: 'Not Found',
   },
 };
+
+// review 관련 유효성 검사 에러 메시지들
+
+// --- Review Validation Errors ---
+export const ratingValidationError = {
+  key: 'invalidRating',
+  summary: '평점 유효성 검사 실패',
+  value: {
+    statusCode: 400,
+    message:
+      'rating must be an integer number and not less than 1 and not more than 5',
+    error: 'Bad Request',
+  },
+};
+
+export const contentValidationError = {
+  key: 'invalidContent',
+  summary: '리뷰 내용 유효성 검사 실패',
+  value: {
+    statusCode: 400,
+    message: 'content must be a string and not be empty',
+    error: 'Bad Request',
+  },
+};
+
+export const pageValidationError = {
+  key: 'invalidPage',
+  summary: '페이지 번호 유효성 검사 실패',
+  value: {
+    statusCode: 400,
+    message: 'page must be an integer number and not less than 1',
+    error: 'Bad Request',
+  },
+};
+
+export const forbiddenReviewError = {
+  key: 'forbiddenReview',
+  summary: '리뷰 작성 권한 없음',
+  value: {
+    statusCode: 403,
+    message: '해당 견적 제안은 고객님께서 리뷰를 작성할 수 없습니다.',
+    error: 'Forbidden',
+  },
+};
+
+export const completedOfferNotFoundError = {
+  key: 'completedOfferNotFound',
+  summary: '완료된 견적 없음',
+  value: {
+    statusCode: 404,
+    message: '해당 견적 제안을 찾을 수 없습니다.',
+    error: 'Not Found',
+  },
+};
+
+export const reviewAlreadyExistsError = {
+  key: 'reviewConflict',
+  summary: '리뷰 중복 작성',
+  value: {
+    statusCode: 409,
+    message: '이미 리뷰를 작성하셨습니다.',
+    error: 'Conflict',
+  },
+};

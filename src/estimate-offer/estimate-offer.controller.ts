@@ -31,7 +31,6 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { RBAC } from '@/auth/decorator/rbac.decorator';
 import { Role } from '@/user/entities/user.entity';
 import { TransactionInterceptor } from '@/common/interceptor/transaction.interceptor';
-import { handleError } from '@/common/utils/handle-error.util';
 import { QueryRunner } from '@/common/decorator/query-runner.decorator';
 import type { QueryRunner as QR } from 'typeorm';
 import { GenericPaginatedDto } from '@/common/dto/paginated-response.dto';
@@ -137,26 +136,20 @@ export class EstimateOfferController {
     return this.estimateOfferService.getRejectedEstimateOffers(userInfo.sub);
   }
 
-  // 고객이 받은 견적 확정 (견적 요청 ID와 기사 ID로 조회)
-  @Patch(':requestId/:moverId/confirmed')
+  // 고객이 받은 제안 견적 확정 (제안 견적 ID로 조회)
+  @Patch(':offerId/confirmed')
   @RBAC(Role.CUSTOMER)
   @UseInterceptors(TransactionInterceptor)
   @ApiConfirmEstimateOffer()
   async confirmOffer(
-    @Param('requestId') requestId: string,
-    @Param('moverProfileId') moverId: string,
+    @Param('offerId') offerId: string,
     @UserInfo() userInfo: UserInfo,
     @QueryRunner() queryRunner: QR,
   ) {
-    return handleError(
-      () =>
-        this.estimateOfferService.confirm(
-          requestId,
-          moverId,
-          userInfo.sub,
-          queryRunner,
-        ),
-      '견적 확정 처리 중 서버 오류가 발생했습니다.',
+    return this.estimateOfferService.confirm(
+      offerId,
+      userInfo.sub,
+      queryRunner,
     );
   }
 

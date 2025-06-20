@@ -61,6 +61,41 @@ export const MoverProfileListSchema = {
   },
 };
 
+export const LikedMoverProfileListSchema = {
+  example: [
+    {
+      id: 'c89b1ad4-38f7-4813-b683-4298eb854940',
+      nickname: '용기사',
+      imageUrl: 'https://pbs.twimg.com/media/EQwSiJmWAAMqWlM.jpg',
+      experience: 2,
+      serviceType: {
+        SMALL: true,
+        HOME: true,
+        OFFICE: true,
+      },
+      reviewCount: 2,
+      averageRating: 5,
+      confirmedEstimateCount: 0,
+      likeCount: 2,
+    },
+    {
+      id: 'a00b1ad4-38f7-4813-b683-4298eb854940',
+      nickname: '성기사',
+      imageUrl: 'https://pbs.twimg.com/media/EQwSiJmWAAMqWlM.jpg',
+      experience: 2,
+      serviceType: {
+        SMALL: true,
+        HOME: true,
+        OFFICE: true,
+      },
+      reviewCount: 2,
+      averageRating: 5,
+      confirmedEstimateCount: 0,
+      likeCount: 3,
+    },
+  ],
+};
+
 export const MoverProfileDetailSchema = {
   example: {
     id: 'f888f633-2c37-4e39-a898-a4a288d39355',
@@ -138,35 +173,86 @@ export const userDataSchema = {
   },
 };
 
-export const likedMoverListSchema = {
-  example: [
-    {
-      id: 'uuid-1234-abcd',
-      nickname: '홍길동',
-      imageUrl: 'https://example.com/image.jpg',
-      experience: 5,
-      serviceType: '배송',
-      reviewCount: 120,
-      averageRating: 4.7,
-      confirmedEstimateCount: 75,
-      likeCount: 300,
-    },
-    {
-      id: 'uuid-5678-efgh',
-      nickname: '김철수',
-      imageUrl: 'https://example.com/image2.jpg',
-      experience: 3,
-      serviceType: '이사',
-      reviewCount: 60,
-      averageRating: 4.3,
-      confirmedEstimateCount: 30,
-      likeCount: 150,
-    },
-  ],
-};
-
 export const MessageSchema = (message: string) => ({
   example: {
     message: message || '요청이 성공적으로 처리되었습니다.',
   },
 });
+
+// reviews
+// [고객] 리뷰 작성 가능한 목록 조회 API의 응답 예시
+export const AvailableReviewListSchema = {
+  example: {
+    reviewableOffers: [
+      {
+        reviewableOfferId: 'b5a819f9-5466-4cba-acf1-ceba8e248b90',
+        moveType: 'HOME',
+        moveDate: '2025-08-15',
+        offerPrice: 450000,
+        isTargeted: true,
+        mover: {
+          nickname: '친절한김기사',
+          imageUrl: 'https://example.com/images/mover_profile_1.jpg',
+        },
+      },
+      {
+        reviewableOfferId: 'c9b1f2a3-d4e5-f6a7-b8c9-d0e1f2a3b4c5',
+        moveType: 'OFFICE',
+        moveDate: '2025-09-01',
+        offerPrice: 1200000,
+        isTargeted: false,
+        mover: {
+          nickname: '신속용달',
+          imageUrl: null, // 이미지가 없는 경우
+        },
+      },
+    ],
+    total: 15, // 페이지네이션과 무관한 전체 항목 수
+  },
+};
+
+// [고객] 내가 작성한 리뷰 목록 조회 API의 응답 예시 (기존 코드)
+export const CustomerReviewListSchema = {
+  example: {
+    reviews: [
+      {
+        moveType: 'HOME',
+        isTargeted: false,
+        createdAt: '2025-06-18T23:50:20.632Z',
+        moveDate: '2025-06-19T00:00:00.000Z',
+        price: 50000,
+        rating: 5,
+        comment: '빠르고 정확한 이사 감사합니다!',
+        mover: {
+          nickname: '용기사',
+          imageUrl: 'https://pbs.twimg.com/media/EQwSiJmWAAMqWlM.jpg',
+        },
+      },
+    ],
+    total: 1,
+  },
+};
+
+export const MoverReviewListSchema = {
+  example: {
+    reviews: [
+      {
+        rating: 5,
+        comment: '빠르고 정확한 이사 감사합니다!',
+        createdAt: '2025-06-19',
+        customerName: '민지영',
+      },
+    ],
+    rating: {
+      average: 5,
+      count: {
+        '1': 0,
+        '2': 0,
+        '3': 0,
+        '4': 0,
+        '5': 1,
+      },
+    },
+    total: 1,
+  },
+};

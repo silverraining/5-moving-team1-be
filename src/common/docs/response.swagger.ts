@@ -124,6 +124,27 @@ export const CODE_404_NOT_FOUND = (errorExamples: ErrorExample[]) => {
   };
 };
 
+// 409
+export const CODE_409_CONFLICT = (errorExamples: ErrorExample[]) => {
+  return {
+    status: 409,
+    description: '리소스 충돌',
+    content: {
+      'application/json': {
+        examples: Object.fromEntries(
+          errorExamples.map((example) => [
+            example.key,
+            {
+              summary: example.summary,
+              value: example.value,
+            },
+          ]),
+        ),
+      },
+    },
+  };
+};
+
 // 500
 type CODE_500_TYPE = {
   description?: string;

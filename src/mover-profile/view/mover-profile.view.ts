@@ -23,7 +23,7 @@ import { OrderField } from '@/common/validator/order.validator';
         `COUNT(DISTINCT CASE WHEN estimate_offer.status = 'CONFIRMED' THEN estimate_offer.id ELSE NULL END)`,
         OrderField.CONFIRMED_ESTIMATE_COUNT,
       )
-      .addSelect('COUNT(DISTINCT like.moverId)', OrderField.LIKE_COUNT)
+      .addSelect('COUNT(DISTINCT like.customerId)', OrderField.LIKE_COUNT)
       .from(MoverProfile, 'mover')
       .leftJoin(Review, 'review', 'review.moverId = mover.id')
       .leftJoin(
