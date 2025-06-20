@@ -39,12 +39,12 @@ export const LIKED_MOVER_LIST_SELECT = [
 
 export const REVIEWABLE_MOVER_SELECT = [
   'offer.id AS reviewableOfferId',
-  'request.moveType AS moveType',
-  'request.moveDate AS moveDate',
-  'offer.price AS offerPrice',
-  'offer.isTargeted AS isTargeted',
-  'mover.nickname AS moverNickname',
-  'mover.imageUrl AS moverImageUrl',
+  'request.moveType AS move_type',
+  'request.moveDate AS move_date',
+  'offer.price AS price',
+  'offer.isTargeted AS is_targeted',
+  'mover.nickname AS mover_nickname',
+  'mover.imageUrl AS mover_image_url',
 ];
 export const CUSTOMER_REVIEW_SELECT = [
   'review.rating AS rating', // 리뷰 평점

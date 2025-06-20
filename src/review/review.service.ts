@@ -134,9 +134,11 @@ export class ReviewService {
       .createQueryBuilder('request')
       .leftJoin('request.customer', 'customer')
       .leftJoin(EstimateOffer, 'offer', 'offer.id = request.confirmedOfferId')
+      .leftJoin('offer.review', 'review')
       .leftJoin('offer.mover', 'mover')
       .where('customer.id = :customerId', { customerId }) // 사용자 ID로 필터링
       .andWhere('request.status = :status', { status: RequestStatus.COMPLETED }) // 완료 요청 상태 필터링
+      .andWhere('review.estimateOfferId IS NULL')
       .select(REVIEWABLE_MOVER_SELECT); // 작성 가능한 리뷰 목록을 위한 SELECT 문
 
     const total = await qb.getCount(); // 전체 결과 개수를 가져옴 (페이지네이션 적용 전의 총 개수)
@@ -148,13 +150,13 @@ export class ReviewService {
 
     const formattedReviewableOffers = rawReviewableOffers.map((row) => ({
       reviewableOfferId: row.reviewableOfferId, // 작성 가능한 리뷰 견적 제안 ID
-      moveType: row.moveType, // 이사 종류
-      moveDate: formatDateToKst(new Date(row.moveDate)), // 이사일
-      offerPrice: row.offerPrice, // 견적가
-      isTargeted: row.isTargeted, // 지정견적 여부
+      moveType: row.move_type, // 이사 종류
+      moveDate: formatDateToKst(new Date(row.move_date)), // 이사일
+      price: row.price, // 견적가
+      isTargeted: row.is_targeted, // 지정견적 여부
       mover: {
-        nickname: row.moverNickname, // 기사의 닉네임
-        imageUrl: row.moverImageUrl, // 기사의 이미지 URL
+        nickname: row.mover_nickname, // 기사의 닉네임
+        imageUrl: row.mover_image_url, // 기사의 이미지 URL
       },
     }));
 
