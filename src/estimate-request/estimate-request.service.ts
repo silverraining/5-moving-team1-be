@@ -368,12 +368,9 @@ export class EstimateRequestService {
   }
 
   public async getTargetMoverIds(customerId: string) {
-    const estimateRequest = await this.estimateRequestRepository.findOne({
-      where: {
-        customer: { id: customerId },
-        status: RequestStatus.PENDING,
-      },
-      select: ['targetMoverIds'], // 필요한 필드만 가져오기
+    const estimateRequest = await this.estimateRequestRepository.findOneBy({
+      customer: { id: customerId },
+      status: RequestStatus.PENDING,
     });
 
     if (!estimateRequest) {
