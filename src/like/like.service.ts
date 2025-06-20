@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { CustomerProfile } from '@/customer-profile/entities/customer-profile.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -32,9 +36,22 @@ export class LikeService {
   ) {}
 
   async create(userId: string, moverId: string) {
-    const customerId = await this.customerProfileHelper.getCustomerId(userId); // 고객 ID 가져오기
+    const customerId = await this.customerProfileHelper.getCustomerId(userId); // 고객 프로필 ID 가져오기
     const moverNickname = await this.checkMoverExists(moverId); // 기사 존재 여부 확인 후 별명 가져오기
 
+    // 1. 찜한 기사인지 확인
+    const isLiked = await this.likeRepository.findOneBy({
+      moverId,
+      customerId,
+    });
+
+    if (isLiked) {
+      throw new ConflictException(
+        `${moverNickname} 기사님은 이미 찜한 기사입니다.`,
+      );
+    }
+
+    // 2. 찜하기 저장
     await handleError(
       () => this.likeRepository.save({ moverId, customerId }), // 찜하기 저장
       `${moverNickname} 기사님 찜하기 중 서버 오류`,
