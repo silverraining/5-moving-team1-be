@@ -19,7 +19,6 @@ export const UserInfo = createParamDecorator(
     if (!request || !user || !user.sub) {
       // 1. 비회원 접근 허용 (예: @Public() 적용된 라우트)
       if (isPublic) {
-        console.log('비회원 접근 허용');
         return {
           sub: 'anonymous',
           role: Role.GUEST, // 비회원 사용자
