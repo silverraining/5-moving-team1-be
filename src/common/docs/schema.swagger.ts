@@ -185,29 +185,17 @@ export const AvailableReviewListSchema = {
   example: {
     reviewableOffers: [
       {
-        reviewableOfferId: 'b5a819f9-5466-4cba-acf1-ceba8e248b90',
         moveType: 'HOME',
-        moveDate: '2025-08-15',
-        offerPrice: 450000,
+        moveDate: '2025-07-15',
+        price: 450000,
         isTargeted: true,
         mover: {
-          nickname: '친절한김기사',
-          imageUrl: 'https://example.com/images/mover_profile_1.jpg',
-        },
-      },
-      {
-        reviewableOfferId: 'c9b1f2a3-d4e5-f6a7-b8c9-d0e1f2a3b4c5',
-        moveType: 'OFFICE',
-        moveDate: '2025-09-01',
-        offerPrice: 1200000,
-        isTargeted: false,
-        mover: {
-          nickname: '신속용달',
-          imageUrl: null, // 이미지가 없는 경우
+          nickname: '꼼꼼이팀장',
+          imageUrl: null,
         },
       },
     ],
-    total: 15, // 페이지네이션과 무관한 전체 항목 수
+    total: 1,
   },
 };
 
