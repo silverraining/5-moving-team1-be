@@ -146,6 +146,6 @@ export const CreateReviewFullExample = {
   summary: '[고객] 리뷰 작성 예시',
   value: {
     rating: 5, // 평점 (1~5)
-    content: '정말 친절하고 빠른 이사 서비스였습니다!', // 리뷰 내용
+    comment: '정말 친절하고 빠른 이사 서비스였습니다!', // 리뷰 내용
   },
 };
