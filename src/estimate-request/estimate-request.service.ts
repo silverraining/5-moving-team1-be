@@ -373,10 +373,6 @@ export class EstimateRequestService {
       status: RequestStatus.PENDING,
     });
 
-    if (!estimateRequest) {
-      throw new NotFoundException('지정 견적 요청을 찾을 수 없습니다.');
-    }
-
-    return estimateRequest?.targetMoverIds || [];
+    return estimateRequest?.targetMoverIds ?? [];
   }
 }
