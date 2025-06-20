@@ -137,8 +137,15 @@ export class AuthService {
       return {
         refreshToken,
         accessToken,
-        user: { email, name, phone, role, imageUrl, provider },
-        pendingEstimateRequestId,
+        user: {
+          email,
+          name,
+          phone,
+          role,
+          imageUrl,
+          provider,
+          pendingEstimateRequestId,
+        },
       };
     } catch (error) {
       throw new InternalServerErrorException(
