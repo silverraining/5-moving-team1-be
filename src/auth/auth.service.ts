@@ -19,12 +19,18 @@ import {
   noRefreshTokenException,
   tokenVerificationFailedException,
 } from 'src/common/const/exception.const';
+import {
+  EstimateRequest,
+  RequestStatus,
+} from 'src/estimate-request/entities/estimate-request.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(EstimateRequest)
+    private readonly estimateRequestRepository: Repository<EstimateRequest>,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
   ) {}
@@ -104,6 +110,21 @@ export class AuthService {
       user.customerProfile || { imageUrl: null }; // MoverProfile 또는 CustomerProfile이 없을 경우 빈 객체로 초기화
     const imageUrl = profile.imageUrl;
 
+    // Pending 중인 estimate request ID 조회 (고객인 경우에만)
+    let pendingEstimateRequestId: string | null = null;
+
+    if (role === Role.CUSTOMER && user.customerProfile) {
+      // 고객인 경우: 자신의 pending 견적 요청 조회 (하나만)
+      const pendingRequest = await this.estimateRequestRepository.findOne({
+        where: {
+          customer: { id: user.customerProfile.id },
+          status: RequestStatus.PENDING,
+        },
+        select: ['id'],
+      });
+      pendingEstimateRequestId = pendingRequest?.id || null;
+    }
+
     try {
       // 토큰 발급
       const refreshToken = await this.issueToken(payload, true);
@@ -117,6 +138,7 @@ export class AuthService {
         refreshToken,
         accessToken,
         user: { email, name, phone, role, imageUrl, provider },
+        pendingEstimateRequestId,
       };
     } catch (error) {
       throw new InternalServerErrorException(
