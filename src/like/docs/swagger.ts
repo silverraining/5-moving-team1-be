@@ -12,7 +12,7 @@ import {
   moverNotFoundError,
 } from '@/common/docs/validation.swagger';
 import { applyDecorators } from '@nestjs/common';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 // 찜하기 (create)
 export function ApiCreateLike() {
@@ -21,6 +21,7 @@ export function ApiCreateLike() {
       summary: '찜하기',
       description: '고객님이 특정 기사님을 찜합니다.',
     }),
+    ApiBearerAuth(),
     ApiResponse(
       CODE_200_SUCCESS({
         description: '찜하기 성공한 경우',
@@ -45,6 +46,7 @@ export function ApiGetLikedMovers() {
       summary: '찜한 기사 목록 조회',
       description: '고객님이 찜한 기사님 리스트를 조회합니다.',
     }),
+    ApiBearerAuth(),
     ApiResponse(
       CODE_200_SUCCESS({
         description: '찜한 기사 리스트 반환',
@@ -68,6 +70,7 @@ export function ApiDeleteLike() {
       summary: '찜하기 취소',
       description: '고객님이 특정 기사님 찜하기를 취소합니다.',
     }),
+    ApiBearerAuth(),
     ApiResponse(
       CODE_200_SUCCESS({
         description: '찜하기 취소 성공',
