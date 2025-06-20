@@ -61,6 +61,41 @@ export const MoverProfileListSchema = {
   },
 };
 
+export const LikedMoverProfileListSchema = {
+  example: [
+    {
+      id: 'c89b1ad4-38f7-4813-b683-4298eb854940',
+      nickname: '용기사',
+      imageUrl: 'https://pbs.twimg.com/media/EQwSiJmWAAMqWlM.jpg',
+      experience: 2,
+      serviceType: {
+        SMALL: true,
+        HOME: true,
+        OFFICE: true,
+      },
+      reviewCount: 2,
+      averageRating: 5,
+      confirmedEstimateCount: 0,
+      likeCount: 2,
+    },
+    {
+      id: 'a00b1ad4-38f7-4813-b683-4298eb854940',
+      nickname: '성기사',
+      imageUrl: 'https://pbs.twimg.com/media/EQwSiJmWAAMqWlM.jpg',
+      experience: 2,
+      serviceType: {
+        SMALL: true,
+        HOME: true,
+        OFFICE: true,
+      },
+      reviewCount: 2,
+      averageRating: 5,
+      confirmedEstimateCount: 0,
+      likeCount: 3,
+    },
+  ],
+};
+
 export const MoverProfileDetailSchema = {
   example: {
     id: 'f888f633-2c37-4e39-a898-a4a288d39355',
@@ -136,33 +171,6 @@ export const userDataSchema = {
       provider: 'LOCAL',
     },
   },
-};
-
-export const likedMoverListSchema = {
-  example: [
-    {
-      id: 'uuid-1234-abcd',
-      nickname: '홍길동',
-      imageUrl: 'https://example.com/image.jpg',
-      experience: 5,
-      serviceType: '배송',
-      reviewCount: 120,
-      averageRating: 4.7,
-      confirmedEstimateCount: 75,
-      likeCount: 300,
-    },
-    {
-      id: 'uuid-5678-efgh',
-      nickname: '김철수',
-      imageUrl: 'https://example.com/image2.jpg',
-      experience: 3,
-      serviceType: '이사',
-      reviewCount: 60,
-      averageRating: 4.3,
-      confirmedEstimateCount: 30,
-      likeCount: 150,
-    },
-  ],
 };
 
 export const MessageSchema = (message: string) => ({

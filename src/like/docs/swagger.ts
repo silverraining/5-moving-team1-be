@@ -4,7 +4,7 @@ import {
   CODE_500_INTERNAL_SERVER_ERROR,
 } from '@/common/docs/response.swagger';
 import {
-  likedMoverListSchema,
+  LikedMoverProfileListSchema,
   MessageSchema,
 } from '@/common/docs/schema.swagger';
 import {
@@ -48,7 +48,7 @@ export function ApiGetLikedMovers() {
     ApiResponse(
       CODE_200_SUCCESS({
         description: '찜한 기사 리스트 반환',
-        schema: likedMoverListSchema,
+        schema: LikedMoverProfileListSchema,
       }),
     ),
     ApiResponse(CODE_404_NOT_FOUND([customerProfileNotFoundError])),
