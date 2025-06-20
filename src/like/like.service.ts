@@ -5,14 +5,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Like } from './entities/like.entity';
 import {
   LIKED_MOVER_LIST_SELECT,
+  MOVER_LIST_STATS_SELECT,
   MOVER_TABLE,
-  MOVER_VIEW_TABLE,
 } from '@/common/const/query-builder.const';
-import { MoverProfileView } from '@/mover-profile/view/mover-profile.view';
 import { MoverProfile } from '@/mover-profile/entities/mover-profile.entity';
 import { MoverProfileService } from '@/mover-profile/mover-profile.service';
 import { handleError } from '@/common/utils/handle-error.util';
 import { CustomerProfileHelper } from '@/customer-profile/customer-profile.helper';
+import { OrderField } from '@/common/validator/order.validator';
+import { statsAlias } from '@/common/common.service';
+import { MoverProfileHelper } from '@/mover-profile/mover-profile.helper';
 
 @Injectable()
 export class LikeService {
@@ -26,6 +28,7 @@ export class LikeService {
 
     private readonly moverProfileService: MoverProfileService,
     private readonly customerProfileHelper: CustomerProfileHelper,
+    private readonly moverProfileHelper: MoverProfileHelper,
   ) {}
 
   async create(userId: string, moverId: string) {
@@ -41,41 +44,38 @@ export class LikeService {
   }
 
   async findAll(userId: string) {
+    // 1. 고객 ID 가져오기
     const customerId = await this.customerProfileHelper.getCustomerId(userId);
 
-    const customer = await this.customerProfileRepository.findOne({
-      where: { id: customerId },
-      relations: ['likedMovers'],
-    });
+    // 2. 고객이 찜한 기사들의 ID를 추출
+    const likedMoverIds =
+      await this.customerProfileHelper.getLikedMoverIds(customerId);
 
-    // 고객이 찜한 기사들의 ID를 추출
-    const likedMoverIds = (customer.likedMovers ?? []).map(
-      (likeData) => likeData.moverId,
-    );
-
-    // 찜한 기사님이 없는 경우
+    // 3. 찜한 기사님이 없는 경우
     if (!likedMoverIds.length) {
       return []; // 빈 배열 반환
     }
 
-    // 찜한 기사님이 있는 경우
+    // 4. 찜한 기사님이 있는 경우
     const qb = this.moverProfileRepository
       .createQueryBuilder(MOVER_TABLE)
-      .select(LIKED_MOVER_LIST_SELECT) // entity select
-      .leftJoinAndSelect(
-        MoverProfileView,
-        MOVER_VIEW_TABLE,
-        `${MOVER_TABLE}.id = ${MOVER_VIEW_TABLE}.id`,
-      )
+      .select(LIKED_MOVER_LIST_SELECT)
+      .leftJoin(`${MOVER_TABLE}.stats`, 'stats')
+      .addSelect(MOVER_LIST_STATS_SELECT)
       .where(`${MOVER_TABLE}.id IN (:...ids)`, { ids: likedMoverIds })
-      .orderBy(`${MOVER_TABLE}.like_count`, 'DESC');
+      .orderBy(
+        `CAST(${statsAlias}.${OrderField.LIKE_COUNT} AS INTEGER)`,
+        'DESC',
+      );
 
-    const { entities, raw: aggregates } = await qb.getRawAndEntities();
+    const likedMovers = await qb.getMany();
 
-    const moversWithAggregates =
-      this.moverProfileService.mergeEntityWithAggregates(entities, aggregates);
+    // 4. 집계 필드와 함께 프로필 병합
+    const likedMoversWithAggregates = likedMovers.map((mover) =>
+      this.moverProfileHelper.mergeMoverProfileWithAggregates(mover),
+    );
 
-    return moversWithAggregates;
+    return likedMoversWithAggregates;
   }
 
   async remove(userId: string, moverId: string) {
