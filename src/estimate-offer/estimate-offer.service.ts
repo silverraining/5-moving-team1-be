@@ -51,7 +51,6 @@ export class EstimateOfferService {
     // 1. 견적 요청 존재 여부 및 상태 확인
     const estimateRequest = await this.requestRepository.findOne({
       where: { id: estimateRequestId },
-      select: ['id', 'status'],
     });
 
     if (!estimateRequest) {
@@ -83,6 +82,11 @@ export class EstimateOfferService {
       throw new BadRequestException('이미 해당 견적 요청에 제안을 하셨습니다.');
     }
 
+    // 기사에 대한 지정 요청 견적인지 판별
+    const isTargeted = (estimateRequest?.targetMoverIds ?? []).includes(
+      mover.id,
+    );
+
     // 4. 견적 제안 생성
     const estimateOffer = this.offerRepository.create({
       estimateRequestId: estimateRequestId,
@@ -90,7 +94,7 @@ export class EstimateOfferService {
       price: createEstimateOfferDto.price,
       comment: createEstimateOfferDto.comment,
       status: OfferStatus.PENDING,
-      isTargeted: false,
+      isTargeted,
       isConfirmed: false,
     });
 
@@ -425,7 +429,6 @@ export class EstimateOfferService {
     const offer = await manager.findOne(EstimateOffer, {
       where: { id: offerId },
     });
-    console.log('offer: ', offer);
 
     if (!offer) {
       throw new NotFoundException('해당 견적 제안을 찾을 수 없습니다.');
