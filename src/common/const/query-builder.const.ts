@@ -32,6 +32,7 @@ export const LIKED_MOVER_LIST_SELECT = [
   `${MOVER_TABLE}.id`,
   `${MOVER_TABLE}.nickname`,
   `${MOVER_TABLE}.imageUrl`,
+  `${MOVER_TABLE}.intro`,
   `${MOVER_TABLE}.experience`,
   `${MOVER_TABLE}.serviceType`,
 ];
