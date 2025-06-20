@@ -15,16 +15,16 @@ export const UserInfo = createParamDecorator(
     const request = context.switchToHttp().getRequest();
     const { user, isPublic } = request;
 
-    // 1. 비회원 접근 허용 (예: @Public() 적용된 라우트)
-    if (isPublic && !user) {
-      return {
-        sub: 'anonymous',
-        role: Role.GUEST, // 비회원 사용자
-      };
-    }
-
     // 2. 토큰은 있지만 사용자 정보가 불완전한 경우: 예외 발생
     if (!request || !user || !user.sub) {
+      // 1. 비회원 접근 허용 (예: @Public() 적용된 라우트)
+      if (isPublic) {
+        console.log('비회원 접근 허용');
+        return {
+          sub: 'anonymous',
+          role: Role.GUEST, // 비회원 사용자
+        };
+      }
       throw new UnauthorizedException('사용자 정보가 없습니다.');
     }
 
