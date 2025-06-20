@@ -209,12 +209,7 @@ export class EstimateRequestService {
 
     const totalCount = await this.estimateRequestRepository
       .createQueryBuilder('request')
-      .leftJoin('request.customer', 'customer')
-      .leftJoin('customer.user', 'user')
-      .where('user.id = :userId', { userId })
-      .andWhere('request.status IN (:...statuses)', {
-        statuses: this.validStatuses,
-      })
+      .where('request.status = :status', { status: RequestStatus.PENDING })
       .getCount();
 
     return {
@@ -277,11 +272,13 @@ export class EstimateRequestService {
   }
 
   /**
-   * 기사가 진행 중인 견적 요청 목록 조회 - tartgetedMoverIds에 본인 ID가 포함된 경우, isTargeted=true 리턴
+   * 기사가 진행 중인(제안할 수 있는) 견적 요청 목록 조회
+   * - PENDING 상태인 견적 요청만
+   * - 이미 제안했거나 반려한 견적은 제외 (해당 기사가 offer를 생성한 경우 모두 제외)
+   * - tartgetedMoverIds에 본인 ID가 포함된 경우, isTargeted=true 리턴
    * @param userId 기사 ID
    * @returns EstimateRequestResponseDto[]
    */
-
   async findRequestListForMover(
     userId: string,
     pagination: EstimateRequestPaginationDto,
@@ -307,11 +304,15 @@ export class EstimateRequestService {
       throw new BadRequestException('유효하지 않은 커서 값입니다.');
     }
 
+    // 기사가 제안할 수 있는 견적 요청 조회
     const qb = this.estimateRequestRepository
       .createQueryBuilder('request')
       .leftJoinAndSelect('request.customer', 'customer')
       .leftJoinAndSelect('customer.user', 'user')
+      .leftJoin('request.estimateOffers', 'offer', 'offer.moverId = :moverId')
       .where('request.status = :status', { status: RequestStatus.PENDING })
+      .andWhere('offer.id IS NULL') // 이미 제안했거나 반려한 견적 제외 (어떤 상태든 해당 기사가 offer를 생성한 경우 제외)
+      .setParameter('moverId', mover.id)
       .orderBy(`request.${orderByField}`, 'ASC')
       .addOrderBy('request.id', 'ASC')
       .take(take + 1);
@@ -344,8 +345,10 @@ export class EstimateRequestService {
     const items = sliced.map((request) =>
       EstimateRequestResponseDto.from(
         request,
-        undefined,
-        { includeMinimalAddress: true },
+        [],
+        {
+          includeMinimalAddress: true,
+        },
         request.targetMoverIds?.includes(mover.id) ?? false,
       ),
     );
@@ -356,7 +359,10 @@ export class EstimateRequestService {
 
     const totalCount = await this.estimateRequestRepository
       .createQueryBuilder('request')
+      .leftJoin('request.estimateOffers', 'offer', 'offer.moverId = :moverId')
       .where('request.status = :status', { status: RequestStatus.PENDING })
+      .andWhere('offer.id IS NULL')
+      .setParameter('moverId', mover.id)
       .getCount();
 
     return {

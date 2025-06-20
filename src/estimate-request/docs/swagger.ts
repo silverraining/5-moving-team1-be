@@ -229,7 +229,7 @@ export function ApiAddTargetMover() {
 export function ApiGetRequestListForMover() {
   return applyDecorators(
     ApiOperation({
-      summary: '기사가 진행 중인 견적 요청 목록 조회',
+      summary: '기사가 진행 중인(제안할 수 있는) 견적 요청 목록 조회',
       description:
         '견적 요청 상태가 PENDING인 요청들 중, targetMoverIds에 본인의 ID가 포함된 경우 `isTargeted: true`로 반환됩니다.\n\n커서 기반 페이지네이션과 정렬 필드를 쿼리로 지정할 수 있습니다.',
     }),
