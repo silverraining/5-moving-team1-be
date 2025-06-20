@@ -406,16 +406,9 @@ export function ApiConfirmEstimateOffer() {
     }),
     ApiBearerAuth(),
     ApiParam({
-      name: 'requestId',
+      name: 'offerId',
       required: true,
-      description: '견적 요청 ID (UUID)',
-      example: '9ed4f4a0-0391-4a4f-af22-039aed8ccc9b',
-      type: String,
-    }),
-    ApiParam({
-      name: 'moverProfileId',
-      required: true,
-      description: '기사 ID (UUID)',
+      description: '제안 견적 ID (UUID)',
       example: '1a2b3c4d-5678-90ef-abcd-1234567890ab',
       type: String,
     }),
