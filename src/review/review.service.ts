@@ -134,12 +134,9 @@ export class ReviewService {
       .createQueryBuilder('request')
       .leftJoin('request.customer', 'customer')
       .leftJoin(EstimateOffer, 'offer', 'offer.id = request.confirmedOfferId')
-      .leftJoin(Review, 'review', 'review.estimateOfferId = offer.id')
       .leftJoin('offer.mover', 'mover')
       .where('customer.id = :customerId', { customerId }) // 사용자 ID로 필터링
       .andWhere('request.status = :status', { status: RequestStatus.COMPLETED }) // 완료 요청 상태 필터링
-      .andWhere('request.confirmedOfferId IS NOT NULL') // confirmedOfferId가 있는 요청만 선택
-      .andWhere('review.estimateOfferId IS NULL') // 리뷰가 없는 견적 제안만 선택
       .select(REVIEWABLE_MOVER_SELECT); // 작성 가능한 리뷰 목록을 위한 SELECT 문
 
     const total = await qb.getCount(); // 전체 결과 개수를 가져옴 (페이지네이션 적용 전의 총 개수)
@@ -147,6 +144,7 @@ export class ReviewService {
     this.commonService.applyPagePaginationParamsToQb(qb, dto); // 페이지네이션 적용
 
     const rawReviewableOffers = await qb.getRawMany();
+    console.log('rawReviewableOffers: ', rawReviewableOffers);
 
     const formattedReviewableOffers = rawReviewableOffers.map((row) => ({
       reviewableOfferId: row.reviewableOfferId, // 작성 가능한 리뷰 견적 제안 ID
