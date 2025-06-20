@@ -41,7 +41,7 @@ export class EstimateRequestService {
   ) {}
 
   /**
-   * 고객의 진행중인(pending, confirmed) 견적 요청 ID 조회 - //TODO: 개발용이므로 추후 삭제 예정
+   * 고객의 pending 상태의 견적 요청 ID 조회 - //TODO: 개발용이므로 추후 삭제 예정
    * @param userId 고객 ID
    * @returns { estimateRequestId: string }[]
    */
@@ -81,7 +81,7 @@ export class EstimateRequestService {
     const activeRequest = await this.estimateRequestRepository.findOne({
       where: {
         customer: { id: customer.id },
-        status: In([RequestStatus.PENDING, RequestStatus.CONFIRMED]),
+        status: RequestStatus.PENDING,
       },
     });
 
