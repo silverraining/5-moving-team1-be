@@ -1,12 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Notification } from './entities/notification.entity';
 import { User } from '@/user/entities/user.entity';
 import { Observable, Subject } from 'rxjs';
 import { MoverProfile } from '@/mover-profile/entities/mover-profile.entity';
 import { CustomerProfile } from '@/customer-profile/entities/customer-profile.entity';
+import { UpdateNotificationDto } from './dto/update-notification.dto';
 
 @Injectable()
 export class NotificationService {
@@ -29,41 +34,25 @@ export class NotificationService {
   // 알림 생성
   async create(createDto: CreateNotificationDto): Promise<{ message: string }> {
     // 유저 존재 여부 확인
-    let targetUserId = createDto.userId;
     let user = await this.userRepo.findOneBy({ id: createDto.userId });
-    const customerProfile = await this.moverProfileRepo.findOneBy({
-      id: createDto.userId,
-    });
-    const moverProfile = await this.customerProfileRepo.findOneBy({
-      id: createDto.userId,
-    });
-    // user가 없을 경우 다른 프로필에서 찾아보기
+
     if (!user) {
       const customerProfile = await this.customerProfileRepo.findOne({
-        where: { id: targetUserId },
+        where: { id: createDto.userId },
         relations: ['user'],
       });
-
-      if (customerProfile) {
-        targetUserId = customerProfile.user.id;
-        user = customerProfile.user;
-      }
+      if (customerProfile) user = customerProfile.user;
     }
 
     if (!user) {
       const moverProfile = await this.moverProfileRepo.findOne({
-        where: { id: targetUserId },
+        where: { id: createDto.userId },
         relations: ['user'],
       });
-
-      if (moverProfile) {
-        targetUserId = moverProfile.user.id;
-        user = moverProfile.user;
-      }
+      if (moverProfile) user = moverProfile.user;
     }
 
-    //세가지의 table에 존재하지 않는 id값 일때
-    if (!user && !customerProfile && !moverProfile) {
+    if (!user) {
       throw new NotFoundException(
         `해당 ID(${createDto.userId})를 가진 유저를 찾을 수 없습니다.`,
       );
@@ -73,7 +62,7 @@ export class NotificationService {
     const notification = this.notificationRepo.create({
       type: createDto.type,
       message: createDto.message,
-      targetId: targetUserId,
+      targetId: user.id,
       isRead: false,
       user,
     });
@@ -82,19 +71,36 @@ export class NotificationService {
     await this.notificationRepo.save(notification);
     //현재 까지 생성 되어 있는 알림 조회
     const notifications = await this.notificationRepo.find({
-      where: { user: { id: targetUserId }, isRead: false },
-      order: { createdAt: 'DESC' }, // 최신순 정렬 (선택)
+      where: { user: { id: user.id }, isRead: false },
+      order: { createdAt: 'DESC' }, // 최신순 정렬
+      select: {
+        id: true,
+        type: true,
+        message: true,
+        targetId: true,
+        isRead: true,
+        createdAt: true,
+      },
     });
     // 알림 리스트 반환
-    this.sendNotification(targetUserId, notifications);
+    this.sendNotification(user.id, notifications);
 
     return { message: '알림생성 성공' };
   }
+
   //초기 데이터용 알림 api
   async findAll(userId): Promise<Notification[]> {
     const notifications = this.notificationRepo.find({
       where: { user: { id: userId }, isRead: false },
       order: { createdAt: 'DESC' },
+      select: {
+        id: true,
+        type: true,
+        message: true,
+        targetId: true,
+        isRead: true,
+        createdAt: true,
+      },
     });
     return notifications;
   }
@@ -112,8 +118,67 @@ export class NotificationService {
     return this.clients.get(userId).asObservable();
   }
 
+  async markAsRead(
+    dto: UpdateNotificationDto,
+    userId: string,
+  ): Promise<{ message: string }> {
+    if (dto.id && dto.ids && dto.ids.length > 0) {
+      throw new BadRequestException('id 또는 ids 중 하나만 입력해야 합니다.');
+    }
+
+    if (dto.id) {
+      await this.markSingleAsRead(dto.id, userId);
+    } else if (dto.ids?.length > 0) {
+      await this.markMultipleAsRead(
+        dto.ids.map((id) => id),
+        userId,
+      );
+    } else {
+      throw new BadRequestException('id 또는 ids를 입력해야 합니다.');
+    }
+
+    const notifications = await this.notificationRepo.find({
+      where: { user: { id: userId }, isRead: false },
+      order: { createdAt: 'DESC' },
+      select: {
+        id: true,
+        type: true,
+        message: true,
+        targetId: true,
+        isRead: true,
+        createdAt: true,
+      },
+    });
+
+    this.sendNotification(userId, notifications);
+
+    return { message: '읽음 처리 완료' };
+  }
+
+  async markSingleAsRead(id: string, userId: string) {
+    const notification = await this.notificationRepo.findOne({
+      where: { id, user: { id: userId } },
+    });
+
+    if (!notification) {
+      throw new NotFoundException('해당 알림을 찾을 수 없습니다.');
+    }
+
+    if (!notification.isRead) {
+      notification.isRead = true;
+      await this.notificationRepo.save(notification);
+    }
+  }
+
+  async markMultipleAsRead(ids: string[], userId: string) {
+    await this.notificationRepo.update(
+      { id: In(ids), user: { id: userId }, isRead: false },
+      { isRead: true },
+    );
+  }
+
   // 알림 보내기 (payload는 Notification 배열 혹은 string)
-  sendNotification(userId: string, payload: Notification[] | []) {
+  sendNotification(userId: string, payload: Notification[]) {
     const subject = this.clients.get(userId);
     if (!subject) {
       console.log(
