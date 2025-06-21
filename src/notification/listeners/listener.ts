@@ -21,8 +21,8 @@ export class EstimateRequestListener {
     // 알림 저장
     await this.notificationService.create({
       userId: moverId,
-      type: NotificationType.ESTIMATE_CONFIRMED,
-      message: `새로운 이사 요청이 할당되었습니다. (요청 ID: ${requestId})`,
+      type: NotificationType.NEW_ESTIMATE_REQUEST,
+      message: `새로운 견적 요청이 도착했습니다.`,
       targetId: requestId,
     });
   }
