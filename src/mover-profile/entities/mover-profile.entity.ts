@@ -1,8 +1,3 @@
-import {
-  ServiceRegionMap,
-  ServiceTypeMap,
-} from 'src/common/const/service.const';
-import { BaseTable } from 'src/common/entity/base-table.entity';
 import { User } from 'src/user/entities/user.entity';
 import {
   Column,
@@ -16,9 +11,11 @@ import {
 import { Like } from 'src/like/entities/like.entity';
 import { EstimateOffer } from 'src/estimate-offer/entities/estimate-offer.entity';
 import { Review } from 'src/review/entities/review.entity';
-import { MOVER_PROFILE_TABLE } from '@/common/const/query-builder.const';
+import { ServiceRegionMap, ServiceTypeMap } from '@/common/const/service.const';
+import { BaseTable } from '@/common/entity/base-table.entity';
+import { MoverProfileView } from '../view/mover-profile.view';
 
-@Entity(MOVER_PROFILE_TABLE)
+@Entity()
 export class MoverProfile extends BaseTable {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -30,7 +27,7 @@ export class MoverProfile extends BaseTable {
   imageUrl?: string;
 
   @Column()
-  experience: number;
+  experience: number; /// 경력 (년 단위)
 
   @Column()
   intro: string; /// 한 줄 소개
@@ -39,10 +36,10 @@ export class MoverProfile extends BaseTable {
   description: string; /// 상세 설명
 
   @Column({ type: 'json' })
-  serviceType: ServiceTypeMap; /// 서비스 종류
+  serviceType: ServiceTypeMap;
 
   @Column({ type: 'json' })
-  serviceRegion: ServiceRegionMap; /// 서비스 지역
+  serviceRegion: ServiceRegionMap;
 
   /// User : MoverProfile <-> 1:1 관계
   @OneToOne(() => User, (user) => user.moverProfile)
@@ -61,4 +58,8 @@ export class MoverProfile extends BaseTable {
   // moverProfile : Review <-> 1:N 관계
   @OneToMany(() => Review, (review) => review.mover)
   reviews: Review[];
+
+  // MoverProfile : MoverProfileView <-> 1:1 관계
+  @OneToOne(() => MoverProfileView, (view) => view.moverProfile)
+  stats: MoverProfileView;
 }

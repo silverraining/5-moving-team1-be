@@ -82,11 +82,53 @@ export const CODE_401_RESPONSES = {
   },
 };
 
+// 403
+export const CODE_403_FORBIDDEN = (errorExamples: ErrorExample[]) => {
+  return {
+    status: 403,
+    description: '권한 없음',
+    content: {
+      'application/json': {
+        examples: Object.fromEntries(
+          errorExamples.map((example) => [
+            example.key,
+            {
+              summary: example.summary,
+              value: example.value,
+            },
+          ]),
+        ),
+      },
+    },
+  };
+};
+
 // 404
 export const CODE_404_NOT_FOUND = (errorExamples: ErrorExample[]) => {
   return {
     status: 404,
     description: '리소스가 존재하지 않는 경우',
+    content: {
+      'application/json': {
+        examples: Object.fromEntries(
+          errorExamples.map((example) => [
+            example.key,
+            {
+              summary: example.summary,
+              value: example.value,
+            },
+          ]),
+        ),
+      },
+    },
+  };
+};
+
+// 409
+export const CODE_409_CONFLICT = (errorExamples: ErrorExample[]) => {
+  return {
+    status: 409,
+    description: '리소스 충돌',
     content: {
       'application/json': {
         examples: Object.fromEntries(

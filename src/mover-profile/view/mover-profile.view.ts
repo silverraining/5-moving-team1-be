@@ -1,24 +1,29 @@
 import { Review } from '@/review/entities/review.entity';
-import { DataSource, ViewColumn, ViewEntity } from 'typeorm';
+import {
+  DataSource,
+  JoinColumn,
+  OneToOne,
+  ViewColumn,
+  ViewEntity,
+} from 'typeorm';
 import { MoverProfile } from '../entities/mover-profile.entity';
 import { EstimateOffer } from '@/estimate-offer/entities/estimate-offer.entity';
-import { MOVER_PROFILE_VIEW_TABLE } from '@/common/const/query-builder.const';
-import { OrderField } from '@/common/dto/cursor-pagination.dto';
 import { Like } from '@/like/entities/like.entity';
+import { OrderField } from '@/common/validator/order.validator';
 
 @ViewEntity({
-  name: MOVER_PROFILE_VIEW_TABLE,
+  name: 'mover_profile_view', // 뷰의 이름을 'mover_profile_view'로 설정
   expression: (dataSource: DataSource) =>
     dataSource
       .createQueryBuilder()
       .select('mover.id', 'id')
-      .addSelect('COUNT(DISTINCT review.moverId)', OrderField.REVIEW_COUNT)
-      .addSelect('AVG(review.rating)', OrderField.AVERAGE_RATING)
+      .addSelect('COUNT(review.moverId)', OrderField.REVIEW_COUNT)
+      .addSelect('COALESCE(AVG(review.rating), 0.0)', OrderField.AVERAGE_RATING)
       .addSelect(
-        'COUNT(DISTINCT estimate_offer.moverId)',
+        `COUNT(DISTINCT CASE WHEN estimate_offer.status = 'CONFIRMED' THEN estimate_offer.id ELSE NULL END)`,
         OrderField.CONFIRMED_ESTIMATE_COUNT,
       )
-      .addSelect('COUNT(DISTINCT like.moverId)', 'like_count')
+      .addSelect('COUNT(DISTINCT like.customerId)', OrderField.LIKE_COUNT)
       .from(MoverProfile, 'mover')
       .leftJoin(Review, 'review', 'review.moverId = mover.id')
       .leftJoin(
@@ -43,5 +48,10 @@ export class MoverProfileView {
   [OrderField.CONFIRMED_ESTIMATE_COUNT]: number;
 
   @ViewColumn()
-  like_count: number;
+  [OrderField.LIKE_COUNT]: number;
+
+  // MoverProfile : MoverProfileView <-> 1:1 관계
+  @OneToOne(() => MoverProfile, (profile) => profile.stats)
+  @JoinColumn({ name: 'id' })
+  moverProfile: MoverProfile;
 }

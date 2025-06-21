@@ -13,22 +13,14 @@ import {
 
 @Entity()
 export class Review extends BaseTable {
-  // EstimateOffer : Review <-> 1:1 관계
-  @PrimaryColumn({
-    name: 'estimateOfferId',
-    type: 'uuid',
-  })
-  @OneToOne(() => EstimateOffer, (offer) => offer.review)
-  @JoinColumn({ name: 'estimateOfferId' }) // FK 컬럼 이름 지정
-  estimateOffer: EstimateOffer; // 견적 제안 id
+  @PrimaryColumn('uuid')
+  estimateOfferId: string; // 견적 제안 id
 
-  @PrimaryColumn({
-    name: 'customerId',
-    type: 'uuid',
-  })
-  @ManyToOne(() => CustomerProfile, (customer) => customer.reviews)
-  @JoinColumn({ name: 'customerId' }) // FK 컬럼 이름 지정
-  customer: CustomerProfile; // 고객 id
+  @PrimaryColumn('uuid')
+  customerId: string; // 고객 id
+
+  @Column('uuid')
+  moverId: string; // 기사 id
 
   @Column()
   rating: number; // 별점
@@ -36,6 +28,17 @@ export class Review extends BaseTable {
   @Column()
   comment: string; // 리뷰 내용
 
+  // EstimateOffer : Review <-> 1:1 관계
+  @OneToOne(() => EstimateOffer, (offer) => offer.review)
+  @JoinColumn({ name: 'estimateOfferId' }) // FK 컬럼 이름 지정
+  estimateOffer: EstimateOffer; // 견적 제안 id
+
+  // CustomerProfile : Review <-> 1:N 관계
+  @ManyToOne(() => CustomerProfile, (customer) => customer.reviews)
+  @JoinColumn({ name: 'customerId' }) // FK 컬럼 이름 지정
+  customer: CustomerProfile; // 고객 id
+
+  // MoverProfile : Review <-> 1:N 관계
   @ManyToOne(() => MoverProfile, (mover) => mover.reviews)
   @JoinColumn({ name: 'moverId' }) // FK 컬럼 이름 지정
   mover: MoverProfile;

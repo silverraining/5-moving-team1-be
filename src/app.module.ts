@@ -26,6 +26,7 @@ import { DatabaseModule } from './database/database.module';
 import { databaseValidationSchema } from './database/database.config';
 import { TestErrorController } from './common/utils/test-error.controller';
 import { AppController } from './app.controller';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 const appValidationSchema = Joi.object({
   // 애플리케이션 실행 환경 설정 ('dev' 또는 'prod'만 허용)
@@ -48,7 +49,7 @@ const appValidationSchema = Joi.object({
       isGlobal: true,
       validationSchema: appValidationSchema,
     }),
-
+    EventEmitterModule.forRoot(),
     // 핵심 모듈
     DatabaseModule,
     AuthModule,
@@ -95,9 +96,10 @@ export class AppModule implements NestModule {
       .apply(BearerTokenMiddleware)
       .exclude(
         { path: 'auth/register', method: RequestMethod.POST }, /// 회원가입 제외
-        { path: 'auth/login/local', method: RequestMethod.POST }, /// 로컬 로그인 제외
+        { path: 'auth/login', method: RequestMethod.POST }, /// 로컬 로그인 제외
         { path: 'auth/login/:social', method: RequestMethod.GET }, /// 모든 소셜 로그인 (:social 매개변수 사용) 제외
         { path: 'auth/callback/:social', method: RequestMethod.GET }, /// 모든 소셜 콜백 (:social 매개변수 사용) 제외
+        { path: 'auth/logout', method: RequestMethod.POST }, /// 로그아웃 제외
       )
       .forRoutes('*'); /// 모든 라우트에 미들웨어 적용
   }

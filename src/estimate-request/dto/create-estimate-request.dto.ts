@@ -6,8 +6,9 @@ import {
   ValidateNested,
   IsOptional,
   IsArray,
+  IsUUID,
 } from 'class-validator';
-import { ServiceType } from 'src/common/const/service.const';
+import { ServiceType } from '@/common/const/service.const';
 
 export class AddressDto {
   @IsString()
@@ -43,5 +44,6 @@ export class CreateEstimateRequestDto {
 
   @IsOptional()
   @IsArray()
+  @IsUUID('all', { each: true }) // UUID 형식 검증 추가
   targetMoverIds?: string[];
 }

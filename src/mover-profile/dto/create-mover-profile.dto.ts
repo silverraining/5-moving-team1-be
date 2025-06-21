@@ -1,4 +1,11 @@
 import {
+  ServiceRegion,
+  ServiceRegionMap,
+  ServiceType,
+  ServiceTypeMap,
+} from '@/common/const/service.const';
+import { HasAtLeastOneTrue } from '@/common/validator/service.validator';
+import {
   IsInt,
   IsObject,
   IsOptional,
@@ -8,11 +15,6 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import {
-  ServiceRegionMap,
-  ServiceTypeMap,
-} from 'src/common/const/service.const';
-import { HasAtLeastOneTrue } from 'src/common/validator/service.validator';
 
 export class CreateMoverProfileDto {
   @IsString()
@@ -44,13 +46,13 @@ export class CreateMoverProfileDto {
   description: string;
 
   @IsObject()
-  @HasAtLeastOneTrue({
+  @HasAtLeastOneTrue(ServiceType, {
     message: '서비스 타입은 최소 하나 이상 선택되어야 합니다.',
   })
   serviceType: ServiceTypeMap;
 
   @IsObject()
-  @HasAtLeastOneTrue({
+  @HasAtLeastOneTrue(ServiceRegion, {
     message: '서비스 지역은 최소 하나 이상 선택되어야 합니다.',
   })
   serviceRegion: ServiceRegionMap;

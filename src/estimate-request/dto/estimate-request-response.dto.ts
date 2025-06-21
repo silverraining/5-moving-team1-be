@@ -4,7 +4,8 @@ import { EstimateOfferResponseDto } from '@/estimate-offer/dto/estimate-offer-re
 import { EstimateRequest } from '../entities/estimate-request.entity';
 
 export class EstimateRequestResponseDto {
-  id: string;
+  requestId: string;
+  requestStatus: EstimateRequest['status']; // 견적 요청 상태 (PENDING, CONFIRMED, REJECTED, COMPLETED, CANCELED, EXPIRED)
   createdAt: Date;
   moveType: ServiceType;
   moveDate: Date;
@@ -16,8 +17,8 @@ export class EstimateRequestResponseDto {
 
   isTargeted?: boolean;
   customerName?: string;
-
-  estimateOffers: EstimateOfferResponseDto[];
+  offerCount: number; //받은 offer 개수 (request랑 offer 응답에서 구분하기 쉽게 추가했는데 필요없으면 제거 가능)
+  estimateOffers?: EstimateOfferResponseDto[];
 
   /**
    * 정적 팩토리 메서드
@@ -28,25 +29,23 @@ export class EstimateRequestResponseDto {
    */
   static from(
     request: EstimateRequest,
-    offers: EstimateOfferResponseDto[],
+    offers: EstimateOfferResponseDto[] = [],
     options?: {
       includeAddress?: boolean;
       includeMinimalAddress?: boolean;
     },
+    isTargeted?: boolean,
   ): EstimateRequestResponseDto {
     const dto = new EstimateRequestResponseDto();
 
-    dto.id = request.id;
+    dto.requestId = request.id;
+    dto.requestStatus = request.status;
     dto.createdAt = request.createdAt;
     dto.moveType = request.moveType;
     dto.moveDate = request.moveDate;
     dto.estimateOffers = offers;
-
-    dto.isTargeted =
-      Array.isArray(request.targetMoverIds) &&
-      request.targetMoverIds.length > 0;
-
-    dto.customerName = request.customer?.user?.name ?? null;
+    dto.offerCount = offers.length;
+    dto.isTargeted = isTargeted ?? false;
 
     if (options?.includeAddress) {
       dto.fromAddress = AddressDto.from(request.fromAddress);
@@ -55,12 +54,12 @@ export class EstimateRequestResponseDto {
 
     if (options?.includeMinimalAddress) {
       dto.fromAddressMinimal = {
-        sido: request.fromAddress.sido,
-        sigungu: request.fromAddress.sigungu,
+        sido: request.fromAddress?.sido,
+        sigungu: request.fromAddress?.sigungu,
       };
       dto.toAddressMinimal = {
-        sido: request.toAddress.sido,
-        sigungu: request.toAddress.sigungu,
+        sido: request.toAddress?.sido,
+        sigungu: request.toAddress?.sigungu,
       };
     }
 

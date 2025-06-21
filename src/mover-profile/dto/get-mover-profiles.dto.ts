@@ -1,40 +1,25 @@
-import { IsObject } from 'class-validator';
 import {
+  commaDefaultServiceRegion,
+  commaDefaultServiceType,
   ServiceRegion,
-  ServiceRegionMap,
   ServiceType,
-  ServiceTypeMap,
-} from 'src/common/const/service.const';
+} from '@/common/const/service.const';
+import { IsCommaSeparatedEnum } from '@/common/validator/service.validator';
+import { IsOptional, IsString } from 'class-validator';
 import { CursorPaginationDto } from 'src/common/dto/cursor-pagination.dto';
-import { HasAtLeastOneTrue } from 'src/common/validator/service.validator';
-
-// 자동으로 true값을 가지는 맵을 생성하는 함수
-// 만약 enum값이 추가되도 자동으로 true값을 가지는 맵이 생성됨
-function generateTrueMapFromEnum<T extends Record<string, string>>(
-  enumObj: T,
-): Record<T[keyof T], boolean> {
-  return Object.values(enumObj).reduce(
-    (acc, key) => {
-      acc[key] = true;
-      return acc;
-    },
-    {} as Record<T[keyof T], boolean>,
-  );
-}
-
-export const defaultServiceTypeMap = generateTrueMapFromEnum(ServiceType);
-export const defaultServiceRegionMap = generateTrueMapFromEnum(ServiceRegion);
 
 export class GetMoverProfilesDto extends CursorPaginationDto {
-  @IsObject()
-  @HasAtLeastOneTrue({
-    message: '서비스 유형은 최소 하나 이상 선택되어야 합니다.',
+  @IsOptional()
+  @IsString()
+  @IsCommaSeparatedEnum(ServiceType, {
+    message: 'serviceType의 값이 유효하지 않습니다.',
   })
-  serviceType: Partial<ServiceTypeMap> = defaultServiceTypeMap;
+  serviceType?: string = commaDefaultServiceType;
 
-  @IsObject()
-  @HasAtLeastOneTrue({
-    message: '서비스 지역은 최소 하나 이상 선택되어야 합니다.',
+  @IsOptional()
+  @IsString()
+  @IsCommaSeparatedEnum(ServiceRegion, {
+    message: 'serviceRegion의 값이 유효하지 않습니다.',
   })
-  serviceRegion: Partial<ServiceRegionMap> = defaultServiceRegionMap;
+  serviceRegion?: string = commaDefaultServiceRegion;
 }

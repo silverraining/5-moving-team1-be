@@ -1,8 +1,5 @@
-import {
-  ServiceRegionMap,
-  ServiceTypeMap,
-} from 'src/common/const/service.const';
-import { BaseTable } from 'src/common/entity/base-table.entity';
+import { ServiceRegionMap, ServiceTypeMap } from '@/common/const/service.const';
+import { BaseTable } from '@/common/entity/base-table.entity';
 import { EstimateRequest } from 'src/estimate-request/entities/estimate-request.entity';
 import { Like } from 'src/like/entities/like.entity';
 import { Review } from 'src/review/entities/review.entity';

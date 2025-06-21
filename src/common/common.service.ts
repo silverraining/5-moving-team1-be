@@ -1,25 +1,40 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { SelectQueryBuilder } from 'typeorm';
+import { CursorPaginationDto } from './dto/cursor-pagination.dto';
+import * as _ from 'lodash';
+import { parseOrderString, parseFilterString } from './utils/parse-string';
 import {
-  CursorPaginationDto,
+  MoverStatsField,
   OrderDirection,
   OrderField,
-  OrderItemMap,
-} from './dto/cursor-pagination.dto';
-import * as _ from 'lodash';
-import {
-  MOVER_PROFILE_TABLE,
-  MOVER_PROFILE_VIEW_TABLE,
-} from './const/query-builder.const';
+  OrderString,
+} from './validator/order.validator';
+import { PagePaginationDto } from './dto/page-pagination.dto';
 
 export enum Service {
   ServiceType = 'serviceType',
   ServiceRegion = 'serviceRegion',
 }
 
+export const statsAlias = 'stats';
+
 @Injectable()
 export class CommonService {
   constructor() {}
+
+  applyPagePaginationParamsToQb<T>(
+    qb: SelectQueryBuilder<T>,
+    dto: PagePaginationDto,
+  ) {
+    const { page, take } = dto;
+
+    if (take && page) {
+      const skip = (page - 1) * take;
+
+      qb.take(take);
+      qb.skip(skip);
+    }
+  }
 
   async applyCursorPaginationParamsToQb<T>(
     qb: SelectQueryBuilder<T>,
@@ -32,30 +47,24 @@ export class CommonService {
       const decodedCursor = Buffer.from(cursor, 'base64').toString('utf-8');
       const cursorObj = JSON.parse(decodedCursor) as {
         values: Record<string, any>;
-        order: OrderItemMap;
+        order: OrderString;
       };
 
       const { values } = cursorObj;
       order = cursorObj.order; // cursorObj에서 order 추출
 
-      const { field, direction } = order;
+      const { field, direction } = parseOrderString(order);
+
       const orderAlias = this.getOrderFieldAlias(qb, field);
       const cursorId = values.id;
-      const cursorValue = values[field];
+      const cursorValue = parseFloat(values[field]);
 
       const operator = direction === OrderDirection.DESC ? '<' : '>';
-      const equals = '=';
-
-      qb.andWhere(
-        `(${orderAlias} ${operator} :cursorValue OR (${orderAlias} ${equals} :cursorValue AND ${qb.alias}.id ${operator} :cursorId))`,
-        {
-          cursorValue,
-          cursorId,
-        },
-      );
+      const whereClause = `(${orderAlias} ${operator} :cursorValue OR (${orderAlias} = :cursorValue AND ${qb.alias}.id < :cursorId))`;
+      qb.andWhere(whereClause, { cursorValue, cursorId });
     }
 
-    const { field, direction } = order;
+    const { field, direction } = parseOrderString(order);
 
     if (direction !== OrderDirection.ASC && direction !== OrderDirection.DESC) {
       throw new BadRequestException('정렬 방향은 ASC 또는 DESC 여야 합니다.');
@@ -64,7 +73,7 @@ export class CommonService {
     const orderAlias = this.getOrderFieldAlias(qb, field);
 
     qb.addOrderBy(orderAlias, direction); // 정렬 기준 필드
-    qb.addOrderBy(`${qb.alias}.id`, direction); // 항상 id도 정렬에 포함
+    qb.addOrderBy(`${qb.alias}.id`, OrderDirection.DESC); // 항상 id도 정렬에 포함
 
     /**
      * Q) qb.addOrderBy(`${qb.alias}.id`, direction); 이거 왜 해용 ?.?
@@ -78,14 +87,12 @@ export class CommonService {
 
     const results = await qb.getMany();
     const nextCursor = this.generateNextCursor(results, order);
+    const hasNext = !!nextCursor; // nextCursor가 없으면 더 불러올 데이터 없음
 
-    return { qb, nextCursor };
+    return { nextCursor, hasNext };
   }
 
-  private generateNextCursor<T>(
-    results: T[],
-    order: OrderItemMap,
-  ): string | null {
+  private generateNextCursor<T>(results: T[], order: OrderString) {
     if (results.length === 0) return null;
 
     /**
@@ -95,16 +102,23 @@ export class CommonService {
      *      id: 27,
      *      field: value, // 정렬 필드값
      *    }, ...],
-     *    order: {
-     *      field: MoverOrderField,
-     *      direction: OrderDirection,
-     *    }
+     *    order: `${MoverOrderField} ${OrderDirection}`
      * }
      */
 
+    // join은 어차피 계속 될거라서 그냥 배열에 있는 값이랑 OrderField랑 있는지 비교해서 있으면 true로 변경하기
+
     const lastItem = results.at(-1);
-    const { field } = order;
-    const value = lastItem[field];
+    const { field } = parseOrderString(order);
+    const isStatsField = MoverStatsField.includes(field);
+    const value = isStatsField ? lastItem[statsAlias][field] : lastItem[field];
+
+    if (!value) {
+      throw new BadRequestException(
+        `커서 생성 실패: lastItem에서 '${field}' 값을 찾을 수 없습니다.`,
+        lastItem,
+      );
+    }
 
     const cursorObj = {
       values: {
@@ -123,58 +137,54 @@ export class CommonService {
 
   applyServiceFilterToQb<T>(
     qb: SelectQueryBuilder<T>,
-    map: Record<string, boolean>,
-    service: Service,
-    table: string,
+    filterString: string,
+    serviceColumnName: Service,
+    entityAlias: string,
   ) {
-    if (!map) return;
+    if (!filterString) return;
 
-    const activeKeys = _(map)
-      .pickBy(Boolean) // true 값만 추출
-      .keys() // 키만 추출
-      .value(); // lodash 체이닝 결과 반환
+    const activeKeys = parseFilterString(filterString);
 
-    if (_.isEmpty(activeKeys)) return; // 활성화된 키가 없으면 필터링하지 않음
+    if (activeKeys.length === 0) return; // 활성화된 키가 없으면 필터링하지 않음
 
     // 조건문 배열 생성 (json 컬럼 내부 키가 'true'인지 확인)
     const conditions = activeKeys.map(
-      (key) => `(${table}.${service} ->> '${key}')::boolean = true`,
+      (key) =>
+        `(${entityAlias}.${serviceColumnName} ->> '${key}')::boolean = true`,
     );
 
     // 각 조건을 OR로 연결 (serviceType 중 하나라도 true인 것 필터링)
-    qb.andWhere(conditions.join(' OR'));
+    qb.andWhere(`(${conditions.join(' OR ')})`);
   }
 
   private getOrderFieldAlias<T>(
     qb: SelectQueryBuilder<T>,
     field: OrderField,
   ): string {
-    // 정렬 필드에 따라 쿼리 빌더에 조인 및 선택 추가
-    // 추가적으로 필요한 경우, OrderField enum에 추가 정의 후 아래 switch 문에 추가
+    const mainAlias = qb.alias; // 'mover'
 
     // 뷰가 조인되어 있는지 확인 (join 정보에서 mover_profile_view가 있는지)
-    const joinNames = qb.expressionMap.joinAttributes.map(
-      (join) => join.alias?.name,
+    const isStatsJoined = qb.expressionMap.joinAttributes.some(
+      (join) => join.alias.name === statsAlias,
     );
-    const isViewJoined = joinNames.includes(MOVER_PROFILE_VIEW_TABLE);
 
     switch (field) {
-      // MoverProfile 기준 정렬 필드
+      // MoverProfileView 기준 정렬 필드
       case OrderField.REVIEW_COUNT:
       case OrderField.AVERAGE_RATING:
       case OrderField.CONFIRMED_ESTIMATE_COUNT:
-        if (!isViewJoined) {
-          // 뷰가 join 되어있지 않으면 예외 처리
+      case OrderField.LIKE_COUNT:
+        if (!isStatsJoined) {
+          // 이 에러 메시지가 개발자에게 'stats' 별칭으로 join 해야 한다는 것을 알려줍니다.
           throw new BadRequestException(
-            `${field} 정렬 필드를 사용하려면 뷰(${MOVER_PROFILE_VIEW_TABLE})가 조인되어야 합니다.`,
+            `'${field}' 필드로 정렬하려면 MoverProfileView를 '${statsAlias}' 별칭으로 조인해야 합니다.`,
           );
         }
-        return `${MOVER_PROFILE_VIEW_TABLE}.${field}`;
+        return `${statsAlias}.${field}`; // ex) 'stats.review_count'
 
       case OrderField.EXPERIENCE:
-        return `${MOVER_PROFILE_TABLE}.${field}`; // experience는 mover스키마에서만 필요
       case OrderField.CREATED_AT:
-        return `${qb.alias}.${field}`; // 기본 테이블의 created_at 컬럼
+        return `${mainAlias}.${field}`; // 기본 테이블의 created_at 컬럼
 
       default:
         throw new BadRequestException('올바른 정렬 필드를 선택해주세요.');

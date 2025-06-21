@@ -15,7 +15,8 @@ import { ENTITIES } from './database.entities';
         password: configService.get<string>(envVariableKeys.dbPassword),
         database: configService.get<string>(envVariableKeys.dbDatabase),
         entities: ENTITIES,
-        synchronize: true,
+        synchronize:
+          configService.get<string>(envVariableKeys.dbSynchronize) === 'true',
         ssl: { rejectUnauthorized: false },
       }),
       inject: [ConfigService],
