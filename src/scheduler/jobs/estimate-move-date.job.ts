@@ -2,7 +2,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import {
   EstimateRequest,
   RequestStatus,
@@ -24,19 +24,20 @@ export class EstimateMoveDateJob {
     private notificationService: NotificationService,
   ) {}
 
-  @Cron(CronExpression.EVERY_DAY_AT_1AM)
+  @Cron(CronExpression.MONDAY_TO_FRIDAY_AT_1AM)
   async handle() {
     this.logger.log('이사 하루 전 스케줄 시작');
 
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(0, 0, 0, 0);
-    const dayAfterTomorrow = new Date(tomorrow);
-    dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
+    const tomorrowStart = new Date();
+    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+    tomorrowStart.setHours(0, 0, 0, 0);
+
+    const tomorrowEnd = new Date(tomorrowStart);
+    tomorrowEnd.setHours(23, 59, 59, 999);
 
     const estimateRequests = await this.estimateRequestRepo.find({
       where: {
-        moveDate: tomorrow,
+        moveDate: Between(tomorrowStart, tomorrowEnd),
         status: RequestStatus.CONFIRMED,
       },
       relations: ['customer', 'customer.user'],
@@ -57,10 +58,10 @@ export class EstimateMoveDateJob {
       if (request.confirmedOfferId) {
         const offer = await this.estimateOfferRepo.findOne({
           where: { id: request.confirmedOfferId },
-          relations: ['moverProfile', 'moverProfile.user'],
+          relations: ['mover', 'mover.user'],
         });
 
-        const moverUser = offer?.moverId;
+        const moverUser = offer?.mover?.user?.id;
         if (moverUser) {
           const dto: CreateNotificationDto = {
             userId: moverUser,

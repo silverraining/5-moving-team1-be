@@ -2,14 +2,14 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EstimateRequest } from '@/estimate-request/entities/estimate-request.entity';
 import { EstimateOffer } from '@/estimate-offer/entities/estimate-offer.entity';
-import { Notification } from '@/notification/entities/notification.entity';
-import { NotificationService } from '@/notification/notification.service';
 import { EstimateMoveDateJob } from '../jobs/estimate-move-date.job';
+import { NotificationModule } from '@/notification/notification.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([EstimateRequest, EstimateOffer, Notification]),
+    TypeOrmModule.forFeature([EstimateRequest, EstimateOffer]),
+    NotificationModule,
   ],
-  providers: [EstimateMoveDateJob, NotificationService],
+  providers: [EstimateMoveDateJob],
 })
 export class EstimateReminderModule {}
