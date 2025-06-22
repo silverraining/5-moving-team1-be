@@ -38,6 +38,9 @@ const appValidationSchema = Joi.object({
   // 토큰 관련 환경 변수
   ACCESS_TOKEN_SECRET: Joi.string().required(),
   REFRESH_TOKEN_SECRET: Joi.string().required(),
+
+  // CORS Origin
+  CORS_ORIGIN: Joi.string().uri().required(),
 }).concat(databaseValidationSchema);
 @Module({
   imports: [

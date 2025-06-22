@@ -15,9 +15,16 @@ const accessTokenExpirationProd = 'ACCESS_TOKEN_EXPIRATION_PROD';
 const refreshTokenExpirationDev = 'REFRESH_TOKEN_EXPIRATION_DEV';
 const refreshTokenExpirationProd = 'REFRESH_TOKEN_EXPIRATION_PROD';
 
+// CORS Origin (프론트엔드 URL)
+const corsOrigin = 'CORS_ORIGIN';
+
 // naver 관련 키 추가
 const naverClientId = 'NAVER_CLIENT_ID';
 const naverClientSecret = 'NAVER_CLIENT_SECRET';
+
+// google 관련 키 추가
+const googleClientId = 'GOOGLE_CLIENT_ID';
+const googleClientSecret = 'GOOGLE_CLIENT_SECRET';
 
 export const envVariableKeys = {
   env,
@@ -37,6 +44,10 @@ export const envVariableKeys = {
   refreshTokenExpirationDev,
   refreshTokenExpirationProd,
 
+  corsOrigin,
+
   naverClientId,
   naverClientSecret,
+  googleClientId,
+  googleClientSecret,
 };
