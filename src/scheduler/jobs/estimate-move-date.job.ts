@@ -63,7 +63,7 @@ export class EstimateMoveDateJob {
         const moverUser = offer?.moverId;
         if (moverUser) {
           const dto: CreateNotificationDto = {
-            userId: customerUser.id,
+            userId: moverUser,
             type: NotificationType.MOVE_DAY_REMINDER,
             message: '내일 배정된 이사 일정이 있습니다.',
             targetId: request.id,
