@@ -40,7 +40,7 @@ import { GenericPaginatedDto } from '@/common/dto/paginated-response.dto';
 export function ApiGetPendingEstimateOffers() {
   return applyDecorators(
     ApiOperation({
-      summary: '대기 중인 견적 요청에 대한 오퍼 목록 조회',
+      summary: '대기 중인 받은 견적(estimateOffer)목록 조회',
       description:
         '로그인한 고객 본인의 견적 요청 중 상태가 PENDING인 요청에 대해 기사님들이 보낸 오퍼 목록을 커서 기반 페이지네이션 형식으로 조회합니다.',
     }),
@@ -123,7 +123,7 @@ export function ApiGetPendingEstimateOffers() {
 export function ApiGetEstimateOfferDetailByCustomer() {
   return applyDecorators(
     ApiOperation({
-      summary: '고객이 받은 견적 상세 조회',
+      summary: '대기 중인 받은 견적(estimateOffer) 상세 조회',
       description:
         '고객이 받은 견적 상세 정보를 조회합니다. 견적 제안 상세 조회와 동일한 정보를 반환합니다.',
     }),

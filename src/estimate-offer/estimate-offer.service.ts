@@ -177,6 +177,7 @@ export class EstimateOfferService {
       .createQueryBuilder('offer')
       .leftJoinAndSelect('offer.mover', 'mover')
       .leftJoinAndSelect('mover.likedCustomers', 'likedCustomers')
+      .leftJoinAndSelect('likedCustomers.customer', 'likedCustomer')
       .leftJoinAndSelect('offer.estimateRequest', 'estimateRequest')
       .where('offer.estimateRequestId = :requestId', {
         requestId: estimateRequestId,
@@ -222,9 +223,16 @@ export class EstimateOfferService {
 
     const moverViewMap = new Map(moverViews.map((view) => [view.id, view]));
 
+    // CustomerProfile 조회
+    const customerProfileId = (
+      await this.customerProfileRepository.findOne({
+        where: { user: { id: userId } },
+      })
+    )?.id;
+
     const items = sliced.map((offer) => {
       const isLiked = offer.mover.likedCustomers?.some(
-        (like) => like.customer?.id === userId,
+        (like) => like.customer?.id === customerProfileId,
       );
       const view = moverViewMap.get(offer.moverId);
 
