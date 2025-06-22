@@ -38,10 +38,6 @@ const appValidationSchema = Joi.object({
   // 토큰 관련 환경 변수
   ACCESS_TOKEN_SECRET: Joi.string().required(),
   REFRESH_TOKEN_SECRET: Joi.string().required(),
-
-  // 소셜 로그인 관련 환경 변수
-  // NAVER_CLIENT_ID: Joi.string().required(),
-  // NAVER_CLIENT_SECRET: Joi.string().required(),
 }).concat(databaseValidationSchema);
 @Module({
   imports: [
