@@ -41,6 +41,9 @@ const appValidationSchema = Joi.object({
 
   // CORS Origin
   CORS_ORIGIN: Joi.string().uri().required(),
+
+  // API Base URL (콜백 URL용)
+  API_BASE_URL: Joi.string().uri().required(),
 }).concat(databaseValidationSchema);
 @Module({
   imports: [

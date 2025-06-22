@@ -18,6 +18,9 @@ const refreshTokenExpirationProd = 'REFRESH_TOKEN_EXPIRATION_PROD';
 // CORS Origin (프론트엔드 URL)
 const corsOrigin = 'CORS_ORIGIN';
 
+// API Base URL (백엔드 API URL)
+const apiBaseUrl = 'API_BASE_URL';
+
 // naver 관련 키 추가
 const naverClientId = 'NAVER_CLIENT_ID';
 const naverClientSecret = 'NAVER_CLIENT_SECRET';
@@ -45,6 +48,7 @@ export const envVariableKeys = {
   refreshTokenExpirationProd,
 
   corsOrigin,
+  apiBaseUrl,
 
   naverClientId,
   naverClientSecret,
