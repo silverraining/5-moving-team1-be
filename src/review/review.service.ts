@@ -26,6 +26,7 @@ import { MoverProfileView } from '@/mover-profile/view/mover-profile.view';
 import { OrderField } from '@/common/validator/order.validator';
 import { ReviewHelper } from './review.helper';
 import { formatDateToKst } from '@/common/utils/utc2ktc.util';
+import { NewReviewEventDispatcher } from '@/notification/events/dispatcher';
 
 @Injectable()
 export class ReviewService {
@@ -42,6 +43,7 @@ export class ReviewService {
     private readonly commonService: CommonService,
     private readonly customerProfileHelper: CustomerProfileHelper,
     private readonly reviewHelper: ReviewHelper,
+    private readonly dispatcher: NewReviewEventDispatcher,
   ) {}
 
   /**
@@ -107,6 +109,7 @@ export class ReviewService {
     };
 
     try {
+      this.dispatcher.targetMoverAssigned(moverId, reviewData.customerId);
       await this.reviewRepository.save(reviewData); // 리뷰 저장
     } catch (error) {
       console.error('Error saving review:', error);
