@@ -14,6 +14,7 @@ import {
   NewEstimateOfferListener,
   OfferConfirmListener,
 } from '@/notification/listeners/listener';
+import { NotificationModule } from '@/notification/notification.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import {
       MoverProfile,
       CustomerProfile,
     ]),
+    NotificationModule,
   ],
   controllers: [EstimateOfferController],
   providers: [

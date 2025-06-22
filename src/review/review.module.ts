@@ -12,6 +12,7 @@ import { MoverProfileView } from '@/mover-profile/view/mover-profile.view';
 import { ReviewHelper } from './review.helper';
 import { NewReviewListener } from '@/notification/listeners/listener';
 import { NewReviewEventDispatcher } from '@/notification/events/dispatcher';
+import { NotificationModule } from '@/notification/notification.module';
 
 @Module({
   imports: [
@@ -20,7 +21,9 @@ import { NewReviewEventDispatcher } from '@/notification/events/dispatcher';
       EstimateRequest,
       EstimateOffer,
       MoverProfileView,
+      NotificationModule,
     ]),
+    NotificationModule,
     CommonModule,
     CustomerProfileModule,
     MoverProfileModule,
