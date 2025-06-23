@@ -24,7 +24,7 @@ export class EstimateMoveDateJob {
     private notificationService: NotificationService,
   ) {}
 
-  @Cron(CronExpression.MONDAY_TO_FRIDAY_AT_1AM)
+  @Cron(CronExpression.MONDAY_TO_FRIDAY_AT_1AM, { timeZone: 'Asia/Seoul' })
   async handle() {
     this.logger.log('이사 하루 전 스케줄 시작');
 
