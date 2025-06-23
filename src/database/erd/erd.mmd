@@ -1,0 +1,113 @@
+erDiagram
+  like {
+    date createdAt
+    date updatedAt
+    int version
+    uuid moverId FK
+    uuid customerId FK
+  }
+  review {
+    date createdAt
+    date updatedAt
+    int version
+    uuid id PK
+    uuid estimateOfferId FK
+    uuid customerId FK
+    uuid moverId FK
+    int rating
+    string comment
+  }
+  mover_profile_view {
+    uuid id FK
+    int review_count
+    float average_rating
+    int confirmed_estimate_count
+    int like_count
+  }
+  mover_profile {
+    date createdAt
+    date updatedAt
+    int version
+    uuid id PK
+    string nickname
+    string imageUrl
+    int experience
+    string intro
+    string description
+    json serviceType
+    json serviceRegion
+    uuid userId FK
+  }
+  estimate_offer {
+    date createdAt
+    date updatedAt
+    int version
+    uuid id PK
+    uuid estimateRequestId FK
+    uuid moverId FK
+    int price
+    string comment
+    enum status
+    boolean isTargeted
+    boolean isConfirmed
+    date confirmedAt
+  }
+  estimate_request {
+    date createdAt
+    date updatedAt
+    int version
+    uuid id PK
+    enum moveType
+    enum status
+    date moveDate
+    json fromAddress
+    json toAddress
+    uuid targetMoverIds
+    uuid confirmedOfferId FK
+    uuid customerId FK
+  }
+  customer_profile {
+    date createdAt
+    date updatedAt
+    int version
+    uuid id PK
+    string imageUrl
+    json serviceType
+    json serviceRegion
+    uuid userId FK
+  }
+  notification {
+    uuid id PK
+    enum type
+    string message
+    string targetId
+    boolean isRead
+    date createdAt
+    uuid userId FK
+  }
+  user {
+    date createdAt
+    date updatedAt
+    int version
+    uuid id PK
+    enum role
+    string name
+    string email
+    string phone
+    string password
+    enum provider
+    string providerId
+    string refreshToken
+  }
+  like }|--|| mover_profile: mover
+  like }|--|| customer_profile: customer
+  review ||--|| estimate_offer: estimateOffer
+  review }|--|| customer_profile: customer
+  review }|--|| mover_profile: mover
+  mover_profile_view ||--|| mover_profile: moverProfile
+  mover_profile ||--|| user: user
+  estimate_offer }|--|| estimate_request: estimateRequest
+  estimate_offer }|--|| mover_profile: mover
+  estimate_request }|--|| customer_profile: customer
+  customer_profile ||--|| user: user
+  notification }|--|| user: user

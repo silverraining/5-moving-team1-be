@@ -1,0 +1,14 @@
+{
+  "cSpell.ignorePaths": [
+    "**/*.svg",
+    "**/*.mmd",
+    "**/erd/**",
+    "**/docs/**/*.svg",
+    "**/docs/**/*.png"
+  ],
+  "files.associations": {
+    "*.mmd": "mermaid"
+  }
+}
+
+//SVG 파일은 매우 긴 라인을 포함하고 있어서 성능상의 이유로 스펠 체크를 건너뛰도록 설정
