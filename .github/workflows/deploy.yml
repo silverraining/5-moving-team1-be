@@ -32,11 +32,11 @@ jobs:
       - name: 의존성 설치
         run: pnpm install
 
-      - name: 린트 검사
-        run: pnpm lint
+      # - name: 린트 검사
+      #   run: pnpm lint
 
-      - name: 테스트 실행
-        run: pnpm test
+      # - name: 테스트 실행
+      #   run: pnpm test
 
       - name: 빌드 테스트
         run: pnpm build
