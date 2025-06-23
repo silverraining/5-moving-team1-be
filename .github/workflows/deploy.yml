@@ -1,0 +1,134 @@
+name: CI/CD Pipeline for EC2
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/5-moving-app
+  NODE_VERSION: '20'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: 테스트 및 린트 검사
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: pnpm 설치
+        uses: pnpm/action-setup@v3
+        with:
+          version: latest
+
+      - name: 의존성 설치
+        run: pnpm install
+
+      - name: 린트 검사
+        run: pnpm lint
+
+      - name: 테스트 실행
+        run: pnpm test
+
+      - name: 빌드 테스트
+        run: pnpm build
+
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    name: 도커 이미지 빌드 및 푸시
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Docker Buildx 설정
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker Hub 로그인
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: 메타데이터 추출
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_IMAGE }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: 도커 이미지 빌드 및 푸시
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    name: EC2 배포
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: EC2 배포
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # 도커 로그인
+            echo "${{ secrets.DOCKER_PASSWORD }}" | sudo docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+            # 새 이미지 풀
+            sudo docker pull ${{ env.DOCKER_IMAGE }}:latest
+
+            # 기존 컨테이너 중지 및 제거
+            sudo docker stop 5-moving-app || true
+            sudo docker rm 5-moving-app || true
+
+            # 새 컨테이너 실행
+            sudo docker run -d \
+              -p 3000:3000 \
+              --name 5-moving-app \
+              --restart unless-stopped \
+              ${{ env.DOCKER_IMAGE }}:latest
+
+            # 사용하지 않는 이미지 정리
+            sudo docker image prune -f
+
+            # 컨테이너 상태 확인
+            sudo docker ps | grep 5-moving-app
+
+      - name: Discord 배포 성공 알림
+        if: success()
+        uses: Ilshidur/action-discord@master
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        with:
+          args: '✅ **배포 성공!** `${{ github.repository }}`의 새 버전이 프로덕션에 배포되었습니다. 커밋: `${{ github.sha }}`'
+
+      - name: Discord 배포 실패 알림
+        if: failure()
+        uses: Ilshidur/action-discord@master
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        with:
+          args: '❌ **배포 실패!** `${{ github.repository }}`의 배포가 실패했습니다. 확인이 필요합니다. 커밋: `${{ github.sha }}`'
