@@ -28,6 +28,6 @@ import { NotificationModule } from '@/notification/notification.module';
     EstimateRequestListener,
     EstimateRequestEventDispatcher,
   ],
-  exports: [EstimateRequestService, EstimateRequestEventDispatcher],
+  exports: [EstimateRequestService],
 })
 export class EstimateRequestModule {}

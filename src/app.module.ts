@@ -27,6 +27,8 @@ import { databaseValidationSchema } from './database/database.config';
 import { TestErrorController } from './common/utils/test-error.controller';
 import { AppController } from './app.controller';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ScheduleModule } from '@nestjs/schedule';
+import { EstimateReminderModule } from './scheduler/modules/estimate-reminder.module';
 
 const appValidationSchema = Joi.object({
   // 애플리케이션 실행 환경 설정 ('dev' 또는 'prod'만 허용)
@@ -49,7 +51,10 @@ const appValidationSchema = Joi.object({
       isGlobal: true,
       validationSchema: appValidationSchema,
     }),
+    //알림 관련 모듈
+    ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),
+    EstimateReminderModule,
     // 핵심 모듈
     DatabaseModule,
     AuthModule,
