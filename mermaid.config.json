@@ -1,0 +1,20 @@
+{
+  "theme": "default",
+  "width": 1920,
+  "height": 1080,
+  "backgroundColor": "white",
+  "configFile": "./mermaid.config.json",
+  "cssFile": null,
+  "scale": 1,
+  "format": "svg",
+  "outputDir": "./docs",
+  "quiet": false,
+  "themeVariables": {
+    "primaryColor": "#ff6b6b",
+    "primaryTextColor": "#fff",
+    "primaryBorderColor": "#ff4757",
+    "lineColor": "#5f27cd",
+    "secondaryColor": "#54a0ff",
+    "tertiaryColor": "#2e86de"
+  }
+}
