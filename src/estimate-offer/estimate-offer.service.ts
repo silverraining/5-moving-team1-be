@@ -144,12 +144,7 @@ export class EstimateOfferService {
       throw new BadRequestException('이미 처리된 견적 요청입니다.');
     }
 
-    // 5. 요청 상태 업데이트
-    request.status = RequestStatus.REJECTED;
-
-    await this.requestRepository.save(request);
-
-    // 6. 견적 제안 생성 (거절 사유 포함)
+    // 5. 견적 제안 생성 (거절 사유 포함)
     const estimateOffer = this.offerRepository.create({
       estimateRequestId: estimateRequestId,
       moverId: mover.id,
