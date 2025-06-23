@@ -4,9 +4,23 @@ import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as session from 'express-session';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // express-session 미들웨어 추가 (OAuth state 파라미터 지원)
+  app.use(
+    session({
+      secret: process.env.SESSION_SECRET || 'your-secret-key',
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: process.env.NODE_ENV === 'production', // HTTPS에서만 쿠키 전송
+        maxAge: 24 * 60 * 60 * 1000, // 24시간
+      },
+    }),
+  );
 
   app.enableCors({
     origin: process.env.CORS_ORIGIN || 'http://localhost:3000', // 프론트엔드 주소

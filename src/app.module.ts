@@ -41,9 +41,11 @@ const appValidationSchema = Joi.object({
   ACCESS_TOKEN_SECRET: Joi.string().required(),
   REFRESH_TOKEN_SECRET: Joi.string().required(),
 
-  // 소셜 로그인 관련 환경 변수
-  // NAVER_CLIENT_ID: Joi.string().required(),
-  // NAVER_CLIENT_SECRET: Joi.string().required(),
+  // CORS Origin
+  CORS_ORIGIN: Joi.string().uri().required(),
+
+  // API Base URL (콜백 URL용)
+  API_BASE_URL: Joi.string().uri().required(),
 }).concat(databaseValidationSchema);
 @Module({
   imports: [
