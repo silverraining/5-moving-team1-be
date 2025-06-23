@@ -9,6 +9,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { LocalStrategy } from './strategy/local.strategy';
 import { GoogleStrategy } from './strategy/google.strategy';
 import { PassportModule } from '@nestjs/passport';
+import { KakaoStrategy } from './strategy/kakao.strategy';
 import { UserModule } from '@/user/user.module';
 import { SocialConfigModule } from './social-config.module';
 
@@ -28,7 +29,7 @@ import { SocialConfigModule } from './social-config.module';
     SocialConfigModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, GoogleStrategy],
+  providers: [AuthService, LocalStrategy, GoogleStrategy, KakaoStrategy],
   exports: [AuthService, PassportModule, JwtModule],
 })
 export class AuthModule {}
