@@ -7,6 +7,8 @@ const socialValidationSchema = Joi.object({
   GOOGLE_CLIENT_SECRET: Joi.string().required(),
   NAVER_CLIENT_ID: Joi.string().required(),
   NAVER_CLIENT_SECRET: Joi.string().required(),
+  KAKAO_CLIENT_ID: Joi.string().required(),
+  KAKAO_CLIENT_SECRET: Joi.string().required(),
 });
 
 @Module({
