@@ -348,15 +348,22 @@ export class AuthService {
       name: string;
       picture?: string;
       provider: string;
+      providerId?: string;
+      phone?: string;
     },
     role?: Role,
   ) {
-    // 기존 사용자 조회
+    // 기존 사용자 조회 - providerId가 있으면 우선적으로 사용, 없으면 email로 조회
     let user = await this.userRepository.findOne({
-      where: {
-        email: socialUser.email,
-        provider: socialUser.provider as Provider,
-      },
+      where: socialUser.providerId
+        ? {
+            providerId: socialUser.providerId,
+            provider: socialUser.provider as Provider,
+          }
+        : {
+            email: socialUser.email,
+            provider: socialUser.provider as Provider,
+          },
       relations: ['customerProfile', 'moverProfile'],
     });
 
@@ -368,9 +375,10 @@ export class AuthService {
       const newUser = await this.userRepository.save({
         email: socialUser.email,
         name: displayName,
+        phone: socialUser.phone,
         provider: socialUser.provider as Provider,
         role: role || Role.CUSTOMER, // 전달받은 역할 사용, 없으면 기본값 CUSTOMER
-        providerId: socialUser.email, // Google의 경우 email을 providerId로 사용
+        providerId: socialUser.providerId || socialUser.email, // 각 제공자의 고유 ID 사용, Google의 경우 email을 providerId로 사용
       });
 
       // 새로 생성된 사용자 조회
@@ -445,6 +453,8 @@ export class AuthService {
       name: string;
       picture?: string;
       provider: string;
+      providerId?: string;
+      phone?: string;
     },
     role: Role,
   ) {

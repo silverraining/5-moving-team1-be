@@ -63,6 +63,8 @@ export class SnSAuthGuard implements CanActivate {
         return AuthGuard('google');
       case 'kakao':
         return AuthGuard('kakao');
+      case 'naver':
+        return AuthGuard('naver');
       default:
         throw new BadRequestException(
           `지원하지 않는 소셜 로그인입니다! : ${social}`,
