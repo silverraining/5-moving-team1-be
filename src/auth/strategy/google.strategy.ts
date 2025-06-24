@@ -31,6 +31,8 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       name: profile.displayName,
       picture: profile.photos?.[0]?.value,
       provider: Provider.GOOGLE,
+      providerId: profile.id,
+      phone: null, // 구글에서는 phone 정보를 기본적으로 제공하지 않음
     };
   }
 }
