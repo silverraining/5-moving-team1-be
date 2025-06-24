@@ -29,6 +29,10 @@ const naverClientSecret = 'NAVER_CLIENT_SECRET';
 const googleClientId = 'GOOGLE_CLIENT_ID';
 const googleClientSecret = 'GOOGLE_CLIENT_SECRET';
 
+// kakao 관련 키 추가
+const kakaoClientId = 'KAKAO_CLIENT_ID';
+const kakaoClientSecret = 'KAKAO_CLIENT_SECRET';
+
 export const envVariableKeys = {
   env,
   dbType,
@@ -54,4 +58,6 @@ export const envVariableKeys = {
   naverClientSecret,
   googleClientId,
   googleClientSecret,
+  kakaoClientId,
+  kakaoClientSecret,
 };

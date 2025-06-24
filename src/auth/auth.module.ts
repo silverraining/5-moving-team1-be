@@ -8,7 +8,9 @@ import { EstimateRequest } from 'src/estimate-request/entities/estimate-request.
 import { JwtModule } from '@nestjs/jwt';
 import { LocalStrategy } from './strategy/local.strategy';
 import { GoogleStrategy } from './strategy/google.strategy';
+import { NaverStrategy } from './strategy/naver.strategy';
 import { PassportModule } from '@nestjs/passport';
+import { KakaoStrategy } from './strategy/kakao.strategy';
 import { UserModule } from '@/user/user.module';
 import { SocialConfigModule } from './social-config.module';
 
@@ -28,7 +30,13 @@ import { SocialConfigModule } from './social-config.module';
     SocialConfigModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, GoogleStrategy],
+  providers: [
+    AuthService,
+    LocalStrategy,
+    GoogleStrategy,
+    NaverStrategy,
+    KakaoStrategy,
+  ],
   exports: [AuthService, PassportModule, JwtModule],
 })
 export class AuthModule {}
