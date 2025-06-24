@@ -72,13 +72,13 @@ export class AuthController {
   @Get('login/:social')
   @UseGuards(SnSAuthGuard)
   @ApiSocialLogin()
-  async redirectToSocialLogin(@Param('social') social: string) {
+  redirectToSocialLogin(@Param('social') _social: string) {
     // 실제 리디렉션은 passport가 처리
   }
 
   @Public()
   @Get('login/:social/role/:role')
-  async setRoleAndRedirect(
+  setRoleAndRedirect(
     @Param('social') social: string,
     @Param('role') role: string,
     @Req() req: ExpressRequest,
@@ -102,10 +102,8 @@ export class AuthController {
     const sessionRole = req.session['oauthRole']; // 세션에서 역할 정보 가져오기
 
     // 역할 결정 (세션에서 역할 정보 확인)
-    let role: Role = Role.CUSTOMER; // 기본값
-    if (sessionRole === 'mover') {
-      role = Role.MOVER;
-    }
+    const isMover = sessionRole === 'mover';
+    const role = isMover ? Role.MOVER : Role.CUSTOMER;
 
     // 세션에서 역할 정보 삭제
     delete req.session['oauthRole'];

@@ -30,8 +30,10 @@ export class NaverStrategy extends PassportStrategy(Strategy, 'naver') {
     });
   }
 
-  async validate(accessToken: string, refreshToken: string, profile: Profile) {
+  validate(_AT: unknown, _RT: unknown, profile: Profile) {
+    console.log('Naver profile:', profile);
     const naverProfile = profile._json as NaverProfile;
+    console.log('naverProfile: ', naverProfile);
 
     return {
       email: naverProfile.email,
