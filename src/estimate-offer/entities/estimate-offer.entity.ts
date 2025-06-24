@@ -18,6 +18,7 @@ export enum OfferStatus {
   CANCELED = 'CANCELED', // 고객이 다른 기사 선택 → 자동 취소
   COMPLETED = 'COMPLETED',
   REJECTED = 'REJECTED',
+  EXPIRED = 'EXPIRED', // 견적 요청 만료 → 자동 취소
 }
 
 @Entity()
