@@ -16,6 +16,11 @@ export class ResponseTimeInterceptor implements NestInterceptor {
     const request = context.switchToHttp().getRequest();
     const requestTime = Date.now();
 
+    // SSE 경로 제외하기
+    if (request.url === '/api/notifications/stream') {
+      return next.handle();
+    }
+
     return next.handle().pipe(
       tap(() => {
         const responseTime = Date.now();

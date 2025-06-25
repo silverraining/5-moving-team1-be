@@ -25,6 +25,10 @@ import { OrderField } from '@/common/validator/order.validator';
 import { GenericPaginatedDto } from '@/common/dto/paginated-response.dto';
 import { CreatedAtCursorPaginationDto } from '../common/dto/created-at-pagination.dto';
 import { CustomerProfile } from '@/customer-profile/entities/customer-profile.entity';
+import {
+  NewEstimateOfferEventDispatcher,
+  OfferConfirmEventDispatcher,
+} from '@/notification/events/dispatcher';
 
 @Injectable()
 export class EstimateOfferService {
@@ -38,6 +42,8 @@ export class EstimateOfferService {
     @InjectRepository(MoverProfile)
     private readonly moverRepository: Repository<MoverProfile>,
     private readonly dataSource: DataSource,
+    private readonly newOfferDispatcher: NewEstimateOfferEventDispatcher,
+    private readonly offerConfirmDispatcher: OfferConfirmEventDispatcher,
   ) {}
 
   /**
@@ -97,7 +103,8 @@ export class EstimateOfferService {
       isTargeted,
       isConfirmed: false,
     });
-
+    //모든 로직이 종료된 후 이벤트 리스너 동작
+    this.newOfferDispatcher.targetMoverAssigned(estimateOffer.id, mover.id);
     await this.offerRepository.save(estimateOffer);
   }
 
@@ -137,12 +144,7 @@ export class EstimateOfferService {
       throw new BadRequestException('이미 처리된 견적 요청입니다.');
     }
 
-    // 5. 요청 상태 업데이트
-    request.status = RequestStatus.REJECTED;
-
-    await this.requestRepository.save(request);
-
-    // 6. 견적 제안 생성 (거절 사유 포함)
+    // 5. 견적 제안 생성 (거절 사유 포함)
     const estimateOffer = this.offerRepository.create({
       estimateRequestId: estimateRequestId,
       moverId: mover.id,
@@ -177,6 +179,7 @@ export class EstimateOfferService {
       .createQueryBuilder('offer')
       .leftJoinAndSelect('offer.mover', 'mover')
       .leftJoinAndSelect('mover.likedCustomers', 'likedCustomers')
+      .leftJoinAndSelect('likedCustomers.customer', 'likedCustomer')
       .leftJoinAndSelect('offer.estimateRequest', 'estimateRequest')
       .where('offer.estimateRequestId = :requestId', {
         requestId: estimateRequestId,
@@ -222,9 +225,16 @@ export class EstimateOfferService {
 
     const moverViewMap = new Map(moverViews.map((view) => [view.id, view]));
 
+    // CustomerProfile 조회
+    const customerProfileId = (
+      await this.customerProfileRepository.findOne({
+        where: { user: { id: userId } },
+      })
+    )?.id;
+
     const items = sliced.map((offer) => {
       const isLiked = offer.mover.likedCustomers?.some(
-        (like) => like.customer?.id === userId,
+        (like) => like.customer?.id === customerProfileId,
       );
       const view = moverViewMap.get(offer.moverId);
 
@@ -468,6 +478,9 @@ export class EstimateOfferService {
     request.status = RequestStatus.CONFIRMED;
     request.confirmedOfferId = offer.id;
     await manager.save(request);
+
+    //모든 로직이 종료된 후 이벤트 리스너 동작
+    this.offerConfirmDispatcher.targetMoverAssigned(offer.id, offer.moverId);
 
     // 6. 성공 메시지
     return {

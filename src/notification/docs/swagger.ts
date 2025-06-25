@@ -41,3 +41,17 @@ export const ApiGetNotifications = () =>
       type: [Notification],
     }),
   );
+class PatchNotificationsReadResponse {
+  message: string;
+}
+
+export const ApiPatchNotificationsRead = () =>
+  applyDecorators(
+    ApiBearerAuth(),
+    ApiOperation({ summary: '알림 읽음 처리' }),
+    ApiResponse({
+      status: 200,
+      description: '알림 읽음 처리 성공',
+      type: PatchNotificationsReadResponse,
+    }),
+  );

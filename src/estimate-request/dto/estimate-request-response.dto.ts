@@ -47,6 +47,11 @@ export class EstimateRequestResponseDto {
     dto.offerCount = offers.length;
     dto.isTargeted = isTargeted ?? false;
 
+    // customer.user.name 설정
+    if (request.customer?.user?.name) {
+      dto.customerName = request.customer.user.name;
+    }
+
     if (options?.includeAddress) {
       dto.fromAddress = AddressDto.from(request.fromAddress);
       dto.toAddress = AddressDto.from(request.toAddress);
