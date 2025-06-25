@@ -30,7 +30,7 @@ jobs:
           version: latest
 
       - name: 의존성 설치
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       # - name: 린트 검사
       #   run: pnpm lint
