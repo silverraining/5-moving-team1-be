@@ -123,7 +123,7 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
         with:
-          args: '✅ **배포 성공!** `${{ github.repository }}`의 새 버전이 프로덕션에 배포되었습니다. 커밋: `${{ github.sha }}`'
+          args: '**MOVING 배포 성공! ✅ ** `${{ github.repository }}`의 새 버전이 AWS EC2에 배포되었습니다. 🥳 커밋: `${{ github.sha }}`'
 
       - name: Discord 배포 실패 알림
         if: failure()
@@ -131,4 +131,4 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
         with:
-          args: '❌ **배포 실패!** `${{ github.repository }}`의 배포가 실패했습니다. 확인이 필요합니다. 커밋: `${{ github.sha }}`'
+          args: '**MOVING 배포 실패! ❌ ** `${{ github.repository }}`의 AWS EC2 배포가 실패했습니다. 😭 확인이 필요합니다 -> 커밋: `${{ github.sha }}`'
