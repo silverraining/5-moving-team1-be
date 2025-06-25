@@ -1,4 +1,4 @@
-# 📦 무빙 (Moving)
+# 📦 무빙 (Moving) - Backend
 
 이사 전문가 매칭 서비스 무빙의 백엔드 API 서버입니다. NestJS 프레임워크를 기반으로 개발되었으며, 고객과 이사 기사를 연결하는 플랫폼 서비스를 제공합니다.
 
@@ -63,26 +63,19 @@ src/
 
 **기사님 견적 관리 관련 CRUD 담당**
 
-#### 구현된 API
-
 - `POST /api/s3/presigned-url` - S3 Presigned URL 요청
 - `GET /api/estimate-offer/:offers` - 견적 제안 목록 조회
 - `GET /api/estimate-offer/:offerId` - 견적 제안 상세 조회
 - `GET /api/estimate-offer/rejected-offers` - 반려한 견적 목록 조회
 - `POST /api/estimate-offer/:requestId` - 견적 보내기
 - `PATCH /api/estimate-offer/:requestId/rejected` - 견적 반려하기
+- AWS 배포 및 Github Actions CI/CD 파이프라인 구현
 
 ### 최은비
 
-#### 구현된 API
-
 ### 민지영
 
-#### 구현된 API
-
 ### 김조순
-
-#### 구현된 API
 
 ## 주요 기능
 
