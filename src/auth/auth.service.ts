@@ -23,6 +23,7 @@ import {
   EstimateRequest,
   RequestStatus,
 } from 'src/estimate-request/entities/estimate-request.entity';
+import { SocialUser } from './types/social-user.type';
 
 @Injectable()
 export class AuthService {
@@ -342,50 +343,82 @@ export class AuthService {
    * @param role - 사용자 역할 (CUSTOMER 또는 MOVER)
    * @returns 로그인 결과 (토큰 및 사용자 정보)
    */
-  async loginOrSignup(
-    socialUser: {
-      email: string;
-      name: string;
-      picture?: string;
-      provider: string;
-      providerId?: string;
-      phone?: string;
-    },
-    role?: Role,
-  ) {
-    // 기존 사용자 조회 - providerId가 있으면 우선적으로 사용, 없으면 email로 조회
+  async loginOrSignup(socialUser: SocialUser, role?: Role) {
+    // 기존 사용자 조회 - 여러 조건으로 확인
     let user = await this.userRepository.findOne({
-      where: socialUser.providerId
-        ? {
-            providerId: socialUser.providerId,
-            provider: socialUser.provider as Provider,
-          }
-        : {
-            email: socialUser.email,
-            provider: socialUser.provider as Provider,
-          },
+      where: [
+        // 1. providerId와 provider로 조회 (정확한 소셜 계정 매칭)
+        ...(socialUser.providerId
+          ? [
+              {
+                providerId: socialUser.providerId,
+                provider: socialUser.provider,
+              },
+            ]
+          : []),
+        // 2. email과 provider로 조회 (같은 제공자에서 이메일 기반 매칭)
+        {
+          email: socialUser.email,
+          provider: socialUser.provider,
+        },
+      ],
       relations: ['customerProfile', 'moverProfile'],
     });
 
     // 새 사용자인 경우 회원가입 처리
     if (!user) {
+      // 혹시 같은 이메일로 다른 제공자로 가입한 사용자가 있는지 확인
+      const existingUserWithEmail = await this.userRepository.findOne({
+        where: { email: socialUser.email },
+      });
+
+      if (existingUserWithEmail) {
+        throw new BadRequestException(
+          `이미 ${existingUserWithEmail.provider}로 가입된 이메일입니다. ${existingUserWithEmail.provider} 로그인을 이용해주세요.`,
+        );
+      }
+
       // 소셜에서 받은 이름이 있으면 사용, 없으면 이메일의 @ 앞부분을 이름으로 사용
       const displayName = socialUser.name || socialUser.email.split('@')[0];
 
-      const newUser = await this.userRepository.save({
-        email: socialUser.email,
-        name: displayName,
-        phone: socialUser.phone,
-        provider: socialUser.provider as Provider,
-        role: role || Role.CUSTOMER, // 전달받은 역할 사용, 없으면 기본값 CUSTOMER
-        providerId: socialUser.providerId || socialUser.email, // 각 제공자의 고유 ID 사용, Google의 경우 email을 providerId로 사용
-      });
+      try {
+        const newUser = await this.userRepository.save({
+          email: socialUser.email,
+          name: displayName,
+          phone: socialUser.phone,
+          provider: socialUser.provider,
+          role: role || Role.CUSTOMER, // 전달받은 역할 사용, 없으면 기본값 CUSTOMER
+          providerId: socialUser.providerId || socialUser.email, // 각 제공자의 고유 ID 사용, Google의 경우 email을 providerId로 사용
+        });
 
-      // 새로 생성된 사용자 조회
-      user = await this.userRepository.findOne({
-        where: { id: newUser.id },
-        relations: ['customerProfile', 'moverProfile'],
-      });
+        // 새로 생성된 사용자 조회
+        user = await this.userRepository.findOne({
+          where: { id: newUser.id },
+          relations: ['customerProfile', 'moverProfile'],
+        });
+      } catch (error) {
+        // 중복 키 에러가 발생한 경우, 다시 한번 사용자를 조회해서 반환
+        if (
+          error.code === '23505' &&
+          error.constraint === 'IDX_UQ_USER_PROVIDER_EMAIL'
+        ) {
+          user = await this.userRepository.findOne({
+            where: {
+              email: socialUser.email,
+              provider: socialUser.provider,
+            },
+            relations: ['customerProfile', 'moverProfile'],
+          });
+
+          if (!user) {
+            throw new InternalServerErrorException(
+              '사용자 조회 중 오류가 발생했습니다.',
+            );
+          }
+        } else {
+          throw error;
+        }
+      }
     }
 
     // JWT payload 생성
@@ -447,17 +480,7 @@ export class AuthService {
    * @param role - 사용자 역할
    * @returns 리디렉션 URL과 사용자 정보
    */
-  async handleSocialCallback(
-    socialUser: {
-      email: string;
-      name: string;
-      picture?: string;
-      provider: string;
-      providerId?: string;
-      phone?: string;
-    },
-    role: Role,
-  ) {
+  async handleSocialCallback(socialUser: SocialUser, role: Role) {
     const loginResult = await this.loginOrSignup(socialUser, role);
 
     // 사용자 정보 객체 생성
