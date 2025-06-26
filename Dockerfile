@@ -26,7 +26,6 @@ RUN pnpm build
 # 환경변수 설정 (빌드 정보)
 ENV BUILD_TIME=${BUILD_TIME}
 ENV COMMIT_HASH=${COMMIT_HASH}
-ENV DEPLOY_TIME=""
 
 # 컨테이너 외부에서 접근 가능한 포트 설정
 EXPOSE 3000

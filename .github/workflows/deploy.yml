@@ -100,32 +100,25 @@ jobs:
             # 도커 로그인
             echo "${{ secrets.DOCKER_PASSWORD }}" | sudo docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-            # 현재 실행 중인 컨테이너 정보 확인
-            echo "=== 배포 전 현재 상태 ==="
-            sudo docker ps | grep 5-moving-app || echo "실행 중인 컨테이너 없음"
-            sudo docker images ${{ env.DOCKER_IMAGE }} | head -5 || echo "기존 이미지 없음"
+            # 기존 컨테이너 정리
+            echo "=== 기존 컨테이너 정리 ==="
+            sudo docker stop $(sudo docker ps -q --filter "name=5-moving-app") 2>/dev/null || true
+            sudo docker rm $(sudo docker ps -aq --filter "name=5-moving-app") 2>/dev/null || true
+            sudo docker ps --filter "publish=80" --filter "publish=3000" -q | xargs -r sudo docker stop 2>/dev/null || true
+            sudo docker ps -a --filter "publish=80" --filter "publish=3000" -q | xargs -r sudo docker rm 2>/dev/null || true
 
-            # 기존 컨테이너 중지 및 제거
-            sudo docker stop 5-moving-app || true
-            sudo docker rm 5-moving-app || true
-
-            # 기존 이미지 제거 (캐시 문제 방지)
-            echo "=== 기존 이미지 제거 ==="
+            # 기존 이미지 제거
+            echo "=== 기존 이미지 정리 ==="
             sudo docker rmi ${{ env.DOCKER_IMAGE }}:latest || true
 
-            # 새 이미지 강제 풀
+            # 새 이미지 다운로드
             echo "=== 새 이미지 다운로드 ==="
             sudo docker pull ${{ env.DOCKER_IMAGE }}:latest
-
-            # 이미지 정보 상세 확인
-            echo "=== 다운로드된 이미지 정보 ==="
-            sudo docker images ${{ env.DOCKER_IMAGE }}:latest
-            sudo docker inspect ${{ env.DOCKER_IMAGE }}:latest | grep Created | head -1
 
             # 새 컨테이너 실행
             echo "=== 새 컨테이너 실행 ==="
             sudo docker run -d \
-              -p 3000:3000 \
+              -p 80:3000 \
               --name 5-moving-app \
               --restart unless-stopped \
               --env-file /home/ec2-user/.env \
@@ -135,19 +128,16 @@ jobs:
             # 컨테이너 시작 대기
             sleep 10
 
-            # 배포 완료 후 상태 확인
-            echo "=== 배포 완료 후 상태 확인 ==="
-            echo "현재 시간: $(date)"
-            echo "커밋 해시: ${{ github.sha }}"
+            # 배포 상태 확인
+            echo "=== 배포 완료 ==="
+            echo "커밋: ${{ github.sha }}"
+            echo "배포 시간: $(date)"
             sudo docker ps | grep 5-moving-app
-            echo "=== 컨테이너 로그 (최근 30줄) ==="
-            sudo docker logs --tail 30 5-moving-app
-            echo "=== 애플리케이션 버전 정보 확인 ==="
-            curl -s http://localhost:3000/version || echo "버전 엔드포인트 응답 없음"
-            echo "=== 기본 헬스체크 ==="
-            curl -s http://localhost:3000/ || echo "헬스체크 응답 없음"
 
-            # 사용하지 않는 이미지 정리
+            # 애플리케이션 응답 확인
+            curl -s http://localhost/ > /dev/null && echo "✅ 서버 응답 정상" || echo "❌ 서버 응답 없음"
+
+            # 이미지 정리
             sudo docker image prune -f
 
       - name: Discord 배포 성공 알림
