@@ -17,7 +17,10 @@ import { OrderField } from '@/common/validator/order.validator';
     dataSource
       .createQueryBuilder()
       .select('mover.id', 'id')
-      .addSelect('COUNT(DISTINCT review.id)', OrderField.REVIEW_COUNT)
+      .addSelect(
+        'COUNT(DISTINCT review.estimateOfferId)',
+        OrderField.REVIEW_COUNT,
+      )
       .addSelect('COALESCE(AVG(review.rating), 0.0)', OrderField.AVERAGE_RATING)
       .addSelect(
         `COUNT(DISTINCT CASE WHEN estimate_offer.status = 'CONFIRMED' THEN estimate_offer.id ELSE NULL END)`,
