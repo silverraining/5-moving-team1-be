@@ -1,4 +1,3 @@
-// import { Review } from '@/review/entities/review.entity';
 import {
   DataSource,
   JoinColumn,
@@ -7,8 +6,6 @@ import {
   ViewEntity,
 } from 'typeorm';
 import { MoverProfile } from '../entities/mover-profile.entity';
-// import { EstimateOffer } from '@/estimate-offer/entities/estimate-offer.entity';
-// import { Like } from '@/like/entities/like.entity';
 import { OrderField } from '@/common/validator/order.validator';
 
 @ViewEntity({
