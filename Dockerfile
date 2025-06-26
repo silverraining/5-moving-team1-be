@@ -1,6 +1,10 @@
 # Node.js 베이스 이미지 사용
 FROM node:20-alpine
 
+# 빌드 인수 설정
+ARG BUILD_TIME
+ARG COMMIT_HASH
+
 # 작업 디렉토리 설정
 WORKDIR /app
 
@@ -18,6 +22,11 @@ COPY . .
 
 # 프로덕션용 빌드
 RUN pnpm build
+
+# 환경변수 설정 (빌드 정보)
+ENV BUILD_TIME=${BUILD_TIME}
+ENV COMMIT_HASH=${COMMIT_HASH}
+ENV DEPLOY_TIME=""
 
 # 컨테이너 외부에서 접근 가능한 포트 설정
 EXPOSE 3000
