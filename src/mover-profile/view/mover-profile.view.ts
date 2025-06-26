@@ -18,7 +18,7 @@ import { OrderField } from '@/common/validator/order.validator';
       .createQueryBuilder()
       .select('mover.id', 'id')
       .addSelect(
-        'COUNT(DISTINCT review.estimateOfferId)',
+        'COUNT(DISTINCT (review.estimate_offer_id, review.customer_id))',
         OrderField.REVIEW_COUNT,
       )
       .addSelect('COALESCE(AVG(review.rating), 0.0)', OrderField.AVERAGE_RATING)
