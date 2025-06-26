@@ -97,12 +97,19 @@ jobs:
             # 도커 로그인
             echo "${{ secrets.DOCKER_PASSWORD }}" | sudo docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-            # 새 이미지 풀
-            sudo docker pull ${{ env.DOCKER_IMAGE }}:latest
-
             # 기존 컨테이너 중지 및 제거
             sudo docker stop 5-moving-app || true
             sudo docker rm 5-moving-app || true
+
+            # 기존 이미지 제거 (캐시 문제 방지)
+            sudo docker rmi ${{ env.DOCKER_IMAGE }}:latest || true
+
+            # 새 이미지 강제 풀 (--pull always 옵션으로 항상 최신 버전 다운로드)
+            sudo docker pull ${{ env.DOCKER_IMAGE }}:latest
+
+            # 이미지 정보 확인 (디버깅용)
+            echo "=== 풀된 이미지 정보 ==="
+            sudo docker images ${{ env.DOCKER_IMAGE }}:latest
 
             # 새 컨테이너 실행
             sudo docker run -d \
@@ -111,11 +118,14 @@ jobs:
               --restart unless-stopped \
               ${{ env.DOCKER_IMAGE }}:latest
 
+            # 컨테이너 상태 및 로그 확인
+            echo "=== 컨테이너 상태 ==="
+            sudo docker ps | grep 5-moving-app
+            echo "=== 컨테이너 로그 (최근 20줄) ==="
+            sudo docker logs --tail 20 5-moving-app
+
             # 사용하지 않는 이미지 정리
             sudo docker image prune -f
-
-            # 컨테이너 상태 확인
-            sudo docker ps | grep 5-moving-app
 
       - name: Discord 배포 성공 알림
         if: success()
