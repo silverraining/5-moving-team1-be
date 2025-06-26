@@ -22,6 +22,15 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:e2e:verbose": "jest --config ./test/jest-e2e.json --verbose",
+    "test:e2e:watch": "jest --config ./test/jest-e2e.json --watch",
+    "test:e2e:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --config ./test/jest-e2e.json --runInBand",
+    "test:e2e:new-user": "jest --config ./test/jest-e2e.json test/new-user.e2e-spec.ts",
+    "test:e2e:new-user:verbose": "jest --config ./test/jest-e2e.json test/new-user.e2e-spec.ts --verbose",
+    "test:e2e:existing-user": "jest --config ./test/jest-e2e.json test/existing-user.e2e-spec.ts",
+    "test:e2e:existing-user:verbose": "jest --config ./test/jest-e2e.json test/existing-user.e2e-spec.ts --verbose",
+    "test:e2e:estimate-flow": "jest --config ./test/jest-e2e.json test/estimate-request-flow.e2e-spec.ts",
+    "test:e2e:estimate-flow:verbose": "jest --config ./test/jest-e2e.json test/estimate-request-flow.e2e-spec.ts --verbose",
     "seed": "ts-node -r tsconfig-paths/register src/seed/index.ts"
   },
   "dependencies": {
