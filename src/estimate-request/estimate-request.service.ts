@@ -441,4 +441,69 @@ export class EstimateRequestService {
       });
     });
   }
+  /**
+   * 견적 요청 취소
+   * @param requestId 견적 요청 ID
+   * @param userId 고객 ID
+   */
+  async cancelEstimateRequest(
+    requestId: string,
+    userId: string,
+  ): Promise<void> {
+    // 1. 고객 프로필 조회
+    const customerProfile = await this.customerProfileRepository.findOne({
+      where: { user: { id: userId } },
+    });
+
+    if (!customerProfile) {
+      throw new NotFoundException('고객 프로필을 찾을 수 없습니다.');
+    }
+
+    // 2. 견적 요청 조회
+    const request = await this.estimateRequestRepository.findOne({
+      where: { id: requestId },
+      relations: {
+        customer: true,
+        estimateOffers: true,
+      },
+    });
+
+    if (!request) {
+      throw new NotFoundException('견적 요청을 찾을 수 없습니다.');
+    }
+
+    // 3. 요청자 본인인지 확인
+    if (request.customer.id !== customerProfile.id) {
+      throw new ForbiddenException('견적 요청 취소 권한이 없습니다.');
+    }
+
+    // 4. 요청 상태 확인
+    if (request.status !== RequestStatus.PENDING) {
+      throw new BadRequestException(
+        '대기 중인 견적 요청만 취소할 수 있습니다.',
+      );
+    }
+
+    // 5. 견적 요청 상태를 CANCELED로 변경
+    request.status = RequestStatus.CANCELED;
+    await this.estimateRequestRepository.save(request);
+
+    // 6. 연관된 PENDING 상태의 견적 제안들도 모두 취소 처리
+    if (request.estimateOffers?.length > 0) {
+      const pendingOffers = request.estimateOffers.filter(
+        (offer) => offer.status === OfferStatus.PENDING,
+      );
+
+      if (pendingOffers.length > 0) {
+        await this.dataSource
+          .createQueryBuilder()
+          .update(EstimateOffer)
+          .set({ status: OfferStatus.CANCELED })
+          .where('id IN (:...ids)', {
+            ids: pendingOffers.map((offer) => offer.id),
+          })
+          .execute();
+      }
+    }
+  }
 }

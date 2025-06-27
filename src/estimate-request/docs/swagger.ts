@@ -254,3 +254,94 @@ export function ApiGetRequestListForMover() {
     ApiResponse({ status: 403, description: '기사 권한이 없는 사용자' }),
   );
 }
+
+export function ApiCancelEstimateRequest() {
+  return applyDecorators(
+    ApiOperation({
+      summary: '견적 요청 취소',
+      description: '고객이 자신의 PENDING 상태의 견적 요청을 취소합니다.',
+    }),
+    ApiParam({
+      name: 'requestId',
+      required: true,
+      description: '견적 요청 ID',
+      type: 'string',
+    }),
+    ApiResponse({
+      status: 200,
+      description: '견적 요청 취소 성공',
+      schema: {
+        type: 'object',
+        properties: {
+          message: {
+            type: 'string',
+            example: '견적 요청이 취소되었습니다.',
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 400,
+      description: '잘못된 요청',
+      schema: {
+        type: 'object',
+        properties: {
+          message: {
+            type: 'string',
+            example: '대기 중인 견적 요청만 취소할 수 있습니다.',
+          },
+          error: {
+            type: 'string',
+            example: 'Bad Request',
+          },
+          statusCode: {
+            type: 'number',
+            example: 400,
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 403,
+      description: '권한 없음',
+      schema: {
+        type: 'object',
+        properties: {
+          message: {
+            type: 'string',
+            example: '견적 요청 취소 권한이 없습니다.',
+          },
+          error: {
+            type: 'string',
+            example: 'Forbidden',
+          },
+          statusCode: {
+            type: 'number',
+            example: 403,
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 404,
+      description: '견적 요청을 찾을 수 없음',
+      schema: {
+        type: 'object',
+        properties: {
+          message: {
+            type: 'string',
+            example: '견적 요청을 찾을 수 없습니다.',
+          },
+          error: {
+            type: 'string',
+            example: 'Not Found',
+          },
+          statusCode: {
+            type: 'number',
+            example: 404,
+          },
+        },
+      },
+    }),
+  );
+}
