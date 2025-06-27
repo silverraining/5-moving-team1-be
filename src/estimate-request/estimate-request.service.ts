@@ -381,4 +381,50 @@ export class EstimateRequestService {
 
     return estimateRequest?.targetMoverIds ?? [];
   }
+
+  /**
+   * 고객의 pending 상태의 견적 요청 조회
+   * @param userId 고객 ID
+   * @returns EstimateRequestResponseDto[]
+   */
+  async findActiveEstimateRequests(
+    userId: string,
+  ): Promise<EstimateRequestResponseDto[]> {
+    const requests = await this.estimateRequestRepository.find({
+      where: {
+        customer: { user: { id: userId } },
+        status: RequestStatus.PENDING,
+      },
+      relations: {
+        customer: {
+          user: true,
+        },
+        estimateOffers: {
+          mover: true,
+        },
+      },
+    });
+
+    if (requests.length === 0) {
+      return [];
+    }
+
+    return requests.map((request) =>
+      EstimateRequestResponseDto.from(
+        request,
+        request.estimateOffers?.map((offer) =>
+          EstimateOfferResponseDto.from(offer, false, {
+            confirmedCount: 0,
+            averageRating: 0,
+            reviewCount: 0,
+            likeCount: 0,
+            includeFullAddress: true,
+          }),
+        ) || [],
+        {
+          includeAddress: true,
+        },
+      ),
+    );
+  }
 }

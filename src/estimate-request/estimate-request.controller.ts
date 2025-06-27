@@ -31,12 +31,14 @@ export class EstimateRequestController {
   constructor(
     private readonly estimateRequestService: EstimateRequestService,
   ) {}
-  //INFO: 개발용 해당 고객의 진행 중인 견적 요청 ID 조회 API
+  // 고객의 진행 중인 견적 요청 조회 API
   @Get('active')
   @ApiGetMyActiveEstimateRequest()
   @RBAC(Role.CUSTOMER)
-  async getMyActiveEstimateRequest(@UserInfo() user: UserInfo) {
-    return this.estimateRequestService.findActiveEstimateRequestIds(user.sub);
+  async getMyActiveEstimateRequest(
+    @UserInfo() user: UserInfo,
+  ): Promise<EstimateRequestResponseDto[]> {
+    return this.estimateRequestService.findActiveEstimateRequests(user.sub);
   }
 
   @Post()
