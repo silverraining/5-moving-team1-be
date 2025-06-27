@@ -506,4 +506,63 @@ export class EstimateRequestService {
       }
     }
   }
+
+  /**
+   * 이사 완료 처리
+   * @param requestId 견적 요청 ID
+   * @param userId 고객 ID
+   */
+  async completeEstimateRequest(
+    requestId: string,
+    userId: string,
+  ): Promise<void> {
+    // 1. 고객 프로필 조회
+    const customerProfile = await this.customerProfileRepository.findOne({
+      where: { user: { id: userId } },
+    });
+
+    if (!customerProfile) {
+      throw new NotFoundException('고객 프로필을 찾을 수 없습니다.');
+    }
+
+    // 2. 견적 요청 조회
+    const request = await this.estimateRequestRepository.findOne({
+      where: { id: requestId },
+      relations: {
+        customer: true,
+        estimateOffers: true,
+      },
+    });
+
+    if (!request) {
+      throw new NotFoundException('견적 요청을 찾을 수 없습니다.');
+    }
+
+    // 3. 요청자 본인인지 확인
+    if (request.customer.id !== customerProfile.id) {
+      throw new ForbiddenException('이사 완료 처리 권한이 없습니다.');
+    }
+
+    // 4. 요청 상태 확인
+    if (request.status !== RequestStatus.CONFIRMED) {
+      throw new BadRequestException(
+        '확정된 견적 요청만 완료 처리할 수 있습니다.',
+      );
+    }
+
+    // 5. 견적 요청 상태를 COMPLETED로 변경
+    request.status = RequestStatus.COMPLETED;
+
+    // 6. 확정된 견적 제안의 상태도 COMPLETED로 변경
+    const confirmedOffer = request.estimateOffers.find(
+      (offer) => offer.id === request.confirmedOfferId,
+    );
+
+    if (confirmedOffer) {
+      confirmedOffer.status = OfferStatus.COMPLETED;
+    }
+
+    // 7. 변경사항 저장
+    await this.estimateRequestRepository.save(request);
+  }
 }

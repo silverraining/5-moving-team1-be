@@ -345,3 +345,71 @@ export function ApiCancelEstimateRequest() {
     }),
   );
 }
+
+export function ApiCompleteEstimateRequest() {
+  return applyDecorators(
+    ApiOperation({
+      summary: '이사 완료 처리',
+      description:
+        '고객이 이사를 완료한 후, 견적 요청과 견적 제안의 상태를 CONFIRMED -> COMPLETED로 변경합니다.',
+    }),
+    ApiParam({
+      name: 'requestId',
+      required: true,
+      description: '견적 요청 ID',
+      type: 'string',
+    }),
+    ApiResponse({
+      status: 200,
+      description: '이사 완료 처리 성공',
+      schema: {
+        type: 'object',
+        properties: {
+          message: {
+            type: 'string',
+            example: '이사가 성공적으로 완료 처리되었습니다.',
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 400,
+      description: '잘못된 요청',
+      schema: {
+        type: 'object',
+        properties: {
+          message: {
+            type: 'string',
+            example: '확정된 견적 요청만 완료 처리할 수 있습니다.',
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 403,
+      description: '권한 없음',
+      schema: {
+        type: 'object',
+        properties: {
+          message: {
+            type: 'string',
+            example: '이사 완료 처리 권한이 없습니다.',
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 404,
+      description: '리소스를 찾을 수 없음',
+      schema: {
+        type: 'object',
+        properties: {
+          message: {
+            type: 'string',
+            example: '견적 요청을 찾을 수 없습니다.',
+          },
+        },
+      },
+    }),
+  );
+}
