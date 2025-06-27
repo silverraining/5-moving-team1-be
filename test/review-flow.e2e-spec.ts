@@ -8,6 +8,8 @@ import {
   getRandomAddress,
   generateRandomName,
   generateTestEmail,
+  generateReviewData,
+  generateRandomMoveType,
 } from './utils/test-helpers';
 import { DataSource } from 'typeorm';
 import { TEST_CONSTANTS } from './config/test.constants';
@@ -282,7 +284,7 @@ describe('Review Flow (e2e)', () => {
         .post('/estimate-request')
         .set('Authorization', `Bearer ${customerToken}`)
         .send({
-          moveType: 'HOME',
+          moveType: generateRandomMoveType(),
           moveDate: pastDate.toISOString().split('T')[0],
           fromAddress: {
             sido: fromAddress.sido,
@@ -397,10 +399,10 @@ describe('Review Flow (e2e)', () => {
         .set('Authorization', `Bearer ${customerToken}`)
         .expect(200);
 
-      console.log(
-        'Available reviews response:',
-        JSON.stringify(availableReviewsResponse.body, null, 2),
-      );
+      // console.log(
+      //   'Available reviews response:',
+      //   JSON.stringify(availableReviewsResponse.body, null, 2),
+      // );
       console.log('Looking for estimateOfferId:', estimateOfferId);
 
       // 4-2. 현재 견적이 작성 가능한 리뷰 목록에 있는지 확인
@@ -413,11 +415,7 @@ describe('Review Flow (e2e)', () => {
       expect(reviewableOffer).toBeTruthy();
 
       // 4-3. 리뷰 작성
-      const reviewData = {
-        rating: 5,
-        comment:
-          '매우 만족스러운 이사였습니다. 기사님이 친절하고 꼼꼼하게 작업해주셨어요.',
-      };
+      const reviewData = generateReviewData();
 
       const createReviewResponse = await request(app.getHttpServer())
         .post(`/review/${reviewableOffer.reviewableOfferId}`)
@@ -440,7 +438,7 @@ describe('Review Flow (e2e)', () => {
       const latestReview = getReviewResponse.body.reviews[0];
 
       expect(latestReview).toBeTruthy();
-      expect(latestReview.rating).toBe(5);
+      expect(latestReview.rating).toBe(reviewData.rating);
       expect(latestReview.comment).toBe(reviewData.comment);
 
       isReviewCreated = true;
