@@ -275,7 +275,7 @@ export function ApiCancelEstimateRequest() {
         properties: {
           message: {
             type: 'string',
-            example: '견적 요청이 취소되었습니다.',
+            example: '견적 요청이 성공적으로 취소되었습니다.',
           },
         },
       },
