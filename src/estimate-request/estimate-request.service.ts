@@ -38,6 +38,8 @@ export class EstimateRequestService {
     private readonly customerProfileRepository: Repository<CustomerProfile>,
     @InjectRepository(MoverProfile)
     private readonly moverProfileRepository: Repository<MoverProfile>,
+    @InjectRepository(EstimateOffer)
+    private readonly estimateOfferRepository: Repository<EstimateOffer>,
     private readonly dataSource: DataSource,
     //알림 생성부분
     private readonly dispatcher: EstimateRequestEventDispatcher,
@@ -554,15 +556,20 @@ export class EstimateRequestService {
     request.status = RequestStatus.COMPLETED;
 
     // 6. 확정된 견적 제안의 상태도 COMPLETED로 변경
-    const confirmedOffer = request.estimateOffers.find(
-      (offer) => offer.id === request.confirmedOfferId,
-    );
+    const confirmedOffer = await this.estimateOfferRepository.findOne({
+      where: { id: request.confirmedOfferId },
+    });
 
-    if (confirmedOffer) {
-      confirmedOffer.status = OfferStatus.COMPLETED;
+    if (!confirmedOffer) {
+      throw new NotFoundException('확정된 견적 제안을 찾을 수 없습니다.');
     }
 
-    // 7. 변경사항 저장
-    await this.estimateRequestRepository.save(request);
+    confirmedOffer.status = OfferStatus.COMPLETED;
+
+    // 7. 변경사항 저장 (트랜잭션으로 처리)
+    await this.dataSource.transaction(async (manager) => {
+      await manager.save(request);
+      await manager.save(confirmedOffer);
+    });
   }
 }
