@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThan, Repository } from 'typeorm';
 import {
@@ -24,6 +24,20 @@ export class EstimateStatusUpdateJob {
     private eventEmitter: EventEmitter2,
   ) {
     this.logger.log('EstimateStatusUpdateJob 초기화 완료');
+  }
+
+  private async expirePendingOffers(request: EstimateRequest) {
+    const pendingOffers = request.estimateOffers?.filter(
+      (offer) => offer.status === OfferStatus.PENDING,
+    );
+
+    for (const offer of pendingOffers || []) {
+      await this.estimateOfferRepo.update(offer.id, {
+        status: OfferStatus.EXPIRED,
+      });
+    }
+
+    return pendingOffers?.length || 0;
   }
 
   // 매일 자정에 실행
@@ -56,6 +70,8 @@ export class EstimateStatusUpdateJob {
         relations: ['customer', 'customer.user', 'estimateOffers'],
       });
 
+      let totalExpiredPendingOffers = 0;
+
       for (const request of confirmedRequests) {
         // 고객에게 이사 완료 확인 알림
         if (request.customer?.user) {
@@ -67,25 +83,18 @@ export class EstimateStatusUpdateJob {
           this.logger.log(`견적 요청 ${request.id}에 대한 완료 확인 알림 발송`);
 
           // 해당 요청의 (확정된 제안을 제외한) PENDING 상태 견적 제안들을 EXPIRED로 변경
-          const pendingOffers = request.estimateOffers?.filter(
-            (offer) => offer.status === OfferStatus.PENDING,
-          );
+          const expiredCount = await this.expirePendingOffers(request);
+          totalExpiredPendingOffers += expiredCount;
 
-          for (const offer of pendingOffers || []) {
-            await this.estimateOfferRepo.update(offer.id, {
-              status: OfferStatus.EXPIRED,
-            });
-          }
-
-          if (pendingOffers?.length > 0) {
+          if (expiredCount > 0) {
             this.logger.log(
-              `견적 요청 ${request.id}의 PENDING 상태 견적 제안 ${pendingOffers.length}개 → EXPIRED`,
+              `견적 요청 ${request.id}의 PENDING 상태 견적 제안 ${expiredCount}개 → EXPIRED`,
             );
           }
         }
       }
 
-      // 2. 이사날이 7일 지난 CONFIRMED 상태의 견적 요청 상태를 EXPIRED로 변경
+      // 2. 이사날이 7일 지난 CONFIRMED 상태의 견적 요청 상태를 COMPLETED로 변경
       const expiredConfirmedRequests = await this.estimateRequestRepo.find({
         where: {
           moveDate: LessThan(sevenDaysAgo),
@@ -95,20 +104,20 @@ export class EstimateStatusUpdateJob {
       });
 
       for (const request of expiredConfirmedRequests) {
-        // 견적 요청을 EXPIRED로 변경
+        // 견적 요청을 COMPLETED로 변경
         await this.estimateRequestRepo.update(request.id, {
-          status: RequestStatus.EXPIRED,
+          status: RequestStatus.COMPLETED,
         });
 
-        // 확정된 견적 제안도 EXPIRED로 변경
+        // 확정된 견적 제안도 COMPLETED로 변경
         if (request.confirmedOfferId) {
           await this.estimateOfferRepo.update(request.confirmedOfferId, {
-            status: OfferStatus.EXPIRED,
+            status: OfferStatus.COMPLETED,
           });
         }
 
         this.logger.log(
-          `이사일 7일 경과 고객 완료 미확인 견적 요청 ${request.id} → EXPIRED`,
+          `이사일 7일 경과 고객 완료 미확인 견적 요청 ${request.id} → COMPLETED`,
         );
       }
 
@@ -128,23 +137,16 @@ export class EstimateStatusUpdateJob {
         });
 
         // 해당 요청의 모든 PENDING 상태 견적 제안들을 EXPIRED로 변경
-        const pendingOffers = request.estimateOffers?.filter(
-          (offer) => offer.status === OfferStatus.PENDING,
-        );
-
-        for (const offer of pendingOffers || []) {
-          await this.estimateOfferRepo.update(offer.id, {
-            status: OfferStatus.EXPIRED,
-          });
-        }
+        const expiredCount = await this.expirePendingOffers(request);
+        totalExpiredPendingOffers += expiredCount;
 
         this.logger.log(
-          `견적 요청 ${request.id} → EXPIRED (관련 견적 제안 ${pendingOffers?.length || 0}개)`,
+          `견적 요청 ${request.id} → EXPIRED (관련 견적 제안 ${expiredCount}개)`,
         );
       }
 
       this.logger.log(
-        `✅ 스케줄러 실행 완료 - 완료확인알림: ${confirmedRequests.length}건, 7일경과만료: ${expiredConfirmedRequests.length}건, EXPIRED 견적 요청: ${pendingRequests.length}건`,
+        `✅ 스케줄러 실행 완료 - 완료알림: ${confirmedRequests.length}건, 7일경과완료처리: ${expiredConfirmedRequests.length}건, EXPIRED로 변경된 견적 요청: ${pendingRequests.length}건`,
       );
     } catch (error) {
       this.logger.error('견적 상태 업데이트 중 오류 발생:', error);
