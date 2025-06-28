@@ -25,3 +25,10 @@ export class NewReviewEvent {
     public readonly reveiwId: string,
   ) {}
 }
+
+export class MoveCompletionEvent {
+  constructor(
+    public readonly requestId: string,
+    public readonly customerId: string,
+  ) {}
+}

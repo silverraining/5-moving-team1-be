@@ -5,6 +5,7 @@ import {
   OfferComfirmUpdateEvent,
   TargetMoverUpdatedEvent,
   TargetOfferUpdateEvent,
+  MoveCompletionEvent,
 } from '../events/event';
 import { NotificationService } from 'src/notification/notification.service';
 import { NotificationType } from '../entities/notification.entity';
@@ -96,6 +97,27 @@ export class NewReviewListener {
       type: NotificationType.CREATE_REVIEW,
       message: `신규 리뷰가 있습니다.`,
       targetId: reveiwId,
+    });
+  }
+}
+
+/**
+ * 이사 완료 확인 알림
+ */
+@Injectable()
+export class MoveCompletionListener {
+  constructor(private readonly notificationService: NotificationService) {}
+
+  @OnEvent('move.completion-check')
+  async handleMoveCompletion(event: MoveCompletionEvent) {
+    const { requestId, customerId } = event;
+
+    // 알림 저장
+    await this.notificationService.create({
+      userId: customerId,
+      type: NotificationType.CREATE_REVIEW,
+      message: `이사를 완료하셨나요? 리뷰를 작성해보세요`,
+      targetId: requestId,
     });
   }
 }
