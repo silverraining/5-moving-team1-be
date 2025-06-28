@@ -29,8 +29,8 @@
     "test:e2e:new-user:verbose": "jest --config ./test/jest-e2e.json test/new-user.e2e-spec.ts --verbose",
     "test:e2e:existing-user": "jest --config ./test/jest-e2e.json test/existing-user.e2e-spec.ts",
     "test:e2e:existing-user:verbose": "jest --config ./test/jest-e2e.json test/existing-user.e2e-spec.ts --verbose",
-    "test:e2e:estimate-flow": "jest --config ./test/jest-e2e.json test/estimate-request-flow.e2e-spec.ts",
-    "test:e2e:estimate-flow:verbose": "jest --config ./test/jest-e2e.json test/estimate-request-flow.e2e-spec.ts --verbose",
+    "test:e2e:review-flow": "jest --config ./test/jest-e2e.json test/review-flow.e2e-spec.ts",
+    "test:e2e:review-flow:verbose": "jest --config ./test/jest-e2e.json test/review-flow.e2e-spec.ts --verbose",
     "seed": "ts-node -r tsconfig-paths/register src/seed/index.ts"
   },
   "dependencies": {
@@ -121,6 +121,9 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/$1"
+    }
   }
 }

@@ -53,7 +53,7 @@ export class EstimateOfferService {
     estimateRequestId: string,
     createEstimateOfferDto: CreateEstimateOfferDto,
     userId: string,
-  ): Promise<void> {
+  ): Promise<EstimateOffer> {
     // 1. 견적 요청 존재 여부 및 상태 확인
     const estimateRequest = await this.requestRepository.findOne({
       where: { id: estimateRequestId },
@@ -103,9 +103,10 @@ export class EstimateOfferService {
       isTargeted,
       isConfirmed: false,
     });
+
     //모든 로직이 종료된 후 이벤트 리스너 동작
     this.newOfferDispatcher.targetMoverAssigned(estimateOffer.id, mover.id);
-    await this.offerRepository.save(estimateOffer);
+    return await this.offerRepository.save(estimateOffer);
   }
 
   /**
@@ -480,7 +481,7 @@ export class EstimateOfferService {
     await manager.save(request);
 
     //모든 로직이 종료된 후 이벤트 리스너 동작
-    this.offerConfirmDispatcher.targetMoverAssigned(offer.id, offer.moverId);
+    this.offerConfirmDispatcher.targetMoverAssigned(offer.moverId, offer.id); //targetMoverAssigned에 맞게 순서 변경
 
     // 6. 성공 메시지
     return {
