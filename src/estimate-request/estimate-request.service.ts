@@ -21,7 +21,10 @@ import { MoverProfile } from '@/mover-profile/entities/mover-profile.entity';
 
 import { EstimateRequestPaginationDto } from './dto/estimate-request-pagination.dto';
 import { GenericPaginatedDto } from '@/common/dto/paginated-response.dto';
-import { EstimateOffer } from '@/estimate-offer/entities/estimate-offer.entity';
+import {
+  EstimateOffer,
+  OfferStatus,
+} from '@/estimate-offer/entities/estimate-offer.entity';
 import { CreatedAtCursorPaginationDto } from '@/common/dto/created-at-pagination.dto';
 import { EstimateRequestEventDispatcher } from '@/notification/events/dispatcher';
 
@@ -380,5 +383,62 @@ export class EstimateRequestService {
     });
 
     return estimateRequest?.targetMoverIds ?? [];
+  }
+
+  /**
+   * 고객의 pending 상태의 견적 요청 조회
+   * @param userId 고객 ID
+   * @returns EstimateRequestResponseDto[]
+   */
+  async findActiveEstimateRequests(
+    userId: string,
+  ): Promise<EstimateRequestResponseDto[]> {
+    const requests = await this.estimateRequestRepository.find({
+      where: {
+        customer: { user: { id: userId } },
+        status: RequestStatus.PENDING,
+      },
+      relations: {
+        customer: {
+          user: true,
+        },
+        estimateOffers: {
+          mover: true,
+          estimateRequest: true,
+        },
+      },
+    });
+
+    if (requests.length === 0) {
+      return [];
+    }
+
+    const allMoverIds = requests.flatMap((req) =>
+      req.estimateOffers.map((o) => o.moverId),
+    );
+
+    const moverViews = await this.dataSource
+      .getRepository(MoverProfileView)
+      .findBy({ id: In(allMoverIds) });
+
+    const moverViewMap = new Map(moverViews.map((v) => [v.id, v]));
+
+    return requests.map((request) => {
+      const offers =
+        request.estimateOffers?.map((offer) => {
+          const stats = moverViewMap.get(offer.moverId);
+          return EstimateOfferResponseDto.from(offer, false, {
+            confirmedCount: stats?.confirmed_estimate_count ?? 0,
+            averageRating: stats?.average_rating ?? 0,
+            reviewCount: stats?.review_count ?? 0,
+            likeCount: stats?.like_count ?? 0,
+            includeFullAddress: true,
+          });
+        }) || [];
+
+      return EstimateRequestResponseDto.from(request, offers, {
+        includeAddress: true,
+      });
+    });
   }
 }
