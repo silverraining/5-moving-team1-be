@@ -20,6 +20,7 @@ import {
   ApiGetMyEstimateHistory,
   ApiGetRequestListForMover,
   ApiCancelEstimateRequest,
+  ApiCompleteEstimateRequest,
 } from './docs/swagger';
 import { EstimateRequestPaginationDto } from './dto/estimate-request-pagination.dto';
 import { EstimateRequestResponseDto } from './dto/estimate-request-response.dto';
@@ -106,6 +107,20 @@ export class EstimateRequestController {
       user.sub,
     );
     return { message: '견적 요청이 성공적으로 취소되었습니다.' };
+  }
+
+  @Patch(':requestId/complete')
+  @RBAC(Role.CUSTOMER)
+  @ApiCompleteEstimateRequest()
+  async completeEstimateRequest(
+    @Param('requestId') requestId: string,
+    @UserInfo() user: UserInfo,
+  ) {
+    await this.estimateRequestService.completeEstimateRequest(
+      requestId,
+      user.sub,
+    );
+    return { message: '이사가 성공적으로 완료 처리되었습니다.' };
   }
 
   // @Delete(':id')
