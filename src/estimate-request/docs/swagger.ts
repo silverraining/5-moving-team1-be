@@ -125,40 +125,18 @@ export function ApiGetMyEstimateHistory() {
 export function ApiGetMyActiveEstimateRequest() {
   return applyDecorators(
     ApiOperation({
-      summary: '진행 중인 견적 요청 ID 조회',
-      description: 'PENDING 상태의 견적 요청 ID만 반환합니다.',
+      summary: '진행 중인 견적 요청 조회',
+      description: 'PENDING 상태의 견적 요청 정보를 반환합니다.',
     }),
+    ApiExtraModels(EstimateRequestResponseDto),
     ApiResponse({
       status: 200,
-      description: '진행 중인 견적 요청이 없을 경우 메시지를 반환합니다.',
-      schema: {
-        oneOf: [
-          {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                estimateRequestId: {
-                  type: 'string',
-                  example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
-                },
-              },
-            },
-          },
-          {
-            type: 'object',
-            properties: {
-              message: {
-                type: 'string',
-                example: '현재 진행중인 견적 요청이 없습니다.',
-              },
-            },
-          },
-        ],
-      },
+      description: '진행 중인 견적 요청 ',
+      type: [EstimateRequestResponseDto],
     }),
   );
 }
+
 export function ApiAddTargetMover() {
   return applyDecorators(
     ApiOperation({
@@ -274,5 +252,164 @@ export function ApiGetRequestListForMover() {
 
     ApiResponse({ status: 401, description: '인증되지 않은 사용자' }),
     ApiResponse({ status: 403, description: '기사 권한이 없는 사용자' }),
+  );
+}
+
+export function ApiCancelEstimateRequest() {
+  return applyDecorators(
+    ApiOperation({
+      summary: '견적 요청 취소',
+      description: '고객이 자신의 PENDING 상태의 견적 요청을 취소합니다.',
+    }),
+    ApiParam({
+      name: 'requestId',
+      required: true,
+      description: '견적 요청 ID',
+      type: 'string',
+    }),
+    ApiResponse({
+      status: 200,
+      description: '견적 요청 취소 성공',
+      schema: {
+        type: 'object',
+        properties: {
+          message: {
+            type: 'string',
+            example: '견적 요청이 성공적으로 취소되었습니다.',
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 400,
+      description: '잘못된 요청',
+      schema: {
+        type: 'object',
+        properties: {
+          message: {
+            type: 'string',
+            example: '대기 중인 견적 요청만 취소할 수 있습니다.',
+          },
+          error: {
+            type: 'string',
+            example: 'Bad Request',
+          },
+          statusCode: {
+            type: 'number',
+            example: 400,
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 403,
+      description: '권한 없음',
+      schema: {
+        type: 'object',
+        properties: {
+          message: {
+            type: 'string',
+            example: '견적 요청 취소 권한이 없습니다.',
+          },
+          error: {
+            type: 'string',
+            example: 'Forbidden',
+          },
+          statusCode: {
+            type: 'number',
+            example: 403,
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 404,
+      description: '견적 요청을 찾을 수 없음',
+      schema: {
+        type: 'object',
+        properties: {
+          message: {
+            type: 'string',
+            example: '견적 요청을 찾을 수 없습니다.',
+          },
+          error: {
+            type: 'string',
+            example: 'Not Found',
+          },
+          statusCode: {
+            type: 'number',
+            example: 404,
+          },
+        },
+      },
+    }),
+  );
+}
+
+export function ApiCompleteEstimateRequest() {
+  return applyDecorators(
+    ApiOperation({
+      summary: '이사 완료 처리',
+      description:
+        '고객이 이사를 완료한 후, 견적 요청과 견적 제안의 상태를 CONFIRMED -> COMPLETED로 변경합니다.',
+    }),
+    ApiParam({
+      name: 'requestId',
+      required: true,
+      description: '견적 요청 ID',
+      type: 'string',
+    }),
+    ApiResponse({
+      status: 200,
+      description: '이사 완료 처리 성공',
+      schema: {
+        type: 'object',
+        properties: {
+          message: {
+            type: 'string',
+            example: '이사가 성공적으로 완료 처리되었습니다.',
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 400,
+      description: '잘못된 요청',
+      schema: {
+        type: 'object',
+        properties: {
+          message: {
+            type: 'string',
+            example: '확정된 견적 요청만 완료 처리할 수 있습니다.',
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 403,
+      description: '권한 없음',
+      schema: {
+        type: 'object',
+        properties: {
+          message: {
+            type: 'string',
+            example: '이사 완료 처리 권한이 없습니다.',
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 404,
+      description: '리소스를 찾을 수 없음',
+      schema: {
+        type: 'object',
+        properties: {
+          message: {
+            type: 'string',
+            example: '견적 요청을 찾을 수 없습니다.',
+          },
+        },
+      },
+    }),
   );
 }

@@ -30,6 +30,8 @@ import { SnSAuthGuard } from './guard/sns.guard';
 import { UserService } from '@/user/user.service';
 import { SocialUser } from './types/social-user.type';
 import { Role } from '@/user/entities/user.entity';
+import { ConfigService } from '@nestjs/config';
+import { envVariableKeys } from '@/common/const/env.const';
 
 interface RequestWithUser extends ExpressRequest {
   user: SocialUser;
@@ -40,13 +42,52 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly userService: UserService,
+    private readonly configService: ConfigService,
   ) {}
 
   @Public()
   @Post('register')
   @applyDecorators(...ApiRegister())
-  registerLocal(@Body() createUserDto: CreateUserDto) {
-    return this.authService.register(createUserDto);
+  async registerLocal(
+    @Body() createUserDto: CreateUserDto,
+    @Res() res: Response,
+    @Req() req: ExpressRequest,
+  ) {
+    const result = await this.authService.register(createUserDto);
+
+    // 1. locale 추출 (쿼리, 헤더, 쿠키 등에서)
+    const supportedLocales = ['ko', 'en', 'zh'];
+    let locale =
+      req.query.locale ||
+      req.headers['x-locale'] ||
+      req.cookies?.i18next ||
+      'ko';
+
+    if (Array.isArray(locale)) locale = locale[0];
+    if (!supportedLocales.includes(locale)) locale = 'ko';
+
+    if (!result.success) {
+      const encodedMessage = encodeURIComponent(result.message);
+      const corsOrigin = this.configService.get<string>(
+        envVariableKeys.corsOrigin,
+      );
+
+      // role에 따라 경로 결정
+      let signupPath = '/auth/user/signup';
+      if (createUserDto.role === 'MOVER') {
+        signupPath = '/auth/mover/signup';
+      }
+
+      const redirectUrl = `${corsOrigin}/${locale}${signupPath}?error=${encodedMessage}&errorType=${result.errorType}`;
+      res.redirect(redirectUrl);
+      return;
+    }
+
+    res.status(201).json({
+      user: result.user,
+      tokens: result.tokens,
+    });
+    return;
   }
 
   /*소셜 로그인 사용자 이름 업데이트*/
@@ -98,14 +139,10 @@ export class AuthController {
     @Req() req: RequestWithUser,
     @Res() res: Response,
   ) {
-    const userFromSocial = req.user; // passport strategy의 validate()에서 return한 값
-    const sessionRole = req.session['oauthRole']; // 세션에서 역할 정보 가져오기
-
-    // 역할 결정 (세션에서 역할 정보 확인)
+    const userFromSocial = req.user;
+    const sessionRole = req.session['oauthRole'];
     const isMover = sessionRole === 'mover';
     const role = isMover ? Role.MOVER : Role.CUSTOMER;
-
-    // 세션에서 역할 정보 삭제
     delete req.session['oauthRole'];
 
     const result = await this.authService.handleSocialCallback(
@@ -113,7 +150,37 @@ export class AuthController {
       role,
     );
 
-    return res.redirect(result.redirectUrl);
+    // locale 추출
+    const supportedLocales = ['ko', 'en', 'zh'];
+    let locale =
+      req.query.locale ||
+      req.headers['x-locale'] ||
+      req.cookies?.i18next ||
+      'ko';
+    if (Array.isArray(locale)) locale = locale[0];
+    if (!supportedLocales.includes(locale)) locale = 'ko';
+
+    // 서비스에서 받은 URL 파싱
+    const url = new URL(result.redirectUrl);
+    const corsOrigin = url.origin;
+    const pathWithQuery = url.pathname + url.search;
+
+    // role에 따라 로그인 경로 결정
+    let loginPath = '/auth/user/login';
+    const userRole = result?.userInfo?.role || result?.error?.provider || role;
+    if (userRole === 'MOVER') {
+      loginPath = '/auth/mover/login';
+    }
+
+    // 에러 리다이렉트라면 경로 교체
+    let redirectUrl;
+    if (pathWithQuery.startsWith('/login')) {
+      redirectUrl = `${corsOrigin}/${locale}${loginPath}${url.search}`;
+    } else {
+      redirectUrl = `${corsOrigin}/${locale}${pathWithQuery}`;
+    }
+
+    return res.redirect(redirectUrl);
   }
 
   @Public()

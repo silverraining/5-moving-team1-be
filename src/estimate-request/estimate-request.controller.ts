@@ -19,6 +19,8 @@ import {
   ApiGetMyActiveEstimateRequest,
   ApiGetMyEstimateHistory,
   ApiGetRequestListForMover,
+  ApiCancelEstimateRequest,
+  ApiCompleteEstimateRequest,
 } from './docs/swagger';
 import { EstimateRequestPaginationDto } from './dto/estimate-request-pagination.dto';
 import { EstimateRequestResponseDto } from './dto/estimate-request-response.dto';
@@ -31,12 +33,14 @@ export class EstimateRequestController {
   constructor(
     private readonly estimateRequestService: EstimateRequestService,
   ) {}
-  //INFO: 개발용 해당 고객의 진행 중인 견적 요청 ID 조회 API
+  // 고객의 진행 중인 견적 요청 조회 API
   @Get('active')
   @ApiGetMyActiveEstimateRequest()
   @RBAC(Role.CUSTOMER)
-  async getMyActiveEstimateRequest(@UserInfo() user: UserInfo) {
-    return this.estimateRequestService.findActiveEstimateRequestIds(user.sub);
+  async getMyActiveEstimateRequest(
+    @UserInfo() user: UserInfo,
+  ): Promise<EstimateRequestResponseDto[]> {
+    return this.estimateRequestService.findActiveEstimateRequests(user.sub);
   }
 
   @Post()
@@ -89,6 +93,34 @@ export class EstimateRequestController {
       user.sub,
       pagination,
     );
+  }
+
+  @Patch(':requestId/cancel')
+  @RBAC(Role.CUSTOMER)
+  @ApiCancelEstimateRequest()
+  async cancelEstimateRequest(
+    @Param('requestId') requestId: string,
+    @UserInfo() user: UserInfo,
+  ) {
+    await this.estimateRequestService.cancelEstimateRequest(
+      requestId,
+      user.sub,
+    );
+    return { message: '견적 요청이 성공적으로 취소되었습니다.' };
+  }
+
+  @Patch(':requestId/complete')
+  @RBAC(Role.CUSTOMER)
+  @ApiCompleteEstimateRequest()
+  async completeEstimateRequest(
+    @Param('requestId') requestId: string,
+    @UserInfo() user: UserInfo,
+  ) {
+    await this.estimateRequestService.completeEstimateRequest(
+      requestId,
+      user.sub,
+    );
+    return { message: '이사가 성공적으로 완료 처리되었습니다.' };
   }
 
   // @Delete(':id')

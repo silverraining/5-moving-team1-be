@@ -83,7 +83,7 @@ export class EstimateOfferController {
     @Body() createEstimateOfferDto: CreateEstimateOfferDto,
     @UserInfo() userInfo: UserInfo,
   ) {
-    await this.estimateOfferService.create(
+    const offer = await this.estimateOfferService.create(
       requestId,
       createEstimateOfferDto,
       userInfo.sub,
@@ -91,6 +91,7 @@ export class EstimateOfferController {
 
     return {
       message: '견적 제안이 성공적으로 생성되었습니다.',
+      id: offer.id,
     };
   }
 

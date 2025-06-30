@@ -17,19 +17,19 @@ export class EstimateRequestResponseDto {
 
   isTargeted?: boolean;
   customerName?: string;
-  offerCount: number; //받은 offer 개수 (request랑 offer 응답에서 구분하기 쉽게 추가했는데 필요없으면 제거 가능)
-  estimateOffers?: EstimateOfferResponseDto[];
+  offerCount: number = 0; // 기본값 0으로 설정
+  estimateOffers?: EstimateOfferResponseDto[]; // 옵셔널로 변경
 
   /**
    * 정적 팩토리 메서드
    * @param request EstimateRequest 엔티티
-   * @param offers 연결된 제안 목록 DTO들
+   * @param offers 연결된 제안 목록 DTO들 (옵셔널)
    * @param options 주소 포함 여부 및 기타 옵션
    * @returns EstimateRequestResponseDto 인스턴스
    */
   static from(
     request: EstimateRequest,
-    offers: EstimateOfferResponseDto[] = [],
+    offers?: EstimateOfferResponseDto[],
     options?: {
       includeAddress?: boolean;
       includeMinimalAddress?: boolean;
@@ -43,8 +43,13 @@ export class EstimateRequestResponseDto {
     dto.createdAt = request.createdAt;
     dto.moveType = request.moveType;
     dto.moveDate = request.moveDate;
-    dto.estimateOffers = offers;
-    dto.offerCount = offers.length;
+
+    // offers가 존재하고 비어있지 않은 경우에만 할당
+    if (offers?.length) {
+      dto.estimateOffers = offers;
+      dto.offerCount = offers.length;
+    }
+
     dto.isTargeted = isTargeted ?? false;
 
     // customer.user.name 설정
