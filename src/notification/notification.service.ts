@@ -57,19 +57,7 @@ export class NotificationService {
         `해당 ID(${createDto.userId})를 가진 유저를 찾을 수 없습니다.`,
       );
     }
-    // 중복 여부 체크
-    const existing = await this.notificationRepo.findOne({
-      where: {
-        user: { id: user.id },
-        type: createDto.type,
-        message: createDto.message,
-        isRead: false, // 안읽은 알림 중 같은 알림이 있는 경우만 체크
-      },
-    });
 
-    if (existing) {
-      return { message: '이미 동일한 알림이 존재합니다.' };
-    }
     // 알림 생성
     const notification = this.notificationRepo.create({
       type: createDto.type,

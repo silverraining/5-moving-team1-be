@@ -10,10 +10,6 @@ import {
   NewEstimateOfferEventDispatcher,
   OfferConfirmEventDispatcher,
 } from '@/notification/events/dispatcher';
-import {
-  NewEstimateOfferListener,
-  OfferConfirmListener,
-} from '@/notification/listeners/listener';
 import { NotificationModule } from '@/notification/notification.module';
 
 @Module({
@@ -29,9 +25,7 @@ import { NotificationModule } from '@/notification/notification.module';
   controllers: [EstimateOfferController],
   providers: [
     EstimateOfferService,
-    //알림에서 사용 하는 dispatcher, listener 모듈
-    OfferConfirmListener,
-    NewEstimateOfferListener,
+    //알림에서 사용 하는 dispatcher만 등록 (listener는 NotificationModule에서 관리)
     OfferConfirmEventDispatcher,
     NewEstimateOfferEventDispatcher,
   ],

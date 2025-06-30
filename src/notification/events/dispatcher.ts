@@ -35,10 +35,10 @@ export class EstimateRequestEventDispatcher {
 export class NewEstimateOfferEventDispatcher {
   constructor(private readonly eventEmitter: EventEmitter2) {}
 
-  targetMoverAssigned(customerId: string, offerId: string) {
+  targetMoverAssigned(offerId: string, customerId: string) {
     this.eventEmitter.emit(
       'new-estimate-orffer.target-customer-updated',
-      new TargetOfferUpdateEvent(customerId, offerId),
+      new TargetOfferUpdateEvent(offerId, customerId),
     );
   }
 }

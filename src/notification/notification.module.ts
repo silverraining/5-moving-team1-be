@@ -6,6 +6,7 @@ import { NotificationService } from './notification.service';
 import { Notification } from './entities/notification.entity';
 import { MoverProfile } from '@/mover-profile/entities/mover-profile.entity';
 import { CustomerProfile } from '@/customer-profile/entities/customer-profile.entity';
+import { EstimateOffer } from '@/estimate-offer/entities/estimate-offer.entity';
 import {
   EstimateRequestListener,
   NewEstimateOfferListener,
@@ -21,6 +22,7 @@ import {
       User,
       MoverProfile,
       CustomerProfile,
+      EstimateOffer,
     ]),
   ],
   controllers: [NotificationController],
