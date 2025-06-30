@@ -61,14 +61,20 @@ export class AuthService {
   async register(createUserDto: CreateUserDto) {
     const { email, password, provider, ...userData } = createUserDto;
 
-    const user = await this.userRepository.findOne({
-      where: { email, provider },
+    // 1. 이메일 중복 확인
+    const existingUserWithEmail = await this.userRepository.findOne({
+      where: { email },
     });
-
-    if (user) {
-      throw new BadRequestException('이미 가입한 이메일 입니다!');
+    if (existingUserWithEmail) {
+      return {
+        success: false,
+        errorType: 'DUPLICATE_EMAIL',
+        message: `이미 ${existingUserWithEmail.provider}로 가입된 이메일입니다. \n${existingUserWithEmail.provider} 로그인을 이용해주세요.`,
+        provider: existingUserWithEmail.provider,
+      };
     }
 
+    // 2. 사용자 생성
     const HASH_ROUNDS = this.configService.get<number>('HASH_ROUNDS') ?? 10;
     const hashedPassword = password
       ? await bcrypt.hash(password, HASH_ROUNDS)
@@ -82,13 +88,33 @@ export class AuthService {
     });
 
     const newUser = await this.userRepository.findOneBy({ email, provider });
-    const { password: _, ...newUserData } = newUser; // password 제외한 사용자 정보
-
     if (!newUser) {
-      throw new InternalServerErrorException('회원가입에 실패했습니다.');
+      return {
+        success: false,
+        errorType: 'INTERNAL_ERROR',
+        message: '회원가입에 실패했습니다.',
+      };
     }
+    const { password: _, ...newUserData } = newUser;
 
-    return newUserData;
+    // 3. 토큰 발급
+    const payload: JwtPayload = {
+      sub: newUser.id,
+      role: newUser.role,
+      type: null,
+    };
+    const refreshToken = await this.issueToken(payload, true);
+    const accessToken = await this.issueToken(payload, false);
+    await this.saveRefreshToken(newUser.id, refreshToken);
+
+    return {
+      success: true,
+      user: newUserData,
+      tokens: {
+        accessToken,
+        refreshToken,
+      },
+    };
   }
 
   /**
@@ -480,32 +506,56 @@ export class AuthService {
    * @param role - 사용자 역할
    * @returns 리디렉션 URL과 사용자 정보
    */
+
   async handleSocialCallback(socialUser: SocialUser, role: Role) {
-    const loginResult = await this.loginOrSignup(socialUser, role);
+    try {
+      const loginResult = await this.loginOrSignup(socialUser, role);
 
-    // 사용자 정보 객체 생성
-    const userInfoObj = {
-      id: loginResult.user.id,
-      name: loginResult.user.name,
-      email: loginResult.user.email,
-      phone: loginResult.user.phone,
-      role: loginResult.user.role,
-      provider: loginResult.user.provider,
-      imageUrl: loginResult.user.imageUrl,
-      pendingEstimateRequestId: loginResult.user.pendingEstimateRequestId,
-    };
+      // 사용자 정보 객체 생성
+      const userInfoObj = {
+        id: loginResult.user.id,
+        name: loginResult.user.name,
+        email: loginResult.user.email,
+        phone: loginResult.user.phone,
+        role: loginResult.user.role,
+        provider: loginResult.user.provider,
+        imageUrl: loginResult.user.imageUrl,
+        pendingEstimateRequestId: loginResult.user.pendingEstimateRequestId,
+      };
 
-    const userInfo = encodeURIComponent(JSON.stringify(userInfoObj));
+      const userInfo = encodeURIComponent(JSON.stringify(userInfoObj));
 
-    // 프론트엔드 리디렉션 URL 생성 (CORS Origin = 프론트엔드 URL 환경변수)
-    const corsOrigin = this.configService.get<string>(
-      envVariableKeys.corsOrigin,
-    );
-    const frontendRedirectUrl = `${corsOrigin}/oauth?token=${loginResult.accessToken}&refreshToken=${loginResult.refreshToken}&userInfo=${userInfo}`;
+      // 프론트엔드 리디렉션 URL 생성
+      const corsOrigin = this.configService.get<string>(
+        envVariableKeys.corsOrigin,
+      );
+      const frontendRedirectUrl = `${corsOrigin}/oauth?token=${loginResult.accessToken}&refreshToken=${loginResult.refreshToken}&userInfo=${userInfo}`;
 
-    return {
-      redirectUrl: frontendRedirectUrl,
-      userInfo: userInfoObj,
-    };
+      return {
+        redirectUrl: frontendRedirectUrl,
+        userInfo: userInfoObj,
+      };
+    } catch (error) {
+      // 에러 발생 시 에러 정보와 함께 리다이렉트
+      const corsOrigin = this.configService.get<string>(
+        envVariableKeys.corsOrigin,
+      );
+
+      const errorInfo = {
+        type: 'DUPLICATE_EMAIL',
+        message: error.message,
+        provider: socialUser.provider,
+      };
+
+      const encodedError = encodeURIComponent(JSON.stringify(errorInfo));
+
+      // 에러가 있을 때는 /login 또는 /signup 페이지로 리다이렉트
+      const frontendRedirectUrl = `${corsOrigin}/login?error=${encodedError}`;
+
+      return {
+        redirectUrl: frontendRedirectUrl,
+        error: errorInfo,
+      };
+    }
   }
 }
