@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThan, Repository } from 'typeorm';
 import {
@@ -10,9 +10,7 @@ import {
   EstimateOffer,
   OfferStatus,
 } from '@/estimate-offer/entities/estimate-offer.entity';
-import { NotificationService } from '@/notification/notification.service';
-import { NotificationType } from '@/notification/entities/notification.entity';
-import { CreateNotificationDto } from '@/notification/dto/create-notification.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class EstimateStatusUpdateJob {
@@ -23,9 +21,23 @@ export class EstimateStatusUpdateJob {
     private estimateRequestRepo: Repository<EstimateRequest>,
     @InjectRepository(EstimateOffer)
     private estimateOfferRepo: Repository<EstimateOffer>,
-    private notificationService: NotificationService,
+    private eventEmitter: EventEmitter2,
   ) {
     this.logger.log('EstimateStatusUpdateJob 초기화 완료');
+  }
+
+  private async expirePendingOffers(request: EstimateRequest) {
+    const pendingOffers = request.estimateOffers?.filter(
+      (offer) => offer.status === OfferStatus.PENDING,
+    );
+
+    for (const offer of pendingOffers || []) {
+      await this.estimateOfferRepo.update(offer.id, {
+        status: OfferStatus.EXPIRED,
+      });
+    }
+
+    return pendingOffers?.length || 0;
   }
 
   // 매일 자정에 실행
@@ -44,17 +56,54 @@ export class EstimateStatusUpdateJob {
       kstTime.getDate(),
     );
 
+    // 7일 전 날짜 (이사일 7일 지나도 고객이 완료 처리 안할경우 자동 처리용)
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
     try {
-      // 1. 이사날이 지난 CONFIRMED 상태의 견적 요청들을 COMPLETED로 변경
+      // 1. 이사날이 지난 CONFIRMED 상태의 견적 요청들에 대해 완료 확인 알림 발송
       const confirmedRequests = await this.estimateRequestRepo.find({
         where: {
           moveDate: LessThan(today),
           status: RequestStatus.CONFIRMED,
         },
-        relations: ['customer', 'customer.user'],
+        relations: ['customer', 'customer.user', 'estimateOffers'],
       });
 
+      let totalExpiredPendingOffers = 0;
+
       for (const request of confirmedRequests) {
+        // 고객에게 이사 완료 확인 알림
+        if (request.customer?.user) {
+          // 이벤트 발생
+          this.eventEmitter.emit('move.completion-check', {
+            requestId: request.id,
+            customerId: request.customer.user.id,
+          });
+          this.logger.log(`견적 요청 ${request.id}에 대한 완료 확인 알림 발송`);
+
+          // 해당 요청의 (확정된 제안을 제외한) PENDING 상태 견적 제안들을 EXPIRED로 변경
+          const expiredCount = await this.expirePendingOffers(request);
+          totalExpiredPendingOffers += expiredCount;
+
+          if (expiredCount > 0) {
+            this.logger.log(
+              `견적 요청 ${request.id}의 PENDING 상태 견적 제안 ${expiredCount}개 → EXPIRED`,
+            );
+          }
+        }
+      }
+
+      // 2. 이사날이 7일 지난 CONFIRMED 상태의 견적 요청 상태를 COMPLETED로 변경
+      const expiredConfirmedRequests = await this.estimateRequestRepo.find({
+        where: {
+          moveDate: LessThan(sevenDaysAgo),
+          status: RequestStatus.CONFIRMED,
+        },
+        relations: ['estimateOffers'],
+      });
+
+      for (const request of expiredConfirmedRequests) {
         // 견적 요청을 COMPLETED로 변경
         await this.estimateRequestRepo.update(request.id, {
           status: RequestStatus.COMPLETED,
@@ -67,21 +116,12 @@ export class EstimateStatusUpdateJob {
           });
         }
 
-        // 고객에게 알림
-        if (request.customer?.user) {
-          const customerNotification: CreateNotificationDto = {
-            userId: request.customer.user.id,
-            type: NotificationType.WRITE_REVIEW,
-            message: '이사가 완료되었습니다. 리뷰를 작성해보세요.',
-            targetId: request.id,
-          };
-          await this.notificationService.create(customerNotification);
-        }
-
-        this.logger.log(`견적 요청 ${request.id} → COMPLETED`);
+        this.logger.log(
+          `이사일 7일 경과 고객 완료 미확인 견적 요청 ${request.id} → COMPLETED`,
+        );
       }
 
-      // 2. 이사날이 지난 PENDING 상태의 견적 요청들을 EXPIRED로 변경
+      // 3. 이사날이 지난 PENDING 상태의 견적 요청들을 EXPIRED로 변경
       const pendingRequests = await this.estimateRequestRepo.find({
         where: {
           moveDate: LessThan(today),
@@ -97,23 +137,16 @@ export class EstimateStatusUpdateJob {
         });
 
         // 해당 요청의 모든 PENDING 상태 견적 제안들을 EXPIRED로 변경
-        const pendingOffers = request.estimateOffers?.filter(
-          (offer) => offer.status === OfferStatus.PENDING,
-        );
-
-        for (const offer of pendingOffers || []) {
-          await this.estimateOfferRepo.update(offer.id, {
-            status: OfferStatus.EXPIRED,
-          });
-        }
+        const expiredCount = await this.expirePendingOffers(request);
+        totalExpiredPendingOffers += expiredCount;
 
         this.logger.log(
-          `견적 요청 ${request.id} → EXPIRED (관련 견적 제안 ${pendingOffers?.length || 0}개)`,
+          `견적 요청 ${request.id} → EXPIRED (관련 견적 제안 ${expiredCount}개)`,
         );
       }
 
       this.logger.log(
-        `✅ 스케줄러 실행 완료 - COMPLETED: ${confirmedRequests.length}건, EXPIRED: ${pendingRequests.length}건`,
+        `✅ 스케줄러 실행 완료 - 완료알림: ${confirmedRequests.length}건, 7일경과완료처리: ${expiredConfirmedRequests.length}건, EXPIRED로 변경된 견적 요청: ${pendingRequests.length}건`,
       );
     } catch (error) {
       this.logger.error('견적 상태 업데이트 중 오류 발생:', error);
