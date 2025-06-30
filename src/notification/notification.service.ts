@@ -162,8 +162,6 @@ export class NotificationService {
       },
     });
 
-    this.sendNotification(userId, notifications);
-
     return { message: '읽음 처리 완료' };
   }
 

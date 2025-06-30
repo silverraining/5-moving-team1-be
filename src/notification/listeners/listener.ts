@@ -115,7 +115,7 @@ export class MoveCompletionListener {
     // 알림 저장
     await this.notificationService.create({
       userId: customerId,
-      type: NotificationType.CREATE_REVIEW,
+      type: NotificationType.COMPLETED_CHECK,
       message: `이사를 완료하셨나요? 리뷰를 작성해보세요`,
       targetId: requestId,
     });
