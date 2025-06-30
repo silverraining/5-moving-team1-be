@@ -251,7 +251,7 @@ export const getRandomAddress = () =>
   addressData[Math.floor(Math.random() * addressData.length)];
 
 // 리뷰 관련 상수
-const REVIEW_RATINGS = [3, 3.5, 4, 4.5, 5] as const;
+const REVIEW_RATINGS = [1, 2, 3, 4, 5] as const;
 const REVIEW_COMMENTS = [
   '이사 서비스가 매우 만족스러웠습니다.',
   '기사님이 매우 친절하셨고 꼼꼼하게 작업해주셨어요.',
@@ -284,3 +284,36 @@ export const generateRandomMoveType = (): ServiceType => {
   const moveTypes = Object.values(ServiceType);
   return getRandomElement(moveTypes);
 };
+
+// 기사님 닉네임 리스트
+const moverNicknames = [
+  '무빙맨',
+  '이사왕',
+  '이사천재',
+  '짐박사',
+  '포장이사달인',
+  '이사마스터',
+  '짐운반장인',
+  '이사도우미',
+  '이사프로',
+  '이사특공대',
+];
+
+// 순차 이메일 생성 함수 (ex: mover01@moving.com, customer02@moving.com)
+export function generateSequentialEmail(
+  role: 'mover' | 'customer',
+  index: number,
+) {
+  return `${role}${String(index).padStart(2, '0')}@moving.com`;
+}
+
+// 닉네임 생성 함수 (ex: 빠른치타01, 행복한고객01)
+export function generateNickname(role: 'mover' | 'customer', index: number) {
+  if (role === 'mover') {
+    const base = moverNicknames[index % moverNicknames.length];
+    return `${base}${String(index + 1).padStart(2, '0')}`;
+  } else {
+    // 고객은 랜덤 한국식 이름 사용
+    return generateKoreanName();
+  }
+}
