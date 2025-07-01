@@ -91,7 +91,7 @@ export class NotificationService {
   //초기 데이터용 알림 api
   async findAll(userId): Promise<Notification[]> {
     const notifications = this.notificationRepo.find({
-      where: { user: { id: userId }, isRead: false },
+      where: { user: { id: userId } }, //읽은 알림도 반환하도록 수정
       order: { createdAt: 'DESC' },
       select: {
         id: true,
