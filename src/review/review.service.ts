@@ -9,7 +9,10 @@ import { CreateReviewDto } from './dto/create-review.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Review } from './entities/review.entity';
-import { EstimateOffer } from '@/estimate-offer/entities/estimate-offer.entity';
+import {
+  EstimateOffer,
+  OfferStatus,
+} from '@/estimate-offer/entities/estimate-offer.entity';
 import {
   EstimateRequest,
   RequestStatus,
@@ -109,16 +112,14 @@ export class ReviewService {
     };
 
     try {
-      this.dispatcher.targetMoverAssigned(moverId, reviewData.customerId);
-      await this.reviewRepository.save(reviewData); // 리뷰 저장
+      this.dispatcher.targetMoverAssigned(moverId, customerId);
+      await this.reviewRepository.save(reviewData);
+      return { message: '리뷰가 성공적으로 작성되었습니다.' };
     } catch (error) {
-      console.error('Error saving review:', error);
       throw new InternalServerErrorException(
         '리뷰 작성 중 오류가 발생했습니다.',
       );
     }
-
-    return { message: '리뷰가 성공적으로 작성되었습니다.' };
   }
 
   /**
@@ -136,23 +137,26 @@ export class ReviewService {
     const qb = this.estimateRequestRepository
       .createQueryBuilder('request')
       .leftJoin('request.customer', 'customer')
-      .leftJoin(EstimateOffer, 'offer', 'offer.id = request.confirmedOfferId')
+      .leftJoin('request.estimateOffers', 'offer')
       .leftJoin('offer.review', 'review')
       .leftJoin('offer.mover', 'mover')
       .where('customer.id = :customerId', { customerId }) // 사용자 ID로 필터링
       .andWhere('request.status = :status', { status: RequestStatus.COMPLETED }) // 완료 요청 상태 필터링
+      .andWhere('offer.status = :offerStatus', {
+        offerStatus: OfferStatus.COMPLETED,
+      })
+      .andWhere('offer.isConfirmed = :isConfirmed', { isConfirmed: true })
       .andWhere('review.estimateOfferId IS NULL')
       .select(REVIEWABLE_MOVER_SELECT); // 작성 가능한 리뷰 목록을 위한 SELECT 문
 
-    const total = await qb.getCount(); // 전체 결과 개수를 가져옴 (페이지네이션 적용 전의 총 개수)
+    const total = await qb.getCount();
 
     this.commonService.applyPagePaginationParamsToQb(qb, dto); // 페이지네이션 적용
 
     const rawReviewableOffers = await qb.getRawMany();
-    console.log('rawReviewableOffers: ', rawReviewableOffers);
 
     const formattedReviewableOffers = rawReviewableOffers.map((row) => ({
-      reviewableOfferId: row.reviewableOfferId, // 작성 가능한 리뷰 견적 제안 ID
+      reviewableOfferId: row.reviewableofferid, // 작성 가능한 리뷰 견적 제안 ID
       moveType: row.move_type, // 이사 종류
       moveDate: formatDateToKst(new Date(row.move_date)), // 이사일
       price: row.price, // 견적가
@@ -165,7 +169,7 @@ export class ReviewService {
 
     return {
       reviewableOffers: formattedReviewableOffers, // 작성 가능한 리뷰 목록
-      total, // 페이지네이션을 위한 총 개수
+      total,
     };
   }
 
@@ -208,7 +212,7 @@ export class ReviewService {
 
     return {
       reviews: formattedReviews, // 고객이 작성한 리뷰 목록
-      total, // 페이지네이션을 위한 총 개수
+      total,
     };
   }
 
@@ -233,7 +237,6 @@ export class ReviewService {
     this.commonService.applyPagePaginationParamsToQb(qb, dto); // 페이지네이션 적용
 
     const rawReviews = await qb.getRawMany(); // 결과 데이터 목록을 일반 객체 배열로 가져옴
-    console.log('rawReviews: ', rawReviews);
 
     const formattedReviews = rawReviews.map((row) => ({
       rating: row.rating, // 평점
@@ -268,7 +271,7 @@ export class ReviewService {
         average: Math.round(Number(moverAverageRating) * 10) / 10, // 기사의 평균 평점
         count: ratingsCount, // 기사가 받은 평점 개수
       },
-      total, // 페이지네이션을 위한 총 개수
+      total,
     };
   }
 }

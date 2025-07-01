@@ -14,7 +14,7 @@ export enum NotificationType {
   MOVE_DAY_REMINDER = 'MOVE_DAY_REMINDER',
   NEW_OFFER = 'NEW_OFFER',
   CREATE_REVIEW = 'CREATE_REVIEW',
-  WRITE_REVIEW = 'WRITE_REVIEW',
+  COMPLETED_CHECK = 'COMPLETED_CHECK', // 이사 완료 확인 알림
 }
 
 @Entity()

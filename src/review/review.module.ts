@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ReviewService } from './review.service';
 import { ReviewController } from './review.controller';
+import { ReviewDevController } from './review.dev.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Review } from './entities/review.entity';
 import { EstimateOffer } from '@/estimate-offer/entities/estimate-offer.entity';
@@ -28,7 +29,7 @@ import { NotificationModule } from '@/notification/notification.module';
     CustomerProfileModule,
     MoverProfileModule,
   ],
-  controllers: [ReviewController],
+  controllers: [ReviewController, ReviewDevController],
   providers: [
     ReviewService,
     ReviewHelper,

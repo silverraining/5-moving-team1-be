@@ -21,7 +21,10 @@ import { MoverProfile } from '@/mover-profile/entities/mover-profile.entity';
 
 import { EstimateRequestPaginationDto } from './dto/estimate-request-pagination.dto';
 import { GenericPaginatedDto } from '@/common/dto/paginated-response.dto';
-import { EstimateOffer } from '@/estimate-offer/entities/estimate-offer.entity';
+import {
+  EstimateOffer,
+  OfferStatus,
+} from '@/estimate-offer/entities/estimate-offer.entity';
 import { CreatedAtCursorPaginationDto } from '@/common/dto/created-at-pagination.dto';
 import { EstimateRequestEventDispatcher } from '@/notification/events/dispatcher';
 
@@ -35,6 +38,8 @@ export class EstimateRequestService {
     private readonly customerProfileRepository: Repository<CustomerProfile>,
     @InjectRepository(MoverProfile)
     private readonly moverProfileRepository: Repository<MoverProfile>,
+    @InjectRepository(EstimateOffer)
+    private readonly estimateOfferRepository: Repository<EstimateOffer>,
     private readonly dataSource: DataSource,
     //알림 생성부분
     private readonly dispatcher: EstimateRequestEventDispatcher,
@@ -380,5 +385,191 @@ export class EstimateRequestService {
     });
 
     return estimateRequest?.targetMoverIds ?? [];
+  }
+
+  /**
+   * 고객의 pending 상태의 견적 요청 조회
+   * @param userId 고객 ID
+   * @returns EstimateRequestResponseDto[]
+   */
+  async findActiveEstimateRequests(
+    userId: string,
+  ): Promise<EstimateRequestResponseDto[]> {
+    const requests = await this.estimateRequestRepository.find({
+      where: {
+        customer: { user: { id: userId } },
+        status: RequestStatus.PENDING,
+      },
+      relations: {
+        customer: {
+          user: true,
+        },
+        estimateOffers: {
+          mover: true,
+          estimateRequest: true,
+        },
+      },
+    });
+
+    if (requests.length === 0) {
+      return [];
+    }
+
+    const allMoverIds = requests.flatMap((req) =>
+      req.estimateOffers.map((o) => o.moverId),
+    );
+
+    const moverViews = await this.dataSource
+      .getRepository(MoverProfileView)
+      .findBy({ id: In(allMoverIds) });
+
+    const moverViewMap = new Map(moverViews.map((v) => [v.id, v]));
+
+    return requests.map((request) => {
+      const offers =
+        request.estimateOffers?.map((offer) => {
+          const stats = moverViewMap.get(offer.moverId);
+          return EstimateOfferResponseDto.from(offer, false, {
+            confirmedCount: stats?.confirmed_estimate_count ?? 0,
+            averageRating: stats?.average_rating ?? 0,
+            reviewCount: stats?.review_count ?? 0,
+            likeCount: stats?.like_count ?? 0,
+            includeFullAddress: true,
+          });
+        }) || [];
+
+      return EstimateRequestResponseDto.from(request, offers, {
+        includeAddress: true,
+      });
+    });
+  }
+  /**
+   * 견적 요청 취소
+   * @param requestId 견적 요청 ID
+   * @param userId 고객 ID
+   */
+  async cancelEstimateRequest(
+    requestId: string,
+    userId: string,
+  ): Promise<void> {
+    // 1. 고객 프로필 조회
+    const customerProfile = await this.customerProfileRepository.findOne({
+      where: { user: { id: userId } },
+    });
+
+    if (!customerProfile) {
+      throw new NotFoundException('고객 프로필을 찾을 수 없습니다.');
+    }
+
+    // 2. 견적 요청 조회
+    const request = await this.estimateRequestRepository.findOne({
+      where: { id: requestId },
+      relations: {
+        customer: true,
+        estimateOffers: true,
+      },
+    });
+
+    if (!request) {
+      throw new NotFoundException('견적 요청을 찾을 수 없습니다.');
+    }
+
+    // 3. 요청자 본인인지 확인
+    if (request.customer.id !== customerProfile.id) {
+      throw new ForbiddenException('견적 요청 취소 권한이 없습니다.');
+    }
+
+    // 4. 요청 상태 확인
+    if (request.status !== RequestStatus.PENDING) {
+      throw new BadRequestException(
+        '대기 중인 견적 요청만 취소할 수 있습니다.',
+      );
+    }
+
+    // 5. 견적 요청 상태를 CANCELED로 변경
+    request.status = RequestStatus.CANCELED;
+    await this.estimateRequestRepository.save(request);
+
+    // 6. 연관된 PENDING 상태의 견적 제안들도 모두 취소 처리
+    if (request.estimateOffers?.length > 0) {
+      const pendingOffers = request.estimateOffers.filter(
+        (offer) => offer.status === OfferStatus.PENDING,
+      );
+
+      if (pendingOffers.length > 0) {
+        await this.dataSource
+          .createQueryBuilder()
+          .update(EstimateOffer)
+          .set({ status: OfferStatus.CANCELED })
+          .where('id IN (:...ids)', {
+            ids: pendingOffers.map((offer) => offer.id),
+          })
+          .execute();
+      }
+    }
+  }
+
+  /**
+   * 이사 완료 처리
+   * @param requestId 견적 요청 ID
+   * @param userId 고객 ID
+   */
+  async completeEstimateRequest(
+    requestId: string,
+    userId: string,
+  ): Promise<void> {
+    // 1. 고객 프로필 조회
+    const customerProfile = await this.customerProfileRepository.findOne({
+      where: { user: { id: userId } },
+    });
+
+    if (!customerProfile) {
+      throw new NotFoundException('고객 프로필을 찾을 수 없습니다.');
+    }
+
+    // 2. 견적 요청 조회
+    const request = await this.estimateRequestRepository.findOne({
+      where: { id: requestId },
+      relations: {
+        customer: true,
+        estimateOffers: true,
+      },
+    });
+
+    if (!request) {
+      throw new NotFoundException('견적 요청을 찾을 수 없습니다.');
+    }
+
+    // 3. 요청자 본인인지 확인
+    if (request.customer.id !== customerProfile.id) {
+      throw new ForbiddenException('이사 완료 처리 권한이 없습니다.');
+    }
+
+    // 4. 요청 상태 확인
+    if (request.status !== RequestStatus.CONFIRMED) {
+      throw new BadRequestException(
+        '확정된 견적 요청만 완료 처리할 수 있습니다.',
+      );
+    }
+
+    // 5. 견적 요청 상태를 COMPLETED로 변경
+    request.status = RequestStatus.COMPLETED;
+
+    // 6. 확정된 견적 제안의 상태도 COMPLETED로 변경
+    const confirmedOffer = await this.estimateOfferRepository.findOne({
+      where: { id: request.confirmedOfferId },
+    });
+
+    if (!confirmedOffer) {
+      throw new NotFoundException('확정된 견적 제안을 찾을 수 없습니다.');
+    }
+
+    confirmedOffer.status = OfferStatus.COMPLETED;
+
+    // 7. 변경사항 저장 (트랜잭션으로 처리)
+    await this.dataSource.transaction(async (manager) => {
+      await manager.save(request);
+      await manager.save(confirmedOffer);
+    });
   }
 }

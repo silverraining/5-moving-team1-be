@@ -6,6 +6,13 @@ import { NotificationService } from './notification.service';
 import { Notification } from './entities/notification.entity';
 import { MoverProfile } from '@/mover-profile/entities/mover-profile.entity';
 import { CustomerProfile } from '@/customer-profile/entities/customer-profile.entity';
+import {
+  EstimateRequestListener,
+  NewEstimateOfferListener,
+  OfferConfirmListener,
+  NewReviewListener,
+  MoveCompletionListener,
+} from './listeners/listener';
 
 @Module({
   imports: [
@@ -17,7 +24,14 @@ import { CustomerProfile } from '@/customer-profile/entities/customer-profile.en
     ]),
   ],
   controllers: [NotificationController],
-  providers: [NotificationService],
+  providers: [
+    NotificationService,
+    EstimateRequestListener,
+    NewEstimateOfferListener,
+    OfferConfirmListener,
+    NewReviewListener,
+    MoveCompletionListener,
+  ],
   exports: [NotificationService],
 })
 export class NotificationModule {}
