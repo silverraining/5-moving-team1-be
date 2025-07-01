@@ -62,7 +62,7 @@ export class NotificationService {
     const notification = this.notificationRepo.create({
       type: createDto.type,
       message: createDto.message,
-      targetId: user.id,
+      targetId: createDto.targetId,
       isRead: false,
       user,
     });
