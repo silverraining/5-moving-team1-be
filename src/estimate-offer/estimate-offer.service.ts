@@ -57,6 +57,7 @@ export class EstimateOfferService {
     // 1. 견적 요청 존재 여부 및 상태 확인
     const estimateRequest = await this.requestRepository.findOne({
       where: { id: estimateRequestId },
+      relations: ['customer'],
     });
 
     if (!estimateRequest) {
@@ -104,9 +105,16 @@ export class EstimateOfferService {
       isConfirmed: false,
     });
 
-    //모든 로직이 종료된 후 이벤트 리스너 동작
-    this.newOfferDispatcher.targetMoverAssigned(estimateOffer.id, mover.id);
-    return await this.offerRepository.save(estimateOffer);
+    // 5. 데이터베이스에 먼저 저장
+    const savedEstimateOffer = await this.offerRepository.save(estimateOffer);
+
+    // 6. 저장 완료 후 이벤트 리스너 동작
+    this.newOfferDispatcher.targetMoverAssigned(
+      savedEstimateOffer.id,
+      estimateRequest.customer.id,
+    );
+
+    return savedEstimateOffer;
   }
 
   /**

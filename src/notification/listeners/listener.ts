@@ -9,6 +9,9 @@ import {
 } from '../events/event';
 import { NotificationService } from 'src/notification/notification.service';
 import { NotificationType } from '../entities/notification.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { EstimateOffer } from 'src/estimate-offer/entities/estimate-offer.entity';
+import { Repository } from 'typeorm';
 
 /**
  * 지정 견적 생성 리스너
@@ -41,19 +44,49 @@ export class EstimateRequestListener {
  */
 @Injectable()
 export class NewEstimateOfferListener {
-  constructor(private readonly notificationService: NotificationService) {}
+  constructor(
+    private readonly notificationService: NotificationService,
+    @InjectRepository(EstimateOffer)
+    private readonly estimateOfferRepository: Repository<EstimateOffer>,
+  ) {}
 
   @OnEvent('new-estimate-orffer.target-customer-updated')
   async handleTargetMoverUpdated(event: TargetOfferUpdateEvent) {
     const { customerId, offerId } = event;
 
-    // 알림 저장
-    await this.notificationService.create({
-      userId: customerId,
-      type: NotificationType.NEW_OFFER,
-      message: `새로운 견적이 도착했습니다.`,
-      targetId: offerId,
-    });
+    try {
+      // EstimateOffer 조회 (mover 정보 포함)
+      const estimateOffer = await this.estimateOfferRepository.findOne({
+        where: { id: offerId },
+        relations: ['mover'],
+      });
+
+      if (!estimateOffer) {
+        throw new Error(`EstimateOffer not found for offerId: ${offerId}`);
+      }
+
+      if (!estimateOffer.mover) {
+        throw new Error(`Mover not found for EstimateOffer: ${offerId}`);
+      }
+
+      // mover 닉네임을 포함한 개인화된 메시지 생성
+      const moverNickname = estimateOffer.mover.nickname;
+      const personalizedMessage = `${moverNickname} 기사님의 견적이 도착했어요`;
+
+      // 알림 저장
+      await this.notificationService.create({
+        userId: customerId,
+        type: NotificationType.NEW_OFFER,
+        message: personalizedMessage,
+        targetId: offerId,
+      });
+    } catch (error) {
+      Logger.error(
+        `Error creating personalized notification: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
   }
 }
 
