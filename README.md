@@ -12,9 +12,9 @@
 
 ## 링크
 
-- 배포 URL : https://5-moving.vercel.app/
-- API 문서 : http://ec2-15-164-171-112.ap-northeast-2.compute.amazonaws.com/api-docs
-- 팀 협업 문서 : https://positive-kingfisher-003.notion.site/1-_-1f0d9fa672ba8055b067ec2833354efd?source=copy_link
+- [무빙 서비스 바로가기](https://5-moving.vercel.app/)
+- [API 문서 바로가기](https://hay-oon.com/api-docs)
+- [팀 노션 바로가기](https://positive-kingfisher-003.notion.site/1-_-1f0d9fa672ba8055b067ec2833354efd?source=copy_link)
 
 ## 기술 스택
 
@@ -55,21 +55,26 @@ src/
 
 ## 데이터베이스 ERD
 
+![Database ERD](./docs/moving-erd.svg)
+
 ## 아키텍쳐
+
+![Architecture](./docs/moving-architecture_final.svg)
 
 ## 팀원별 담당 기능
 
 ### 정하윤
 
-**기사님 견적 관리 관련 CRUD 담당**
+**DB 설계 & 기사님 견적 관리 관련 CRUD 담당**
 
+- 데이터 모델링 및 API 명세 작성
 - `POST /api/s3/presigned-url` - S3 Presigned URL 요청
 - `GET /api/estimate-offer/:offers` - 견적 제안 목록 조회
 - `GET /api/estimate-offer/:offerId` - 견적 제안 상세 조회
 - `GET /api/estimate-offer/rejected-offers` - 반려한 견적 목록 조회
 - `POST /api/estimate-offer/:requestId` - 견적 보내기
 - `PATCH /api/estimate-offer/:requestId/rejected` - 견적 반려하기
-- AWS 배포 및 Github Actions CI/CD 파이프라인 구현
+- AWS 배포 아키텍쳐 구현 및 Github Actions CI/CD 파이프라인 구축
 
 ### 최은비
 
