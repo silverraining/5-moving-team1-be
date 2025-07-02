@@ -82,6 +82,13 @@ src/
 
 ### 김조순
 
+**알림 관련 CRUD 담당**
+
+- `POST /api/notifications` - 알림 생성 (이벤트 리스너/Cron을 사용하여 일정 이벤트 및 시간이 되면 알림 자동생성 )
+- `GET /api/notifications` - 유저의 알림 중 읽지않은 알림을 전체 조회
+- `PATCH /api/notifications/read` - 알림 읽음처리
+- `GET /api/notifications/stream` - 알림 SSE연결 (신규 알림이 생성되면 Client에 전송)
+
 ## 주요 기능
 
 ### 인증 시스템
