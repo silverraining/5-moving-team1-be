@@ -59,7 +59,7 @@ src/
 
 ## 아키텍쳐
 
-![Architecture](./docs/moving-architecture_final.svg)
+![Architecture](./docs/moving-architecture_final.png)
 
 ## 팀원별 담당 기능
 
