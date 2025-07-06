@@ -105,7 +105,7 @@ src/
 
 ## 팀원별 담당 기능
 
-### 정하윤
+### [정하윤](https://github.com/hay-oon)
 
 **DB 설계 & 기사님 견적 관리 관련 CRUD 담당**
 
@@ -118,7 +118,7 @@ src/
 - `PATCH /api/estimate-offer/:requestId/rejected` - 견적 반려하기
 - AWS 배포 아키텍쳐 구현 및 Github Actions CI/CD 파이프라인 구축
 
-### 최은비
+### [최은비](https://github.com/silverraining)
 
 **DB 설계 & 인증, 고객 견적 요청 및 견적 수신 흐름 전반 CRUD 담당**
 
@@ -145,7 +145,7 @@ src/
   - `GET /api/estimate-request` – 기사가 받은 견적 요청 목록 조회
 
 
-### 민지영
+### [민지영](https://github.com/Obsessive-Curiosity)
 
 **DB 설계 & 고객 및 기사 프로필 관리, 찜하기, 리뷰 관련 CRUD 담당**
 
@@ -182,7 +182,7 @@ src/
 - 견적 제안 확인 및 확정 API
   - `PATCH /api/estimate-offer/:offerId/confirmed` – 기사의 제안 견적 확정 (고객)
 
-### 김조순
+### [김조순](https://github.com/josunkim)
 
 **알림 관련 CRUD 담당**
 
