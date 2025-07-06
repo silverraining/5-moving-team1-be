@@ -143,7 +143,8 @@ src/
 
 - 기사 기준 고객이 생성한 견적 요청 수신 API
   - `GET /api/estimate-request` – 기사가 받은 견적 요청 목록 조회
-
+- Sentry 설정 및 모니터링 적용  
+- Review Flow End-to-End 테스트 작성 (Jest + Supertest)
 
 ### [민지영](https://github.com/Obsessive-Curiosity)
 
