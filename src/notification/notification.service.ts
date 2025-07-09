@@ -70,18 +70,7 @@ export class NotificationService {
     // 저장
     await this.notificationRepo.save(notification);
     //현재 까지 생성 되어 있는 알림 조회
-    const notifications = await this.notificationRepo.find({
-      where: { user: { id: user.id }, isRead: false },
-      order: { createdAt: 'DESC' }, // 최신순 정렬
-      select: {
-        id: true,
-        type: true,
-        message: true,
-        targetId: true,
-        isRead: true,
-        createdAt: true,
-      },
-    });
+    const notifications = await this.getAllNotificationsForUser(user.id);
     // 알림 리스트 반환
     this.sendNotification(user.id, notifications);
 
@@ -90,18 +79,7 @@ export class NotificationService {
 
   //초기 데이터용 알림 api
   async findAll(userId): Promise<Notification[]> {
-    const notifications = this.notificationRepo.find({
-      where: { user: { id: userId }, isRead: false },
-      order: { createdAt: 'DESC' },
-      select: {
-        id: true,
-        type: true,
-        message: true,
-        targetId: true,
-        isRead: true,
-        createdAt: true,
-      },
-    });
+    const notifications = await this.getAllNotificationsForUser(userId);
     return notifications;
   }
 
@@ -137,18 +115,7 @@ export class NotificationService {
       throw new BadRequestException('id 또는 ids를 입력해야 합니다.');
     }
 
-    const notifications = await this.notificationRepo.find({
-      where: { user: { id: userId }, isRead: false },
-      order: { createdAt: 'DESC' },
-      select: {
-        id: true,
-        type: true,
-        message: true,
-        targetId: true,
-        isRead: true,
-        createdAt: true,
-      },
-    });
+    const notifications = await this.getAllNotificationsForUser(userId);
 
     return { message: '읽음 처리 완료' };
   }
@@ -185,5 +152,22 @@ export class NotificationService {
       return;
     }
     subject.next({ data: payload });
+  }
+
+  private async getAllNotificationsForUser(
+    userId: string,
+  ): Promise<Notification[]> {
+    return this.notificationRepo.find({
+      where: { user: { id: userId } },
+      order: { createdAt: 'DESC' },
+      select: {
+        id: true,
+        type: true,
+        message: true,
+        targetId: true,
+        isRead: true,
+        createdAt: true,
+      },
+    });
   }
 }
