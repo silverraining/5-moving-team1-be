@@ -40,15 +40,21 @@ export class EstimateMoveDateJob {
         moveDate: Between(tomorrowStart, tomorrowEnd),
         status: RequestStatus.CONFIRMED,
       },
-      relations: ['customer', 'customer.user'],
+      relations: [
+        'customer',
+        'customer.user',
+        'estimateOffers',
+        'estimateOffers.mover',
+        'estimateOffers.mover.user',
+      ],
     });
 
     for (const request of estimateRequests) {
+      const from = request.fromAddress;
+      const to = request.toAddress;
+      const message = `내일은 ${from.sido}(${from.sigungu}) -> ${to.sido}(${to.sigungu}) 이사 예정일이에요.`;
       const customerUser = request.customer?.user;
       if (customerUser) {
-        const from = request.fromAddress;
-        const to = request.toAddress;
-        const message = `내일은 ${from.sido}(${from.sigungu}) -> ${to.sido}(${to.sigungu}) 이사 예정일이에요.`;
         const dto: CreateNotificationDto = {
           userId: customerUser.id,
           type: NotificationType.MOVE_DAY_REMINDER,
@@ -60,26 +66,23 @@ export class EstimateMoveDateJob {
           `고객 알림 전송: ${message} (userId: ${customerUser.id})`,
         );
       }
-
-      if (request.confirmedOfferId) {
-        const offer = await this.estimateOfferRepo.findOne({
-          where: { id: request.confirmedOfferId },
-          relations: ['mover', 'mover.user'],
-        });
-
+      if (request.confirmedOfferId && request.estimateOffers) {
+        const offer = request.estimateOffers.find(
+          (o) => o.id === request.confirmedOfferId,
+        );
         const moverUser = offer?.mover?.user?.id;
         if (moverUser) {
           const dto: CreateNotificationDto = {
             userId: moverUser,
             type: NotificationType.MOVE_DAY_REMINDER,
-            message: '내일 배정된 이사 일정이 있습니다.',
+            message,
             targetId: request.id,
           };
           await this.notificationService.create(dto);
+          this.logger.log(`기사 알림 전송: ${message} (userId: ${moverUser})`);
         }
       }
-
-      this.logger.log(`${estimateRequests.length}건 이사 알림 완료`);
     }
+    this.logger.log(`${estimateRequests.length}건 이사 알림 완료`);
   }
 }
