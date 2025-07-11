@@ -1,5 +1,5 @@
 # Node.js 베이스 이미지 사용
-FROM node:20-alpine
+FROM node:20-bullseye
 
 # 빌드 인수 설정
 ARG BUILD_TIME
