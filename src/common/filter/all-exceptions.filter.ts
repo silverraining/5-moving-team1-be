@@ -10,7 +10,7 @@ import { Request, Response } from 'express';
 import * as Sentry from '@sentry/node';
 import { sendDiscordAlert } from '@/common/utils/discord-notifier.util';
 import { formatErrorLog } from '@/common/utils/format-error-log';
-import chalk from 'chalk';
+// import chalk from 'chalk';
 import { isString } from 'lodash';
 
 @Catch()
@@ -44,7 +44,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
     this.logger.error(log);
     if (stack) {
       const trimmedStack = stack.split('\n').slice(1).join('\n'); // 첫 줄 중복 메시지 제거
-      console.error(chalk.gray(trimmedStack));
+      // console.error(chalk.gray(trimmedStack));
+      console.error(trimmedStack);
     }
 
     // 클라이언트 에러(4xx)는 Sentry/Discord 전송 생략
