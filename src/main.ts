@@ -1,5 +1,3 @@
-import * as crypto from 'crypto';
-(globalThis as any).crypto = crypto;
 import './sentry/instrument';
 import { AllExceptionsFilter } from './common/filter/all-exceptions.filter';
 import { NestFactory, Reflector } from '@nestjs/core';
